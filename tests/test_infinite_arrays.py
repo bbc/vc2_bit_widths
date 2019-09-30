@@ -82,12 +82,19 @@ class TestInfiniteArray(object):
             a[1]
     
     def test_caching(self):
-        a = self.MyArray(2)
+        a = self.MyArray(2, cache=True)
         assert a[10, 20] == ((10, 20), 1)
         assert a[10, 20] == ((10, 20), 1)
         assert a[20, 10] == ((20, 10), 2)
         assert a[10, 20] == ((10, 20), 1)
         assert a[20, 10] == ((20, 10), 2)
+        
+        a = self.MyArray(2, cache=False)
+        assert a[10, 20] == ((10, 20), 1)
+        assert a[10, 20] == ((10, 20), 2)
+        assert a[20, 10] == ((20, 10), 3)
+        assert a[10, 20] == ((10, 20), 4)
+        assert a[20, 10] == ((20, 10), 5)
 
 
 def test_symbol_array():

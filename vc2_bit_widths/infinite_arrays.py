@@ -196,6 +196,8 @@ class InfiniteArray(object):
     position in an array.
     
     Instances of this type may be indexed like an N-dimensional array.
+    
+    The 'cache' argument controls whether array values are cached or not.
     """
     
     def __init__(self, ndim, cache=True):
