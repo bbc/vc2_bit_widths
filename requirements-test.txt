@@ -1,0 +1,2 @@
+pytest
+vc2_conformance
