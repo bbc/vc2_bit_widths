@@ -153,17 +153,6 @@ the :py:meth:`InfiniteArray.relative_step_size_to` method. For example::
     >>> il.relative_step_size_to(v1)
     (Fraction(1, 2), Fraction(1, 1))
 
-
-Periodic Caching
-----------------
-
-When a large chain of :py:class:`InfiniteArray`\ s have been chained together,
-computing the value of an element can become expensive. The
-:py:class:`PeriodicCachingArray` array implements a smart caching behaviour for
-arrays whose contents follow a regular pattern.
-
-.. autoclass:: PeriodicCachingArray
-
 """
 
 from fractions import Fraction
@@ -188,7 +177,6 @@ __all__ = [
     "LeftShiftedArray",
     "SubsampledArray",
     "InterleavedArray",
-    "PeriodicCachingArray",
 ]
 
 
@@ -805,145 +793,3 @@ class InterleavedArray(InfiniteArray):
             s/2 if d == self._interleave_dimension else s
             for d, s in enumerate(relative_step_size)
         )
-
-
-class PeriodicCachingArray(InfiniteArray):
-    
-    def __init__(self, array, *symbol_arrays):
-        r"""
-        Cache repeating patterns in a :py:class:`InfiniteArray`.
-        
-        Rather than computing the value of every index requested, values for
-        each filter phase are computed once and then cached. When a cached
-        value is retreieved, the indices of symbols within the value are
-        adjusted to match the index actually requested.
-        
-        .. warning::
-            It is assumed that all symbols not originating from the
-            ``symbol_arrays`` :py:class:`SymbolArray`\ s relate to error terms.
-            When a value is read from a :py:class:`PeriodicCachingArray`, all
-            error terms are assigned new, unique symbols. This ensures that
-            error terms remain independent across different array indices but
-            that error terms which should be common between indices will
-            differ.
-        
-        Parameters
-        ==========
-        array : :py:class:`InfiniteArray`
-            The array whose values are to be cached. By design, all built-in
-            :py:class:`InfiniteArray` subclasses are periodic and so any array
-            may be cached by this class.
-        *symbol_arrays : :py:class:`SymbolArray`
-            For every non-error-term symbol in ``array``, the corresponding
-            :py;class:`SymbolArray` must be provided here.
-        """
-        self._array = array
-        
-        if len(set(a.prefix for a in symbol_arrays)) != len(symbol_arrays):
-            raise TypeError("some symbol arrays share a prefix")
-        for symbol_array in symbol_arrays:
-            if self._array.ndim != symbol_array.ndim:
-                raise TypeError("arrays do not have same number of dimensions")
-        
-        # Lookup from prefix to symbol array
-        self._symbol_arrays = {
-            symbol_array.prefix: symbol_array
-            for symbol_array in symbol_arrays
-        }
-        
-        # Cache of values computed by self._get_substitution_recipe
-        #
-        # {phase_key: recipe, ...}
-        self._substitution_recipes = {}
-        
-        super(PeriodicCachingArray, self).__init__(self._array.ndim, cache=False)
-    
-    def _get_substitution_recipe(self, phase_key):
-        """
-        Internal function. Given a phase index, return a recipe for generating
-        symbol substitutions which turn self._array[phase_key] into the value
-        with any key a multiple of the period from phase_key.
-        
-        Parameters
-        ==========
-        phase_key : (n, ...)
-        
-        Returns
-        =======
-        recipe : {symbol: (prefix, scale, offset), ...}
-            Where:
-            * 'symbol' A symbol to replace in self._array[phase_key]
-            * 'prefix': The prefix to use for the replacement symbol
-            * 'scale': The scaling factor for the period number in each
-              dimension.
-            * 'offset': A fixed offset to add to the coordinate in each
-              dimension.
-        """
-        if phase_key in self._substitution_recipes:
-            return self._substitution_recipes[phase_key]
-        
-        recipe = {}
-        
-        for sym in LinExp(self._array[phase_key]).symbols():
-            if (
-                # Symbol may have been produced by a symbol array
-                isinstance(sym, tuple) and
-                len(sym) == self.ndim + 1 and
-                # Is it one of the named arrays?
-                sym[0] in self._symbol_arrays
-            ):
-                prefix = sym[0]
-                offset = sym[1:]
-                symbol_array = self._symbol_arrays[prefix]
-                scale = tuple(
-                    int(s * p)
-                    for s, p in zip(
-                        self._array.relative_step_size_to(symbol_array),
-                        self._array.period
-                    )
-                )
-                recipe[sym] = (prefix, scale, offset)
-            else:
-                # No symbol array contains this symbol; we'll assume it contains an
-                # error term. Error terms will be replaced with a error term with a
-                # similar, but unique, name in each repeated period.
-                prefix = (sym, id(self))
-                scale = tuple(1 for _ in range(self._array.ndim))
-                offset = phase_key
-                recipe[sym] = (prefix, scale, offset)
-        
-        self._substitution_recipes[phase_key] = recipe
-        
-        return recipe
-    
-    def get(self, keys):
-        phase_key = tuple(
-            k % p
-            for k, p in zip(keys, self._array.period)
-        )
-        base_value = self._array[phase_key]
-        
-        recipe = self._get_substitution_recipe(phase_key)
-        
-        period_key = tuple(
-            k // p
-            for k, p in zip(keys, self._array.period)
-        )
-        
-        value = LinExp(base_value).subs({
-            sym: type(sym)((prefix,) + tuple(
-                (pk*s) + o
-                for pk, s, o in zip(period_key, scale, offset)
-            ))
-            for sym, (prefix, scale, offset) in recipe.items()
-        })
-        
-        return value
-    
-    @property
-    def period(self):
-        return self._array.period
-    
-    def relative_step_size_to(self, other):
-        return self._array.relative_step_size_to(other)
-
