@@ -197,10 +197,13 @@ class InfiniteArray(object):
     
     Instances of this type may be indexed like an N-dimensional array.
     
-    The 'cache' argument controls whether array values are cached or not.
+    The 'cache' argument controls whether array values are cached or not. It is
+    recommended that this argument be set to 'True' for expensive to compute
+    functions or functions which introduce new error terms (to ensure error
+    terms are re-used)
     """
     
-    def __init__(self, ndim, cache=True):
+    def __init__(self, ndim, cache):
         self._ndim = ndim
         self._cache = {} if cache else None
     
@@ -355,7 +358,7 @@ class LiftedArray(InfiniteArray):
         self._stage = stage
         self._filter_dimension = filter_dimension
         
-        super(LiftedArray, self).__init__(self._input_array.ndim)
+        super(LiftedArray, self).__init__(self._input_array.ndim, cache=True)
     
     # For each lifting stage type, does this update the odd or even numbered
     # samples?
@@ -520,7 +523,7 @@ class RightShiftedArray(InfiniteArray):
         self._input_array = input_array
         self._shift_bits = shift_bits
         
-        super(RightShiftedArray, self).__init__(self._input_array.ndim, cache=False)
+        super(RightShiftedArray, self).__init__(self._input_array.ndim, cache=True)
     
     def get(self, keys):
         if self._shift_bits == 0:

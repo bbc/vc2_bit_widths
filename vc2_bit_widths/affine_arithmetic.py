@@ -144,31 +144,37 @@ def error_in_range(lower, upper):
     return (half_range * new_error_symbol()) + mean
 
 
-# Cache of previous 'div' outputs
-#
-# {(numerator, denominator): result, ...}
-_div_result_cache = {}
-
 def div(numerator, denominator):
     """
-    Perform Python/VC-2 style truncating integer division by a constant on an
-    affine arithmetic expression.
+    Model Python/VC-2 style truncating integer division using affine
+    arithmetic. An appropriate error term is introduced to represent the
+    rounding error.
     
-    This function introduces a different error symbol (created with
-    :py:func:`new_error_symbol`) for each unique numerator/denominator pairing
-    provided. When a numerator/denominator pairing is repeated, the same symbol
-    will be used.
+    .. warning::
+        
+        If the same numerator and denominator are presented to this function,
+        different error terms will be produced each time. Ideally, however, the
+        same error term ought to be produced. Unfortunately, to implement this
+        would require every numerator/divisor to be cached permenently.
     """
+    return (
+        (LinExp(numerator) / denominator) +
+        error_in_range(-1, 0)
+    )
+
+
+def strip_error_terms(expression):
+    """
+    Return the provided expression with all error symbols removed (i.e. set to
+    0).
+    """
+    expression = LinExp(expression)
     
-    global _div_result_cache
-    
-    if (numerator, denominator) not in _div_result_cache:
-        _div_result_cache[(numerator, denominator)] = (
-            (LinExp(numerator) / denominator) +
-            error_in_range(-1, 0)
-        )
-    
-    return _div_result_cache[(numerator, denominator)]
+    return expression.subs({
+        sym: 0
+        for sym in expression.symbols()
+        if isinstance(sym, Error)
+    })
 
 
 def upper_bound(expression):

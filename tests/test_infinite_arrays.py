@@ -52,7 +52,7 @@ def test_lcm(a, b, exp):
 class TestInfiniteArray(object):
 
     def test_ndim_property(self):
-        assert InfiniteArray(123).ndim == 123
+        assert InfiniteArray(123, cache=False).ndim == 123
     
     class MyArray(InfiniteArray):
         def __init__(self, *args, **kwargs):
@@ -64,17 +64,17 @@ class TestInfiniteArray(object):
             return (key, self._last_id)
     
     def test_1d_index(self):
-        a = self.MyArray(1)
+        a = self.MyArray(1, cache=False)
         assert a[100] == ((100, ), 1)
         assert a[(200, )] == ((200, ), 2)
         assert a[300, ] == ((300, ), 3)
     
     def test_3d_index(self):
-        a = self.MyArray(3)
+        a = self.MyArray(3, cache=False)
         assert a[1, 2, 3] == ((1, 2, 3), 1)
     
     def test_incorrect_dimensions(self):
-        a = self.MyArray(2)
+        a = self.MyArray(2, cache=False)
         
         with pytest.raises(TypeError):
             a[1, 2, 3]

@@ -25,7 +25,7 @@ from vc2_bit_widths.vc2_filters import (
 
 class TestAnalysisAndSynthesisTransforms(object):
 
-    @pytest.mark.parametrize("wavelet_index,wavelet_index_ho,dwt_depth,dwt_depth_ho,exp_error", [
+    @pytest.mark.parametrize("wavelet_index,wavelet_index_ho,dwt_depth,dwt_depth_ho", [
         # Check that when no shifting occurs, no constant error exists
         # (since all other rounding errors should cancel out due to lifting)
         (
@@ -33,7 +33,6 @@ class TestAnalysisAndSynthesisTransforms(object):
             tables.WaveletFilters.haar_no_shift,
             1,
             2,
-            False,
         ),
         # Check:
         # * Asymmetric transforms
@@ -46,7 +45,6 @@ class TestAnalysisAndSynthesisTransforms(object):
             tables.WaveletFilters.le_gall_5_3,  # Horizontal only
             1,
             2,
-            True,
         ),
         # Checks a filter which uses all four lifting types
         (
@@ -54,10 +52,9 @@ class TestAnalysisAndSynthesisTransforms(object):
             tables.WaveletFilters.daubechies_9_7,
             1,
             0,
-            True,
         ),
     ])
-    def test_filters_invert_eachother(self, wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth_ho, exp_error):
+    def test_filters_invert_eachother(self, wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth_ho):
         # Test that the analysis and synthesis filters invert each-other as a
         # check of consistency (and, indirectly, the correctness of the
         # analysis implementation and convert_between_synthesis_and_analysis)
@@ -82,26 +79,15 @@ class TestAnalysisAndSynthesisTransforms(object):
             transform_coeffs,
         )
         
-        # In this example, no quantisation is applied between the two
-        # filters. As a consequence the rounding errors in the analysis and
-        # synthesis filters exactly cancel out. As such the input and output
-        # picture values should be identical.
-        #
-        # The bit shift between transform levels used by some filters
-        # unfortunately exposes a limitation of the affine arithmetic approach.
-        # Specifically, we know that the values fed to the inter-level bit
-        # shift are always a multiple of two and so no rounding takes place.
-        # The affine arithmetic, however, has no way to know this and so error
-        # terms are introduced, one per transform level, ammounting to an
-        # small over-estimate of the error bounds. We check that this is the
-        # case.
+        # In this example, no quantisation is applied between the two filters.
+        # As a consequence the only error terms arise from rounding errors in
+        # the analysis and synthesis filters. Since this implementation does
+        # not account for divisions of the same numbers producing the same
+        # rounding errors, these rounding errors do not cancel out here.
+        # However, aside from these terms, the input and output of the filters
+        # should be identical.
         rounding_errors = output_picture[0, 0] - input_picture[0, 0]
-        if exp_error:
-            assert len(set(rounding_errors.symbols())) == dwt_depth + dwt_depth_ho
-            assert -1 < aa.upper_bound(rounding_errors) < 1
-            assert -1 < aa.lower_bound(rounding_errors) < 1
-        else:
-            assert rounding_errors == 0
+        assert all(isinstance(sym, aa.Error) for sym in rounding_errors.symbols())
     
     @pytest.mark.parametrize("dwt_depth,dwt_depth_ho", [
         (0, 0),

@@ -40,6 +40,11 @@ def test_error_in_range():
     assert aa.upper_bound(a) == 123
 
 
+def test_strip_error_terms():
+    a = aa.new_error_symbol() + 1 + LinExp("x")
+    assert aa.strip_error_terms(a) == LinExp("x") + 1
+
+
 class TestDiv(object):
     
     def test_basic_division_works(self):
@@ -54,8 +59,3 @@ class TestDiv(object):
         assert set(r1.symbols()) != set(r2.symbols())
         assert set(r2.symbols()) != set(r3.symbols())
         assert set(r3.symbols()) != set(r1.symbols())
-    
-    def test_returns_same_error_terms_for_same_inputs(self):
-        r1 = aa.div(LinExp("a") + LinExp("b") + 3, 2)
-        r2 = aa.div(LinExp("a") + LinExp("b") + 3, 2)
-        assert r1 == r2
