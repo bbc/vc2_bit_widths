@@ -9,9 +9,7 @@ from vc2_conformance.decoder.transform_data_syntax import (
     inverse_quant,
 )
 
-from vc2_bit_widths.linexp import LinExp
-
-import vc2_bit_widths.affine_arithmetic as aa
+from vc2_bit_widths.linexp import LinExp, AAError
 
 from vc2_bit_widths.infinite_arrays import (
     SymbolArray,
@@ -87,7 +85,7 @@ class TestAnalysisAndSynthesisTransforms(object):
         # However, aside from these terms, the input and output of the filters
         # should be identical.
         rounding_errors = output_picture[0, 0] - input_picture[0, 0]
-        assert all(isinstance(sym, aa.Error) for sym in rounding_errors.symbols())
+        assert all(isinstance(sym, AAError) for sym in rounding_errors.symbols())
     
     @pytest.mark.parametrize("dwt_depth,dwt_depth_ho", [
         (0, 0),

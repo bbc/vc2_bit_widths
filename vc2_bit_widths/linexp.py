@@ -1,9 +1,11 @@
 r"""
-:py:mod:`linexp`: A simple computer algebra system
-==================================================
+:py:mod:`linexp`: A simple computer algebra system with affine arithmetic
+=========================================================================
 
-This module implements a simple Computer Algebra System (CAS) which is able to
-perform basic algebraic manipulations on linear expressions (linexps).
+This module implements a Computer Algebra System (CAS) which is able to perform
+simple linear algebraic manipulations on linear expressions (linexps). In
+addition, affine arithmetic may be used to model a limited set of non-linear
+operations relating to integer truncation.
 
 .. note::
 
@@ -11,8 +13,8 @@ perform basic algebraic manipulations on linear expressions (linexps).
     is extremely limited. However, within its restricted domain,
     :py:mod:`linexp` is significantly more computationally efficient.
 
-Example Usage
--------------
+Computer Algbra System Usage
+----------------------------
 
 Linear expressions are defined as being of the form:
 
@@ -40,8 +42,8 @@ The expression above may be constructed using this library as follows::
     >>> c = LinExp("c")
     
     >>> expr = a + 2*b - 3*c + 100
-    >>> str(expr)
-    'a + 2*b + -3*c + 100'
+    >>> print(expr)
+    a + 2*b + -3*c + 100
 
 The :py:meth:`LinExp.subs` method may then be used to substitute symbols with
 numbers::
@@ -75,12 +77,12 @@ Instances of :py:class:`LinExp` support all Python operators when the resulting
 expression would be strictly linear. For example::
 
     >>> expr_times_ten = expr * 10
-    >>> str(expr_times_ten)
-    '10*a + 20*b + -30*c + 1000'
+    >>> print(expr_times_ten)
+    10*a + 20*b + -30*c + 1000
     
     >>> three = (expr * 3) / expr
-    >>> str(three)
-    '3'
+    >>> print(three)
+    3
     
     >>> # Not allowed since the result would not be linear
     >>> expr / a
@@ -91,8 +93,8 @@ coefficients exactly. Accordingly :py:class:`LinExp` implements division using
 :py:class:`~fractions.Fraction`::
 
     >>> expr_over_three = expr / 3
-    >>> str(expr_over_three)
-    '(1/3)*a + (2/3)*b + -1*c + 100/3'
+    >>> print(expr_over_three)
+    (1/3)*a + (2/3)*b + -1*c + 100/3
 
 Internally, linear expressions are represented by a dictionary of the form
 ``{symbol: coefficient, ...}``. For example::
@@ -122,11 +124,97 @@ The coefficients associated with particular symbols can be queried like so::
     0
 
 
+Affine Arithmetic
+-----------------
+
+`Affine arithmetic <https://en.wikipedia.org/wiki/Affine_arithmetic>`_ may be
+used to bound the effects of non-linear operations such as integer truncation
+within a linear expression. In affine arithmetic, whenever a non-linear
+operation is performed, an error term is introduced which represents the range
+of values the non-linear operation could produce. In this way, the bounds of
+the effects of the non-linearity may be tracked.
+
+For example, consider the following::
+
+    >>> a = LinExp("a")
+    >>> a_over_2 = a // 2
+    >>> print(a_over_2)
+    (1/2)*a + (1/2)*AAError(id=1) + -1/2
+
+Here, the symbol "a" is divded by 2 with truncating integer division. The
+resulting expression starts with ``(1/2)*a`` as usual but is followed by an
+:py:class:`AAError` term and constant representing the rounding error.
+
+In affine arithmetic, :py:class:`AAError` symbols represent unknown values in
+the range :math:`[-1, +1]`. As a result we can see that our expression defines
+a range :math:`[\frac{a}{2}-1, \frac{a}{2}]`. This range represents the lower-
+and upper-bounds for the result of the truncating integer division. These
+bounds may be computed using the :py:func:`affine_lower_bound` and
+:py:func:`affine_upper_bound` functions respectively::
+
+    >>> from vc2_bit_widths.linexp import affine_lower_bound, affine_upper_bound
+    
+    >>> print(affine_lower_bound(a_over_2))
+    (1/2)*a + -1
+    >>> print(affine_upper_bound(a_over_2))
+    (1/2)*a
+
+Since affine arithmetic :py:class:`AAError` symbols are ordinary symbols they
+will be scaled and manipulated as in ordinary algebra. As such, the affine
+arithmetic bounds of an expression will remain correct. For example:
+
+    >>> expr = ((a // 2) * 2) + 100
+    >>> print(expr)
+    a + Error(id=1) + 99
+    >>> print(affine_lower_bound(expr))
+    a + 98
+    >>> print(affine_upper_bound(expr))
+    a + 100
+
+Bounds computed by affine arithmetic are not exact in the general case but are
+guaranteed to be at least as wide as the true bounds. This largely arises from
+the fact that affine arithmetic is limited to bounding non-linear operations
+using purely linear functions. However, as a rule of thumb, so long as the
+rounding errors in an expression are small, this over estimate will be small
+too.
+
+As well as the inherent limitations of affine arithmetic, :py;class:`LinExp` is
+also naive in its implementation leading to additional sources of
+over-estimates. For example, in the following we might know that 'a' is an
+integer so the expected result should be just 'a', but :py;class:`LinExp` is
+unable to use this information::
+
+    >>> expr = (a * 2) // 2
+    >>> print(expr)
+    a + (1/2)*Error(id=4) + -1/2
+
+As a second example, every truncation produces a new :py:class:`AAError` term
+meaning that sometimes error terms do not cancel when they otherwise could::
+
+    >>> # Error terms cancel as expected
+    >>> print(a_over_2 - a_over_2)
+    0
+    
+    >>> # Two different error terms don't cancel as expected
+    >>> print((a // 2) - (a // 2))
+    (1/2)*AAError(id=5) + (-1/2)*AAError(id=6)
+
+
 API
 ---
 
 .. autoclass:: LinExp
     :members:
+
+.. autoclass:: AAError
+
+.. autoclass:: strip_affine_errors
+
+.. autoclass:: affine_lower_bound
+
+.. autoclass:: affine_upper_bound
+
+.. autoclass:: affine_error_with_range
 
 """
 
@@ -140,12 +228,24 @@ from functools import total_ordering
 
 from fractions import Fraction
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 
 __all__ = [
     "LinExp",
+    "AAError",
+    "strip_affine_errors",
+    "affine_lower_bound",
+    "affine_upper_bound",
+    "affine_error_with_range",
 ]
+
+
+AAError = namedtuple("AAError", "id")
+"""
+An Affine Arithmetic error term. Should be considered an unknown value in the
+range :py:math:`[-1, +1]`.
+"""
 
 
 @total_ordering
@@ -232,6 +332,18 @@ class LinExp(object):
         # crude routine gives a semi-quick-to-compute hash. The hash is
         # precomputed because this routine is outrageously inefficient.
         #self._hash = sum(map(hash, self._coeffs))
+    
+    _next_error_term_id = 0
+    
+    @classmethod
+    def new_affine_error_symbol(cls):
+        """
+        Create a :py:class:`LinExp` with a unique :py:class:`AAError` symbol. This
+        term should be considered as having a value in the range :math:`[-1, +1]`.
+        """
+        cls._next_error_term_id
+        cls._next_error_term_id += 1
+        return cls(AAError(cls._next_error_term_id))
     
     def symbols(self):
         """
@@ -534,6 +646,57 @@ class LinExp(object):
     def __rdiv__(self, other):
         return self._div_operator(other, self)
     
+    def __floordiv__(self, other):
+        return (
+            self._div_operator(self, other) +
+            Fraction(1, 2)*type(self).new_affine_error_symbol() -
+            Fraction(1, 2)
+        )
+    def __rfloordiv__(self, other):
+        return (
+            self._div_operator(other, self) +
+            Fraction(1, 2)*type(self).new_affine_error_symbol() -
+            Fraction(1, 2)
+        )
+    
+    @classmethod
+    def _lshift_operator(cls, a, b):
+        try:
+            a = cls(a)
+            b = cls(b)
+        except TypeError:
+            return NotImplemented
+        
+        # Only supported when the RHS is a constant
+        if not b.is_constant:
+            return NotImplemented
+        
+        return a * (2**b.constant)
+    
+    def __lshift__(self, other):
+        return self._lshift_operator(self, other)
+    def __rlshift__(self, other):
+        return self._lshift_operator(other, self)
+    
+    @classmethod
+    def _rshift_operator(cls, a, b):
+        try:
+            a = cls(a)
+            b = cls(b)
+        except TypeError:
+            return NotImplemented
+        
+        # Only supported when the RHS is a constant
+        if not b.is_constant:
+            return NotImplemented
+        
+        return a // (2**b.constant)
+    
+    def __rshift__(self, other):
+        return self._rshift_operator(self, other)
+    def __rrshift__(self, other):
+        return self._lrshift_operator(other, self)
+    
     @classmethod
     def _pow_operator(cls, a, b):
         try:
@@ -606,3 +769,54 @@ class LinExp(object):
                 new_coeffs[substitutions[symbol]] += coeff
         
         return LinExp(new_coeffs)
+
+
+def affine_error_with_range(lower, upper):
+    """
+    Create an affine arithmetic expression defining the specified
+    range.
+    """
+    mean = Fraction(lower + upper, 2)
+    half_range = Fraction(upper - lower, 2)
+    
+    return (half_range * LinExp.new_affine_error_symbol()) + mean
+
+
+def strip_affine_errors(expression):
+    """
+    Return the provided expression with all affine error symbols removed (i.e.
+    set to 0).
+    """
+    expression = LinExp(expression)
+    
+    return expression.subs({
+        sym: 0
+        for sym in expression.symbols()
+        if isinstance(sym, AAError)
+    })
+
+
+def affine_upper_bound(expression):
+    """
+    Calculate the upper-bound of an affine arithmetic expression.
+    """
+    expression = LinExp(expression)
+    
+    return expression.subs({
+        sym: 1 if value > 0 else -1
+        for sym, value in expression
+        if isinstance(sym, AAError)
+    })
+
+
+def affine_lower_bound(expression):
+    """
+    Calculate the lower-bound of an affine arithmetic expression.
+    """
+    expression = LinExp(expression)
+    
+    return expression.subs({
+        sym: 1 if value < 0 else -1
+        for sym, value in expression
+        if isinstance(sym, AAError)
+    })

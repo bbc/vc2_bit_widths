@@ -2,8 +2,8 @@ r"""
 Infinite Arrays
 ===============
 
-Infinite array types which may be used to construct algebraic descriptions of
-wavelet filters on infinite inputs.
+Infinite array types which may be used to construct descriptions of wavelet
+filters on infinite inputs.
 
 :py:class:`InfiniteArray` types
 -------------------------------
@@ -26,8 +26,8 @@ the :py:class:`InfiniteArray` subclass.
 .. autoclass:: InfiniteArray
     :members:
 
-Typically, the starting point to any filtering operation will be one or more
-:py:class:`SymbolArray`\ s.
+Typically when building algebraic descriptions, the starting point for any
+filtering operation will be one or more :py:class:`SymbolArray`\ s.
 
 .. autoclass:: SymbolArray
 
@@ -165,8 +165,6 @@ except ImportError:
 from vc2_bit_widths.linexp import LinExp
 
 from vc2_data_tables import LiftingFilterTypes
-
-import vc2_bit_widths.affine_arithmetic as aa
 
 
 __all__ = [
@@ -335,12 +333,6 @@ class LiftedArray(InfiniteArray):
         Apply a one-dimensional lifting filter step to an array, as described
         in the VC-2 specification (15.4.4).
         
-        In this implementation, affine arithmetic (rather than truncating
-        integer arithmetic) is used. Consequently, rounding errors which would
-        be present in an integer implementation are represented by the
-        insertion of error terms (see
-        :py:mod:`~vc2_bit_widths.affine_arithmetic`).
-        
         Parameters
         ==========
         input_array : :py:class:`InfiniteArray`
@@ -414,9 +406,7 @@ class LiftedArray(InfiniteArray):
             if self._stage.S > 0:
                 total += 1 << (self._stage.S - 1)
             
-            # Right-shift replaced with division and error term to enable it to
-            # work with LinExp
-            total = aa.div(total, 1 << self._stage.S)
+            total = total >> self._stage.S
             
             if LiftedArray.LIFT_ADDS[self._stage.lift_type]:
                 return self._input_array[keys] + total
@@ -507,12 +497,6 @@ class RightShiftedArray(InfiniteArray):
         is added to the input values prior to the right-shift operation (which
         is used to implement rounding behaviour in integer arithmetic).
         
-        In this implementation, affine arithmetic (rather than truncating
-        integer arithmetic) is used. Consequently, rounding errors which would
-        be present in an integer implementation are represented by the
-        insertion of error terms (see
-        :py:mod:`~vc2_bit_widths.affine_arithmetic`).
-        
         Parameters
         ==========
         input_array : :py:class:`InfiniteArray`
@@ -531,7 +515,7 @@ class RightShiftedArray(InfiniteArray):
         else:
             value = self._input_array[keys]
             value += 1 << (self._shift_bits - 1)
-            value = aa.div(value, 1 << self._shift_bits)
+            value = value >> self._shift_bits
             
             return value
     
@@ -563,10 +547,10 @@ class LeftShiftedArray(InfiniteArray):
         self._input_array = input_array
         self._shift_bits = shift_bits
         
-        super(LeftShiftedArray, self).__init__(self._input_array.ndim, cache=False)
+        super(LeftShiftedArray, self).__init__(self._input_array.ndim, cache=True)
     
     def get(self, keys):
-        return self._input_array[keys] * (1 << self._shift_bits)
+        return self._input_array[keys] << self._shift_bits
     
     @property
     def period(self):

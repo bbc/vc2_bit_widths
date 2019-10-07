@@ -19,9 +19,13 @@ TODO: Describe how quantisation is modelled (i.e. as independent).
 
 """
 
-from vc2_bit_widths.linexp import LinExp
-
-import vc2_bit_widths.affine_arithmetic as aa
+from vc2_bit_widths.linexp import (
+    LinExp,
+    AAError,
+    affine_lower_bound,
+    affine_upper_bound,
+    affine_error_with_range,
+)
 
 from vc2_bit_widths.quantisation import maximum_dequantised_magnitude
 
@@ -49,15 +53,15 @@ def analysis_filter_bounds(expression, picture_lower_bound, picture_upper_bound)
     # appropriate ranges
     expression = LinExp(expression)
     expression = expression.subs({
-        sym: aa.error_in_range(picture_lower_bound, picture_upper_bound)
+        sym: affine_error_with_range(picture_lower_bound, picture_upper_bound)
         for sym in expression.symbols()
-        if sym is not None and not isinstance(sym, aa.Error)
+        if sym is not None and not isinstance(sym, AAError)
     })
     
     # Find bounds using affine arithmetic
     return (
-        aa.lower_bound(expression).constant,
-        aa.upper_bound(expression).constant,
+        affine_lower_bound(expression).constant,
+        affine_upper_bound(expression).constant,
     )
 
 
@@ -175,18 +179,18 @@ def synthesis_filter_bounds(expression, coeff_value_ranges):
     # appropriate ranges
     expression = LinExp(expression)
     expression = expression.subs({
-        sym: aa.error_in_range(*coeff_value_ranges[
+        sym: affine_error_with_range(*coeff_value_ranges[
             sym[0][1],
             sym[0][2],
             sym[1],
             sym[2],
         ])
         for sym in expression.symbols()
-        if sym is not None and not isinstance(sym, aa.Error)
+        if sym is not None and not isinstance(sym, AAError)
     })
     
     # Find bounds using affine arithmetic
     return (
-        aa.lower_bound(expression).constant,
-        aa.upper_bound(expression).constant,
+        affine_lower_bound(expression).constant,
+        affine_upper_bound(expression).constant,
     )

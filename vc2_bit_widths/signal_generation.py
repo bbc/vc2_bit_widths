@@ -21,9 +21,11 @@ from fractions import Fraction
 
 import numpy as np
 
-from vc2_bit_widths.linexp import LinExp
-
-import vc2_bit_widths.affine_arithmetic as aa
+from vc2_bit_widths.linexp import (
+    LinExp,
+    AAError,
+    strip_affine_errors,
+)
 
 from vc2_bit_widths.infinite_arrays import lcm
 
@@ -49,7 +51,7 @@ def get_maximising_inputs(expression):
     return {
         sym: +1 if coeff > 0 else -1
         for sym, coeff in LinExp(expression)
-        if sym is not None and not isinstance(sym, aa.Error)
+        if sym is not None and not isinstance(sym, AAError)
     }
 
 
@@ -224,7 +226,7 @@ def make_synthesis_maximising_signal(
     target_transform_coeffs = {
         (sym[0][1], sym[0][2], sym[1], sym[2]): coeff
         for sym, coeff in synthesis_target_array[tx, ty]
-        if sym is not None and not isinstance(sym, aa.Error)
+        if sym is not None and not isinstance(sym, AAError)
     }
     
     # Find the input pixels which (in the absence of quantisation) contribute
@@ -756,7 +758,7 @@ def improve_synthesis_maximising_signal(
     
     # Remove error/constant terms in synthesis expression: these will not be
     # included in the evaluation
-    synthesis_target_expression = aa.strip_error_terms(synthesis_target_expression)
+    synthesis_target_expression = strip_affine_errors(synthesis_target_expression)
     synthesis_target_expression -= synthesis_target_expression[None]
     
     # Collect all of the input/transform coeff symbols and transform
@@ -772,7 +774,7 @@ def improve_synthesis_maximising_signal(
         coeff_expr = analysis_transform_coeff_arrays[level][orient][x, y]
         
         # Remove error/constant terms in the analysis expressions too
-        coeff_expr = aa.strip_error_terms(coeff_expr)
+        coeff_expr = strip_affine_errors(coeff_expr)
         coeff_expr -= coeff_expr[None]
         
         transform_coeff_expressions[coeff_sym] = coeff_expr

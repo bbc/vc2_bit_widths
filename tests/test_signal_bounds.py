@@ -2,9 +2,10 @@ import pytest
 
 from vc2_data_tables import LIFTING_FILTERS, WaveletFilters
 
-from vc2_bit_widths.linexp import LinExp
-
-import vc2_bit_widths.affine_arithmetic as aa
+from vc2_bit_widths.linexp import (
+    LinExp,
+    affine_error_with_range,
+)
 
 from vc2_bit_widths.quantisation import maximum_dequantised_magnitude
 
@@ -33,13 +34,13 @@ from vc2_bit_widths.signal_bounds import (
     (123, 123, 123),
     (-123, -123, -123),
     # Error term, no variables
-    (aa.error_in_range(-123, 1234), -123, 1234),
+    (affine_error_with_range(-123, 1234), -123, 1234),
     # Variable, no error term, no constants
     (LinExp(("p", 0, 0)), -100, 1000),
     (LinExp({("p", 0, 0): -20}), -20000, 2000),
     # Everything!
     (
-        LinExp(("p", 0, 0)) + 10 + aa.error_in_range(-5, 15),
+        LinExp(("p", 0, 0)) + 10 + affine_error_with_range(-5, 15),
         -100 + 10 - 5,
         1000 + 10 + 15,
     ),
@@ -119,13 +120,13 @@ coeff_arrays = make_coeff_arrays(2, 0)
     (123, 123, 123),
     (-123, -123, -123),
     # Error term, no variables
-    (aa.error_in_range(-123, 1234), -123, 1234),
+    (affine_error_with_range(-123, 1234), -123, 1234),
     # Variable, no error term, no constants
     (coeff_arrays[2]["LH"][0, 0], -10, 100),
     (coeff_arrays[1]["HH"][2, 3]*-20, -20000, 2000),
     # Everything!
     (
-        coeff_arrays[1]["HH"][2, 3] + 10 + aa.error_in_range(-5, 15),
+        coeff_arrays[1]["HH"][2, 3] + 10 + affine_error_with_range(-5, 15),
         -100 + 10 - 5,
         1000 + 10 + 15,
     ),

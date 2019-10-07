@@ -1,6 +1,13 @@
 import pytest
 
-from vc2_bit_widths.linexp import LinExp
+from vc2_bit_widths.linexp import (
+    LinExp,
+    AAError,
+    strip_affine_errors,
+    affine_lower_bound,
+    affine_upper_bound,
+    affine_error_with_range,
+)
 
 from fractions import Fraction
 
@@ -48,6 +55,17 @@ class TestLinExp(object):
         
         # Should pass through original object without creating a new value
         assert v1 is v2
+    
+    def test_new_affine_error_symbol(self):
+        e1 = LinExp.new_affine_error_symbol()
+        e2 = LinExp.new_affine_error_symbol()
+        
+        assert e1.is_symbol
+        assert isinstance(e1.symbol, AAError)
+        assert e2.is_symbol
+        assert isinstance(e2.symbol, AAError)
+        
+        assert e1 != e2
     
     @pytest.mark.parametrize("value,exp_symbols", [
         (0, set([])),
@@ -406,6 +424,53 @@ class TestLinExp(object):
         # rrealdiv/rdiv
         assert 0 / LinExp({"a": 10, None: 100}) == LinExp(0)
     
+    def test_floordiv(self):
+        a = LinExp("a")
+        a_over_3 = a // 3
+        assert affine_lower_bound(a_over_3) == (a / 3) - 1
+        assert affine_upper_bound(a_over_3) == a / 3
+    
+    @pytest.mark.parametrize("a,b,exp_result", [
+        # Both sides constant
+        (LinExp(2), LinExp(3), LinExp(16)),
+        (2, LinExp(3), LinExp(16)),
+        (LinExp(2), 3, LinExp(16)),
+        # LHS side contains a symbol
+        (LinExp("a"), LinExp(3), LinExp("a") * 8),
+        # RHS side contains a symbol
+        (LinExp(3), LinExp("a"), NotImplemented),
+        # One side cannot be cast (due to non-hashable type)
+        (123, ["fail"], NotImplemented),
+        (["fail"], 123, NotImplemented),
+    ])
+    def test_lshift_operator(self, a, b, exp_result):
+        assert LinExp._lshift_operator(a, b) == exp_result
+    
+    @pytest.mark.parametrize("a,b,exp_result", [
+        # Both sides constant
+        (LinExp(123), LinExp(3), LinExp(123) // 8),
+        (123, LinExp(3), LinExp(123) // 8),
+        (LinExp(123), 3, LinExp(123) // 8),
+        # LHS side contains a symbol
+        (LinExp("a"), LinExp(3), LinExp("a") // 8),
+        # RHS side contains a symbol
+        (LinExp(3), LinExp("a"), NotImplemented),
+        # One side cannot be cast (due to non-hashable type)
+        (123, ["fail"], NotImplemented),
+        (["fail"], 123, NotImplemented),
+    ])
+    def test_rshift_operator(self, a, b, exp_result):
+        actual_result = LinExp._rshift_operator(a, b)
+        
+        # Make error symbols match
+        if exp_result is not NotImplemented:
+            actual_error = actual_result - strip_affine_errors(actual_result)
+            exp_error = exp_result - strip_affine_errors(exp_result)
+            actual_result = actual_result.subs({
+                next(actual_error.symbols()): next(exp_error.symbols())
+            })
+        
+        assert actual_result == exp_result
     
     @pytest.mark.parametrize("a,b,exp_result", [
         # Both sides constant
@@ -516,3 +581,32 @@ class TestLinExp(object):
         
         three = (3*a_05) / a_05
         assert str(three) == "3"
+
+def test_strip_error_terms():
+    a = LinExp.new_affine_error_symbol() + 1 + LinExp("x")
+    assert strip_affine_errors(a) == LinExp("x") + 1
+
+@pytest.mark.parametrize("expr_in,lower,upper", [
+    # Pure number (not a sympy type)
+    (0, 0, 0),
+    (123, 123, 123),
+    # Single error
+    (LinExp.new_affine_error_symbol(), -1, 1),
+    (-LinExp.new_affine_error_symbol(), -1, 1),
+    # Scaled error
+    (3*LinExp.new_affine_error_symbol(), -3, 3),
+    # Several errors
+    (3*LinExp.new_affine_error_symbol() + 2*LinExp.new_affine_error_symbol(), -5, 5),
+    (3*LinExp.new_affine_error_symbol() + 2*LinExp.new_affine_error_symbol() + 5, 0, 10),
+    # Errors and other values
+    (LinExp("a") + 5 + 3*LinExp.new_affine_error_symbol(), LinExp("a") + 2, LinExp("a") + 8),
+])
+def test_affine_bounds(expr_in, lower, upper):
+    assert affine_lower_bound(expr_in) == lower
+    assert affine_upper_bound(expr_in) == upper
+
+
+def test_error_in_range():
+    a = affine_error_with_range(-10, 123)
+    assert affine_lower_bound(a) == -10
+    assert affine_upper_bound(a) == 123

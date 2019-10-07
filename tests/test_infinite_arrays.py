@@ -10,9 +10,11 @@ import vc2_data_tables as tables
 
 from vc2_conformance.picture_decoding import SYNTHESIS_LIFTING_FUNCTION_TYPES
 
-from vc2_bit_widths.linexp import LinExp
-
-import vc2_bit_widths.affine_arithmetic as aa
+from vc2_bit_widths.linexp import (
+    LinExp,
+    affine_lower_bound,
+    affine_upper_bound,
+)
 
 from vc2_bit_widths.infinite_arrays import (
     lcm,
@@ -168,7 +170,7 @@ def period_empirically_correct(a):
         values = [
             # Since error terms will always be different, consider the
             # lower-bound case arbitrarily in order to make a fair comparison.
-            aa.lower_bound(a[tuple(c + o for c, o in zip(coord, offset))])
+            affine_lower_bound(a[tuple(c + o for c, o in zip(coord, offset))])
             for coord in product(*(range(d) for d in a.period))
         ]
         print(values)
@@ -233,8 +235,8 @@ class TestLiftedArray(object):
                 for i, value in enumerate(input_array)
             })
             
-            lower_bound = aa.lower_bound(output)
-            upper_bound = aa.upper_bound(output)
+            lower_bound = affine_lower_bound(output)
+            upper_bound = affine_upper_bound(output)
             
             assert (
                 lower_bound <= pseudocode_output <= upper_bound
@@ -434,8 +436,8 @@ class TestRightShiftedArray(object):
         
         sv = sa[1, 2, 3]
         
-        assert aa.lower_bound(sv) == v / 8 - Fraction(1, 2)
-        assert aa.upper_bound(sv) == v / 8 + Fraction(1, 2)
+        assert affine_lower_bound(sv) == v / 8 - Fraction(1, 2)
+        assert affine_upper_bound(sv) == v / 8 + Fraction(1, 2)
     
     def test_period(self):
         a = RepeatingSymbolArray((1, 2, 3))
