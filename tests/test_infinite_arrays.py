@@ -16,10 +16,13 @@ from vc2_bit_widths.linexp import (
     affine_upper_bound,
 )
 
+from vc2_bit_widths.pyexp import Argument, Subscript, Constant
+
 from vc2_bit_widths.infinite_arrays import (
     lcm,
     InfiniteArray,
     SymbolArray,
+    VariableArray,
     SubsampledArray,
     InterleavedArray,
     LiftedArray,
@@ -109,6 +112,18 @@ def test_symbol_array():
     assert a[0, 0, 0] == LinExp(("foo", 0, 0, 0))
     
     assert a[1, 2, 3] == LinExp(("foo", 1, 2, 3))
+
+
+def test_variable_array():
+    a = VariableArray(3, Argument("arg"))
+    
+    assert a.period == (1, 1, 1)
+    assert a.relative_step_size_to(a) == (1, 1, 1)
+    assert a.relative_step_size_to(VariableArray(2, Argument("arg"))) is None
+    
+    assert a[0, 0, 0] == Subscript(Argument("arg"), Constant((0, 0, 0)))
+    
+    assert a[1, 2, 3] == Subscript(Argument("arg"), Constant((1, 2, 3)))
 
 
 class RepeatingSymbolArray(SymbolArray):

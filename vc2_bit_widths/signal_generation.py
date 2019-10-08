@@ -405,7 +405,7 @@ def make_quantisation_factor_sweep(
     transform_coeff_symbols : [((prefix, level, orient), x, y), , ...]
         The symbol for each transform coefficient value to be quantised, with
         symbols of the type produced by
-        :py:func:`~vc2_bit_widths.vc2_filters.make_coeff_arrays`.
+        :py:func:`~vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays`.
     
     Returns
     =======

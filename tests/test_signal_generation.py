@@ -19,7 +19,7 @@ from vc2_bit_widths.linexp import (
 from vc2_bit_widths.infinite_arrays import SymbolArray
 
 from vc2_bit_widths.vc2_filters import (
-    make_coeff_arrays,
+    make_symbol_coeff_arrays,
     analysis_transform,
     synthesis_transform,
 )
@@ -326,7 +326,7 @@ class TestMakeSynthesisMaximisingSignal(object):
     
     @pytest.fixture(scope="class")
     def synthesis_input_arrays(self, dwt_depth, dwt_depth_ho):
-        return make_coeff_arrays(dwt_depth, dwt_depth_ho)
+        return make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho)
     
     @pytest.fixture(scope="class")
     def synthesis_transform_output(self, synthesis_input_arrays,
@@ -816,7 +816,7 @@ def test_improve_synthesis_maximising_signal():
         analysis_input_array,
     )
     
-    synthesis_input_arrays = make_coeff_arrays(dwt_depth, dwt_depth_ho)
+    synthesis_input_arrays = make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho)
     synthesis_output_array, synthesis_intermediate_arrays = synthesis_transform(
         filter_params, filter_params,
         dwt_depth, dwt_depth_ho,

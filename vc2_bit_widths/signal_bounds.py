@@ -164,7 +164,7 @@ def synthesis_filter_bounds(expression, coeff_value_ranges):
         specified range. Coefficients are assumed to be named as per the
         convention used by
         :py:func:`vc2_bit_widths.vc2_filters.analysis_transform` and
-        :py:func:`vc2_bit_widths.vc2_filters.make_coeff_arrays`.
+        :py:func:`vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays`.
     coeff_value_ranges : :py:class:`PostQuantisationTransformCoeffBoundsLookup`
         A lookup giving the lower- and upper-bounds of all transform
         coefficients. The lookup should support keys of the form (level,

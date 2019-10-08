@@ -2,10 +2,17 @@ r"""
 VC-2 Wavelet Filters Implemented as :py:class:`~vc2_bit_widths.infinite_arrays.InfiniteArray`\ s
 ================================================================================================
 
-This module provides an algebraic implementation of the VC-2 wavelet filtering
-process in terms of :py:class:`~vc2_bit_widths.infinite_arrays.InfiniteArray`\
-s. From these algebraic descriptions, analyses may be performed to determine
-signal ranges and rounding error bounds.
+This module provides an implementation of the VC-2 wavelet filtering process in
+terms of :py:class:`~vc2_bit_widths.infinite_arrays.InfiniteArray`\ s.
+
+By using :py:class:`~vc2_bit_widths.infinite_arrays.SymbolArray`\ s as inputs,
+algebraic descriptions (using :py:class:`~vc2_bit_widths.linexp.LinExp`) of the
+VC-2 filters may be assembled. From these analyses may be performed to
+determine, for example, signal ranges and rounding error bounds.
+
+Using :py:class:`~vc2_bit_widths.infinite_arrays.VariableArray`\ s as inputs,
+Python functions may be generated (using :py:mod:`~vc2_bit_widths.pyexp`) which
+efficiently compute single filter outputs or intermediate values.
 
 .. autofunction:: analysis_transform
 
@@ -13,12 +20,18 @@ signal ranges and rounding error bounds.
 
 .. autofunction:: make_coeff_arrays
 
+.. autofunction:: make_symbol_coeff_arrays
+
+.. autofunction:: make_variable_coeff_arrays
+
 """
 
 __all__ = [
-    "make_coeff_arrays",
     "analysis_transform",
     "synthesis_transform",
+    "make_coeff_arrays",
+    "make_symbol_coeff_arrays",
+    "make_variable_coeff_arrays",
 ]
 
 import math
@@ -26,8 +39,6 @@ import math
 from collections import defaultdict
 
 from vc2_conformance.decoder.transform_data_syntax import quant_factor
-
-from vc2_bit_widths.linexp import LinExp
 
 from vc2_data_tables import (
     LiftingFilterParameters,
@@ -37,12 +48,15 @@ from vc2_data_tables import (
 
 from vc2_bit_widths.infinite_arrays import (
     SymbolArray,
+    VariableArray,
     LiftedArray,
     RightShiftedArray,
     LeftShiftedArray,
     SubsampledArray,
     InterleavedArray,
 )
+
+from vc2_bit_widths.pyexp import Argument
 
 
 def convert_between_synthesis_and_analysis(lifting_filter_parameters):
@@ -78,14 +92,55 @@ def convert_between_synthesis_and_analysis(lifting_filter_parameters):
     )
 
 
-def make_coeff_arrays(dwt_depth, dwt_depth_ho, prefix="coeff"):
+def make_coeff_arrays(dwt_depth, dwt_depth_ho, make_array):
     r"""
     Create a set of :py:class:`InfiniteArray`\ s representing transform
     coefficient values, as expected by :py:func:`idwt`.
     
+    See also: :py:func:`make_symbol_coeff_arrays` and
+    :py:func:`make_variable_coeff_arrays`.
+    
+    Parameters
+    ==========
+    make_array : function(level, orientation) -> :py:class:`InfiniteArray`
+        A function which produces an :py:class:`InfiniteArray` for a specified
+        transform level (int) and orientation (one of "L", "H", "LL", "LH",
+        "HL" or "HH").
+    
     Returns
     =======
     coeff_arrays : {level: {orientation: :py:class:`InfiniteArray`, ...}, ...}
+        The transform coefficient values. These dictionaries are indexed the
+        same way as 'coeff_data' in the idwt pseudocode function in (15.4.1) in
+        the VC-2 specification.
+    """
+    coeff_arrays = {}
+    
+    if dwt_depth_ho > 0:
+        coeff_arrays[0] = {"L": make_array(0, "L")}
+        for level in range(1, dwt_depth_ho + 1):
+            coeff_arrays[level] = {"H": make_array(level, "H")}
+    else:
+        coeff_arrays[0] = {"LL": make_array(0, "LL")}
+    
+    for level in range(dwt_depth_ho + 1, dwt_depth + dwt_depth_ho + 1):
+        coeff_arrays[level] = {
+            "LH": make_array(level, "LH"),
+            "HL": make_array(level, "HL"),
+            "HH": make_array(level, "HH"),
+        }
+    
+    return coeff_arrays
+
+
+def make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho, prefix="coeff"):
+    r"""
+    Create a set of :py:class:`~vc2_bit_widths.infinite_arrays.SymbolArray`\ s
+    representing transform coefficient values, as expected by :py:func:`idwt`.
+    
+    Returns
+    =======
+    coeff_arrays : {level: {orientation: :py:class:`SymbolArray`, ...}, ...}
         The transform coefficient values. These dictionaries are indexed the
         same way as 'coeff_data' in the idwt pseudocode function in (15.4.1) in
         the VC-2 specification.
@@ -96,26 +151,42 @@ def make_coeff_arrays(dwt_depth, dwt_depth_ho, prefix="coeff"):
         
         * prefix is given by the 'prefix' argument
         * level is an integer giving the level number
-        * orient is the transform orientation (one of L, H, LL, LH, HL or HH).
+        * orient is the transform orientation (one of "L", "H", "LL", "LH",
+          "HL" or "HH").
         * x and y are the coordinate of the coefficient within that subband.
     """
-    coeff_arrays = {}
+    def make_array(level, orient):
+        return SymbolArray(2, (prefix, level, orient))
     
-    if dwt_depth_ho > 0:
-        coeff_arrays[0] = {"L": SymbolArray(2, (prefix, 0, "L"))}
-        for level in range(1, dwt_depth_ho + 1):
-            coeff_arrays[level] = {"H": SymbolArray(2, (prefix, level, "H"))}
-    else:
-        coeff_arrays[0] = {"LL": SymbolArray(2, (prefix, 0, "LL"))}
+    return make_coeff_arrays(dwt_depth, dwt_depth_ho, make_array)
+
+
+def make_variable_coeff_arrays(dwt_depth, dwt_depth_ho, exp=Argument("coeffs")):
+    r"""
+    Create a set of :py:class:`~vc2_bit_widths.infinite_arrays.SymbolArray`\ s
+    representing transform coefficient values, as expected by :py:func:`idwt`.
     
-    for level in range(dwt_depth_ho + 1, dwt_depth + dwt_depth_ho + 1):
-        coeff_arrays[level] = {
-            "LH": SymbolArray(2, (prefix, level, "LH")),
-            "HL": SymbolArray(2, (prefix, level, "HL")),
-            "HH": SymbolArray(2, (prefix, level, "HH")),
-        }
+    Returns
+    =======
+    coeff_arrays : {level: {orientation: :py:class:`VariableArray`, ...}, ...}
+        The transform coefficient values. These dictionaries are indexed the
+        same way as 'coeff_data' in the idwt pseudocode function in (15.4.1) in
+        the VC-2 specification.
+        
+        The expressions within the :py:class:`VariableArrays`` will be indexed
+        as follows::
+        
+            >>> from vc2_bit_widths.pyexp import Argument
+            
+            >>> coeffs_arg = Argument("coeffs_arg")
+            >>> coeff_arrays = make_variable_coeff_arrays(3, 0, coeffs_arg)
+            >>> coeff_arrays[2]["LH"][3, 4] == coeffs_arg[2]["LH"][3, 4]
+            True
+    """
+    def make_array(level, orient):
+        return VariableArray(2, exp[level][orient])
     
-    return coeff_arrays
+    return make_coeff_arrays(dwt_depth, dwt_depth_ho, make_array)
 
 
 def analysis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_ho, array):
@@ -236,9 +307,8 @@ def synthesis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_h
         The transform coefficient values to be used for synthesis. These nested
         dictionaries are indexed the same way as 'coeff_data' in the idwt
         pseudocode function in (15.4.1) in the VC-2 specification. The
-        :py:func:`make_coeff_arrays` function may be used to create a
-        collection of :py:class:`~vc2_bit_widths.infinite_arrays.SymbolArray`\
-        s for this argument.
+        :py:func:`make_coeff_arrays` function (or one of its derivatives) may
+        be used to quickly construct values for this argument.
     
     Returns
     =======

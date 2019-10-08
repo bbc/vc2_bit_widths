@@ -16,7 +16,7 @@ from vc2_bit_widths.infinite_arrays import (
 )
 
 from vc2_bit_widths.vc2_filters import (
-    make_coeff_arrays,
+    make_symbol_coeff_arrays,
     analysis_transform,
     synthesis_transform,
 )
@@ -112,7 +112,7 @@ class TestPostQuantisationTransformCoeffBoundsLookup(object):
         assert len(lookup._cache) == 2
 
 
-coeff_arrays = make_coeff_arrays(2, 0)
+coeff_arrays = make_symbol_coeff_arrays(2, 0)
 
 @pytest.mark.parametrize("expr,exp_lower,exp_upper", [
     # Constant, no errors, no variables
@@ -157,7 +157,7 @@ def test_integration():
         input_picture_array,
     )
     
-    input_coeff_arrays = make_coeff_arrays(dwt_depth, dwt_depth_ho)
+    input_coeff_arrays = make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho)
     synthesis_output, synthesis_intermediate_values = synthesis_transform(
         filter_params, filter_params,
         dwt_depth, dwt_depth_ho,

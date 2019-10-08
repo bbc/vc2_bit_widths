@@ -26,10 +26,17 @@ the :py:class:`InfiniteArray` subclass.
 .. autoclass:: InfiniteArray
     :members:
 
-Typically when building algebraic descriptions, the starting point for any
-filtering operation will be one or more :py:class:`SymbolArray`\ s.
+Typically when building algebraic descriptions using
+:py:class:`~vc2_bit_widths.linexp.LinExp`, the starting point for any filtering
+operation will be one or more :py:class:`SymbolArray`\ s.
 
 .. autoclass:: SymbolArray
+
+Alternatively, when building Python functions to implement a filter using
+:py:class:`~vc2_bit_widths.pyexp.PyExp`, :py:class:`VariableArray`\ s may be
+used.
+
+.. autoclass:: VariableArray
 
 A single, one-dimensional lifting filter stage may be applied to the values in
 a :py:class:`InfiniteArray` using:
@@ -162,14 +169,17 @@ try:
 except ImportError:
     from fractions import gcd  # Python < 3.5
 
+from vc2_data_tables import LiftingFilterTypes
+
 from vc2_bit_widths.linexp import LinExp
 
-from vc2_data_tables import LiftingFilterTypes
+from vc2_bit_widths.pyexp import PyExp
 
 
 __all__ = [
     "InfiniteArray",
     "SymbolArray",
+    "VariableArray",
     "LiftedArray",
     "RightShiftedArray",
     "LeftShiftedArray",
@@ -314,6 +324,52 @@ class SymbolArray(InfiniteArray):
     def prefix(self):
         """The prefix used for all symbol names in this array."""
         return self._prefix
+    
+    @property
+    def period(self):
+        return (1, ) * self.ndim
+    
+    def relative_step_size_to(self, other):
+        if other is self:
+            return (Fraction(1), ) * self.ndim
+        else:
+            return None
+
+
+class VariableArray(InfiniteArray):
+    
+    def __init__(self, ndim, exp):
+        r"""
+        An infinite array of subscripted :py:class:`PyExp` expressions.
+        
+        Example usage::
+    
+            >>> from vc2_bit_widths.pyexp import Argument
+            
+            >>> arg = Argument("arg")
+            >>> a = VariableArray(2, arg)
+            >>> a[1, 2]
+            Subscript(Argument('arg'), Constant((1, 2)))
+            >>> a[-10, 3]
+            Subscript(Argument('arg'), Constant((-10, 3)))
+        
+        Parameters
+        ==========
+        ndim : int
+            The number of dimensions in the array.
+        exp : :py:class:`~vc2_bit_widths.pyexp.PyExp`
+            The expression to be subscripted in each array element.
+        """
+        self._exp = exp
+        super(VariableArray, self).__init__(ndim, cache=False)
+    
+    def get(self, keys):
+        return self._exp[keys]
+    
+    @property
+    def exp(self):
+        """The :py:class:`PyExp` subscripted in this array."""
+        return self._exp
     
     @property
     def period(self):
