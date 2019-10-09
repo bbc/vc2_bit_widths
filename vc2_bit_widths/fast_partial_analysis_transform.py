@@ -345,24 +345,24 @@ def v_stage(signal, accumulator1, accumulator2, lifting_stage, lifting_stage_sli
     )
 
 
-def fast_partial_analysis_transform(signal, h_filter_params, v_filter_params, dwt_depth, dwt_depth_ho):
+def fast_partial_analysis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_ho, signal):
     """
     Perform a multi-level 2D analysis transform, ignoring edge effects.
     
     Parameters
     ==========
-    signal : :py:class:`numpy.array`
-        The picture to be transformed. Will be transformed in-place (in
-        interleaved form) but de-interleaved views will also be returned.
-        
-        Width must be a multiple of ``2**(dwt_depth+dwt_depth_ho)`` pixels and
-        height a multiple of ``2**dwt_depth`` pixels.
     h_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
     v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
         Horizontal and vertical filter *synthesis* (not analysis!) filter
         parameters (e.g. from :py:data:`vc2_data_tables.LIFTING_FILTERS`).
     dwt_depth, dwt_depth_ho: int
         Transform depths for 2D and horizontal-only transforms.
+    signal : :py:class:`numpy.array`
+        The picture to be transformed. Will be transformed in-place (in
+        interleaved form) but de-interleaved views will also be returned.
+        
+        Width must be a multiple of ``2**(dwt_depth+dwt_depth_ho)`` pixels and
+        height a multiple of ``2**dwt_depth`` pixels.
     
     Returns
     =======

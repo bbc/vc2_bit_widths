@@ -233,11 +233,11 @@ def test_fast_partial_analysis_transform(wavelet_index, wavelet_index_ho, dwt_de
     h_filter_params = tables.LIFTING_FILTERS[wavelet_index_ho]
     v_filter_params = tables.LIFTING_FILTERS[wavelet_index]
     matrix_out = fast_partial_analysis_transform(
-        signal.copy(),
         h_filter_params,
         v_filter_params,
         dwt_depth,
         dwt_depth_ho,
+        signal.copy(),
     )
     
     # Using a symbolic representation of the transform operation and use this
