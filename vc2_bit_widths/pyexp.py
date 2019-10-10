@@ -71,10 +71,10 @@ s::
 
 The names passed to the :py:class:`Argument` objects become the argument names
 in the generated function. If you use multiple :py:class:`Argument`\  s in an
-expression, their order in the generated function is undefined so you must
-explicitly name them when calling the function. If only one
-:py;class:`Argument` is used, or the order is insignificant (as in this case!)
-the names may be omitted::
+expression, their order in the generated function will be the lexicographic
+ordering of their names. If only one :py;class:`Argument` is used, or the order
+is insignificant (as in this case!) the names may be omitted, but it is good
+practice to retain them in other situations::
 
     >>> average(4, 8)
     6.0
@@ -300,6 +300,25 @@ class PyExp(object):
             for dependant in self.get_dependencies():
                 dependant._inline_iff_used_once(visited)
     
+    def get_all_argument_names(self):
+        """
+        Returns the list of argument names in the order they are used by the
+        generated function.
+        """
+        visited = set()
+        argument_names = set()
+        
+        def visit(exp):
+            if exp not in visited:
+                visited.add(exp)
+                argument_names.update(exp.get_argument_names())
+                for dep in exp.get_dependencies():
+                    visit(dep)
+        
+        visit(self)
+        
+        return sorted(argument_names)
+    
     def generate_code(self, function_name="f"):
         """
         Generate a Python function definition string which, once compiled, can
@@ -317,9 +336,6 @@ class PyExp(object):
         # The PyExps visited so far
         visited = set()
         
-        # The complete set of argument names used in this expression
-        argument_names = set()
-        
         # The complete set of statements to be execute, in the order required
         # to generate the final output.
         statements = []
@@ -332,7 +348,6 @@ class PyExp(object):
                 for dep in exp.get_dependencies():
                     visit(dep)
                 
-                argument_names.update(exp.get_argument_names())
                 statements.append(exp.get_definitions())
         
         visit(self)
@@ -344,7 +359,7 @@ class PyExp(object):
             "    {}\n"
         ).format(
             function_name,
-            ", ".join(sorted(argument_names)),
+            ", ".join(self.get_all_argument_names()),
             "".join(statements).replace("\n", "\n    "),
         )
     

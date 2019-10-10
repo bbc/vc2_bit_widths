@@ -294,6 +294,31 @@ class TestInlineIffUsedOnce(object):
         assert a_plus_b._inline is False
 
 
+class TestGetAllArgumentNames(object):
+    
+    def test_just_argument(self):
+        a = Argument("a")
+        assert a.get_all_argument_names() == ["a"]
+    
+    def test_no_repeats(self):
+        a = Argument("a")
+        b = Argument("b")
+        
+        exp = a + b - a
+        
+        assert exp.get_all_argument_names() == ["a", "b"]
+    
+    def test_ordered(self):
+        a = Argument("a")
+        b = Argument("b")
+        
+        exp = a + b
+        assert exp.get_all_argument_names() == ["a", "b"]
+        
+        exp = b + a
+        assert exp.get_all_argument_names() == ["a", "b"]
+
+
 class TestGenerateCode(object):
     
     def test_arguments(self):
