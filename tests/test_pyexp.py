@@ -39,6 +39,11 @@ class TestConstant(object):
     
     def test_repr(self):
         assert repr(Constant("foo")) == "Constant('foo')"
+    
+    def test_subs(self):
+        c = Constant(123)
+        assert c.subs({Constant(123): Constant(321)}) == Constant(321)
+        assert c.subs({Constant(321): Constant(0)}) is c
 
 
 class TestArgument(object):
@@ -61,6 +66,11 @@ class TestArgument(object):
     
     def test_repr(self):
         assert repr(Argument("foo")) == "Argument('foo')"
+    
+    def test_subs(self):
+        a = Argument("foo")
+        assert a.subs({Argument("foo"): Argument("bar")}) == Argument("bar")
+        assert a.subs({Argument("bar"): Argument("xxx")}) is a
 
 
 class TestSubscript(object):
@@ -92,6 +102,21 @@ class TestSubscript(object):
     
     def test_repr(self, exp, key):
         assert repr(Subscript(exp, key)) == "Subscript(Argument('foo'), Constant(123))"
+    
+    def test_subs(self, exp, key):
+        s = Subscript(exp, key)
+        
+        # Substitute whole subscript
+        assert s.subs({exp[key]: Argument("bar")}) == Argument("bar")
+        
+        # Substitute expression
+        assert s.subs({exp: Argument("bar")}) == Argument("bar")[123]
+        
+        # Substitute key
+        assert s.subs({key: Constant(321)}) == exp[321]
+        
+        # Substitute nothing relevant
+        assert s.subs({Argument("bar"): Argument("xxx")}) is s
 
 
 class TestBinaryOperator(object):
@@ -121,6 +146,28 @@ class TestBinaryOperator(object):
     
     def test_repr(self, lhs, rhs):
         assert repr(BinaryOperator(lhs, rhs, "<<")) == "BinaryOperator(Argument('lhs'), Argument('rhs'), '<<')"
+    
+    def test_subs(self, lhs, rhs):
+        b = lhs + rhs
+        
+        # Substitute whole subscript: NB: same object must be used in this case
+        assert b.subs({b: Argument("bar")}) == Argument("bar")
+        
+        # NB: in the following we must comprae string for true equality since
+        # BinaryOperators are compared by identity
+        
+        # Substitute LHS 
+        assert repr(b.subs({lhs: Argument("foo")})) == repr(Argument("foo") + rhs)
+        
+        # Substitute RHS
+        assert str(b.subs({rhs: Argument("foo")})) == str(lhs + Argument("foo"))
+        
+        # Substitution which makes operation a no-op should not return a
+        # BinaryOperator
+        assert b.subs({rhs: Constant(0)}) == lhs
+        
+        # Substitute nothing relevant
+        assert b.subs({Argument("bar"): Argument("xxx")}) is b
     
     @pytest.mark.parametrize("lhs,rhs,operator,expected", [
         # Non no-op arguments
@@ -277,6 +324,42 @@ class TestGenerateCode(object):
             tt=id(twice_ten),
             tts=id(twice_ten_squared),
         )
+
+class TestSubs(object):
+    
+    # Specific tests of global operation of the subs method
+    
+    def test_subs_in_reused_binary_operator(self):
+        # Check if operands to a re-used binary operator are changed, the new
+        # expression still re-uses the updated binary operator.
+        a = Argument("a")
+        b = Argument("b")
+        c = Argument("c")
+        d = Argument("d")
+        
+        a_plus_b = a + b
+        
+        a_plus_b_squared = a_plus_b * a_plus_b
+        
+        # Sanity check
+        assert a_plus_b_squared.lhs is a_plus_b_squared.rhs
+        
+        c_plus_d_squared = a_plus_b_squared.subs({a: c, b: d})
+        assert c_plus_d_squared.lhs is c_plus_d_squared.rhs
+    
+    def test_swap(self):
+        # Check variable swapping is supported (i.e. items in before and after
+        # are same)
+        
+        a = Argument("a")
+        b = Argument("b")
+        
+        a_sub_b = a - b
+        
+        b_sub_a = a_sub_b.subs({a: b, b: a})
+        
+        assert str(b_sub_a) == str(b - a)
+
 
 def test_make_function():
     a = Argument("a")

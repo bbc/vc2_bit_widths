@@ -134,11 +134,35 @@ away) by inspecting its source code::
     def f(values):
         return (values[2] * 2)
 
+
+Manipulating expressions
+------------------------
+
+:py:class:`PyExp` supports simple manipulation of expressions in the form of
+the :py:meth:`PyExp.subs` method which substitutes subexpressions within an
+expression. For example::
+
+    >>> a = Argument("a")
+    >>> b = Argument("b")
+    >>> c = Argument("c")
+    
+    >>> exp = a["deeply"]["nested"]["subscript"] + b
+    BinaryOperator(Subscript(Subscript(Subscript(Argument('a'), Constant('deeply')), Constant('nested')), Constant('subscript')), Argument('b'), '+')
+    
+    >>> exp2 = exp.subs({a["deeply"]["nested"]["subscript"]: c})
+    >>> print(exp2)
+    BinaryOperator(Argument('c'), Argument("b"), "+")
+
+This functionality is intended to allow simple optimisations such as constant
+folding (substituting constants in place of variables) and replacing
+subscripted values with :py:class:`Argument`\ s to reduce overheads.
+
+
 API
 ---
 
 .. autoclass:: PyExp
-    :members: make_function generate_code
+    :members: make_function generate_code subs
 
 .. autoclass:: Constant
 
@@ -173,6 +197,9 @@ class PyExp(object):
     # * get_argument_names
     # * get_definitions
     # * get_expression
+    #
+    # Implementers may also need to implement:
+    # * subs
     
     def __init__(self):
         self._inline = False
@@ -209,6 +236,52 @@ class PyExp(object):
         Return a string containing a Python expression evaluating to this value.
         """
         raise NotImplementedError()
+    
+    def subs(self, substitutions):
+        """
+        Substitute subexpressions. Returns a new :py:class:`PyExp` with the
+        substitutions applied.
+        
+        Parameters
+        ==========
+        substitutions : {before: after, ...}
+            A dictionary mapping from :py:class:`PyExp` to :py:class:`PyExp`.
+            
+            This dictionary may be mutated during calls to subs (with
+            additional entries being inserted).
+            
+            .. warning::
+                
+                Unlike other :py:class:`PyExp` types,
+                :py:class:`BinaryOperator` instances are compared by identity
+                and so using these as 'before' values may not produce the
+                expected results, e.g.::
+                
+                    >>> a = Argument(a)
+                    >>> b = Argument(b)
+                    
+                    >>> a == a
+                    True
+                    >>> b[123] == b[123]
+                    True
+                    >>> (a + b) == (a + b)
+                    False
+                    >>> a_plus_b = a + b
+                    >>> a_plus_b == a_plus_b
+                    True
+        
+        Returns
+        =======
+        exp : :py:class:`PyExp`
+            A new :py:class:`PyExp` with the specified substitutions enacted.
+        """
+        # This base implementation should be extended by subclasses which
+        # depend on other PyExps.
+        substitution = substitutions.get(self)
+        if substitution is not None:
+            return substitution
+        else:
+            return self
     
     def _inline_iff_used_once(self, _visited=None):
         """
@@ -486,6 +559,19 @@ class Subscript(PyExp):
             self._key.get_expression(),
         )
     
+    def subs(self, substitutions):
+        substitution = super(Subscript, self).subs(substitutions)
+        if substitution is self:
+            # May need to make substitution in dependency
+            new_exp = self._exp.subs(substitutions)
+            new_key = self._key.subs(substitutions)
+            if new_exp is not self._exp or new_key is not self._key:
+                substitution = Subscript(new_exp, new_key)
+            
+            return substitution
+        else:
+            return substitution
+    
     def __hash__(self):
         return hash((self._exp, self._key))
     
@@ -598,6 +684,31 @@ class BinaryOperator(PyExp):
             )
         else:
             return "_{}".format(id(self))
+    
+    def subs(self, substitutions):
+        substitution = super(BinaryOperator, self).subs(substitutions)
+        if substitution is self:
+            # May need to make substitution in dependency
+            new_lhs = self._lhs.subs(substitutions)
+            new_rhs = self._rhs.subs(substitutions)
+            if new_lhs is not self._lhs or new_rhs is not self._rhs:
+                no_op_passthrough = BinaryOperator.is_no_op(new_lhs, new_rhs, self._operator)
+                if no_op_passthrough:
+                    substitution = no_op_passthrough
+                else:
+                    substitution = BinaryOperator(new_lhs, new_rhs, self._operator)
+                
+                # To ensure equivalent behaviour we must replace all other uses
+                # of this BinaryOperator with the new version, otherwise every
+                # use of this expression will be substituted with a unique
+                # BinaryOperator and the computation will be repeated.  This is
+                # an artefact of binary operators comparing by instance
+                # identity and not by value.
+                substitutions[self] = substitution
+            
+            return substitution
+        else:
+            return substitution
     
     def __repr__(self):
         return "{}({!r}, {!r}, {!r})".format(type(self).__name__, self._lhs, self._rhs, self._operator)
