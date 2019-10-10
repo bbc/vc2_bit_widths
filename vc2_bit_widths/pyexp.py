@@ -71,10 +71,10 @@ s::
 
 The names passed to the :py:class:`Argument` objects become the argument names
 in the generated function. If you use multiple :py:class:`Argument`\  s in an
-expression, their order in the generated function will be the lexicographic
-ordering of their names. If only one :py;class:`Argument` is used, or the order
-is insignificant (as in this case!) the names may be omitted, but it is good
-practice to retain them in other situations::
+expression, their order in the generated function is defined by
+:py:meth:`PyExp.get_all_argument_names`. If only one :py;class:`Argument` is
+used, or the order is insignificant (as in this case!) the names may be
+omitted, but it is good practice to retain them in other situations::
 
     >>> average(4, 8)
     6.0
