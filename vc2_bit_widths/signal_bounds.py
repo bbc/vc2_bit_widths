@@ -15,7 +15,7 @@ TODO: Describe how quantisation is modelled (i.e. as independent).
 
 .. autofunction:: synthesis_filter_bounds
 
-.. autoclass:: PostQuantisationTransformCoeffBoundsLookup
+.. autofunction:: parse_coeff_symbol_name
 
 """
 
@@ -24,13 +24,10 @@ from vc2_bit_widths.linexp import (
     AAError,
     affine_lower_bound,
     affine_upper_bound,
-    affine_error_with_range,
 )
 
-from vc2_bit_widths.quantisation import maximum_dequantised_magnitude
 
-
-def analysis_filter_bounds(expression, picture_lower_bound, picture_upper_bound):
+def analysis_filter_bounds(expression):
     """
     Find the lower- and upper bound reachable in a
     :py:class:`~vc2_bit_widths.linexp.LinExp` containing an analysis filter
@@ -47,110 +44,32 @@ def analysis_filter_bounds(expression, picture_lower_bound, picture_upper_bound)
     
     Returns
     =======
-    (lower_bound, upper_bound) : numbers
+    (lower_bound, upper_bound) : :py:class:`~vc2_bit_widths.linexp.LinExp`
+        Lower and upper bounds for the signal level in terms of the symbols
+        ``LinExp("signal_min")`` and ``LinExp("signal_max")``, representing the
+        minimum and maximum signal picture levels respectively.
     """
-    # Replace all picture coefficients with affine error terms scaled to
-    # appropriate ranges
+    signal_min = LinExp("signal_min")
+    signal_max = LinExp("signal_max")
+    
     expression = LinExp(expression)
-    expression = expression.subs({
-        sym: affine_error_with_range(picture_lower_bound, picture_upper_bound)
-        for sym in expression.symbols()
+    
+    lower_bound = affine_lower_bound(expression.subs({
+        sym: signal_min if coeff > 0 else signal_max
+        for sym, coeff in expression
         if sym is not None and not isinstance(sym, AAError)
-    })
+    }))
     
-    # Find bounds using affine arithmetic
-    return (
-        affine_lower_bound(expression).constant,
-        affine_upper_bound(expression).constant,
-    )
-
-
-class PostQuantisationTransformCoeffBoundsLookup(object):
-
-    def __init__(self, coeff_arrays, picture_lower_bound, picture_upper_bound):
-        """
-        Given the output transform coefficient arrays from an analysis filter
-        (e.g. from :py:func:`vc2_bit_widths.vc2_filters.analysis_transform`),
-        provides a lookup for lower- and upper-bounds for these transform
-        coefficient values. These bounds also account for worst-case
-        quantisation errors.
-        
-        This object is essentially a thin wrapper for calling
-        :py:func:`analysis_filter_bounds` and
-        :py:func:`~vc2_bit_widths.quantisation.maximum_dequantised_magnitude`
-        but also includes some simple caching logic to speed up repeated
-        accesses. For example::
-        
-            >>> coeff_arrays = analysis_transform(...)
-            
-            >>> lookup = TransformCoeffBoundsLookup(coeff_arrays, -512, +511)
-            >>> lookup_lower_bound, lookup_upper_bound = lookup[2, "LH", 10, 3]
-            
-            >>> manual_lower_bound, manual_upper_bound = map(
-            ...     maximum_dequantised_magnitude,
-            ...     analysis_filter_bounds(
-            ...         coeff_arrays[2]["LH"][10, 3],
-            ...         -512,
-            ...         +511,
-            ...     ),
-            ... )
-
-            >>> lookup_lower_bound == manual_lower_bound
-            True
-            >>> lookup_upper_bound == manual_upper_bound
-            True
-        
-        Parameters
-        ==========
-        coeff_arrays : {level: {orientation: :py:class:`InfiniteArray`, ...}, ...}
-            The transform coefficient values. These dictionaries are indexed
-            the same way as 'coeff_data' in the idwt pseudocode function in
-            (15.4.1) in the VC-2 specification. As returned by
-            :py:func:`vc2_bit_widths.vc2_filters.analysis_transform`.  All
-            symbols which are not :py:mod:`~vc2_bit_widths.affine_arithmetic`
-            error terms will be treated as picture values in the specified
-            range.
-        picture_lower_bound, picture_upper_bound : (lower, upper)
-            The lower and upper bounds for the values of pixels in the input
-            picture.
-        """
-        
-        self._coeff_arrays = coeff_arrays
-        self._picture_lower_bound = picture_lower_bound
-        self._picture_upper_bound = picture_upper_bound
-        
-        # A cache of previously computed value bounds. Coordinates are
-        # noramlised to the first period of the relevant array.
-        #
-        # {(level, orient, normalised_x, normalised_y): (lower, upper), ...}
-        self._cache = {}
+    upper_bound = affine_upper_bound(expression.subs({
+        sym: signal_min if coeff < 0 else signal_max
+        for sym, coeff in expression
+        if sym is not None and not isinstance(sym, AAError)
+    }))
     
-    def __getitem__(self, key):
-        level, orient, x, y = key
-        
-        array = self._coeff_arrays[level][orient]
-        
-        normalised_x = x % array.period[0]
-        normalised_y = y % array.period[1]
-        
-        cache_key = (level, orient, normalised_x, normalised_y)
-        
-        if cache_key not in self._cache:
-            lower_bound, upper_bound = analysis_filter_bounds(
-                array[normalised_x, normalised_y],
-                self._picture_lower_bound,
-                self._picture_upper_bound,
-            )
-            
-            lower_bound = maximum_dequantised_magnitude(lower_bound)
-            upper_bound = maximum_dequantised_magnitude(upper_bound)
-            
-            self._cache[cache_key] = (lower_bound, upper_bound)
-        
-        return self._cache[cache_key]
+    return (lower_bound, upper_bound)
 
 
-def synthesis_filter_bounds(expression, coeff_value_ranges):
+def synthesis_filter_bounds(expression):
     """
     Find the lower- and upper bound reachable in a
     :py:class:`~vc2_bit_widths.linexp.LinExp` containing a synthesis filter
@@ -165,32 +84,57 @@ def synthesis_filter_bounds(expression, coeff_value_ranges):
         convention used by
         :py:func:`vc2_bit_widths.vc2_filters.analysis_transform` and
         :py:func:`vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays`.
-    coeff_value_ranges : :py:class:`PostQuantisationTransformCoeffBoundsLookup`
-        A lookup giving the lower- and upper-bounds of all transform
-        coefficients. The lookup should support keys of the form (level,
-        orient, x, y) and contain values of the form (lower_bound,
-        upper_bound).
     
     Returns
     =======
-    (lower_bound, upper_bound)
+    (lower_bound, upper_bound) : :py:class:`~vc2_bit_widths.linexp.LinExp`
+        Lower and upper bounds for the signal level in terms of the symbols of
+        the form ``LinExp("signal_LEVEL_ORIENT_min")`` and
+        ``LinExp("signal_LEVEL_ORIENT_max")``, representing the minimum and
+        maximum signal levels for transform coefficients in level ``LEVEL`` and
+        orientation ``ORIENT`` respectively. See also
+        :py:func:`parse_coeff_symbol_name`.
     """
     # Replace all transform coefficients with affine error terms scaled to
     # appropriate ranges
     expression = LinExp(expression)
-    expression = expression.subs({
-        sym: affine_error_with_range(*coeff_value_ranges[
+    
+    lower_bound = affine_lower_bound(expression.subs({
+        sym: ("coeff_{}_{}_min" if coeff > 0 else "coeff_{}_{}_max").format(
             sym[0][1],
             sym[0][2],
-            sym[1],
-            sym[2],
-        ])
-        for sym in expression.symbols()
+        )
+        for sym, coeff in expression
         if sym is not None and not isinstance(sym, AAError)
-    })
+    }))
     
-    # Find bounds using affine arithmetic
-    return (
-        affine_lower_bound(expression).constant,
-        affine_upper_bound(expression).constant,
-    )
+    upper_bound = affine_upper_bound(expression.subs({
+        sym: ("coeff_{}_{}_min" if coeff < 0 else "coeff_{}_{}_max").format(
+            sym[0][1],
+            sym[0][2],
+        )
+        for sym, coeff in expression
+        if sym is not None and not isinstance(sym, AAError)
+    }))
+    
+    return (lower_bound, upper_bound)
+
+
+def parse_coeff_symbol_name(symbol_name):
+    """
+    Extract the fields from a symbol name produced by
+    :py:func:`synthesis_filter_bounds`.
+    
+    Parameters
+    ==========
+    symbol_name : str
+        A symbol name from :py:class:`synthesis_filter_bounds`.
+    
+    Returns
+    =======
+    (level, orient, minmax)
+        The level (int), orientation (str) and "min" or "max" extracted from
+        the symbol.
+    """
+    _, level, orient, minmax = symbol_name.split("_")
+    return (int(level), orient, minmax)

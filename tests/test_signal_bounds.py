@@ -23,122 +23,51 @@ from vc2_bit_widths.vc2_filters import (
 
 from vc2_bit_widths.signal_bounds import (
     analysis_filter_bounds,
-    PostQuantisationTransformCoeffBoundsLookup,
     synthesis_filter_bounds,
+    parse_coeff_symbol_name,
 )
 
 
-@pytest.mark.parametrize("expr,exp_lower,exp_upper", [
-    # Constant, no errors, no variables
-    (0, 0, 0),
-    (123, 123, 123),
-    (-123, -123, -123),
-    # Error term, no variables
-    (affine_error_with_range(-123, 1234), -123, 1234),
-    # Variable, no error term, no constants
-    (LinExp(("p", 0, 0)), -100, 1000),
-    (LinExp({("p", 0, 0): -20}), -20000, 2000),
-    # Everything!
-    (
-        LinExp(("p", 0, 0)) + 10 + affine_error_with_range(-5, 15),
-        -100 + 10 - 5,
-        1000 + 10 + 15,
-    ),
-])
-def test_find_analysis_filter_bounds(expr, exp_lower, exp_upper):
-    assert analysis_filter_bounds(expr, -100, 1000) == (exp_lower, exp_upper)
+def test_find_analysis_filter_bounds():
+    expr = (
+        1*LinExp(("pixel", 0, 0)) +
+        2*LinExp(("pixel", 1, 0)) +
+        -4*LinExp(("pixel", 2, 0)) +
+        10*LinExp.new_affine_error_symbol() +
+        1
+    )
+    lower_bound, upper_bound = analysis_filter_bounds(expr)
+    assert lower_bound == 3*LinExp("signal_min") + -4*LinExp("signal_max") - 10 + 1
+    assert upper_bound == -4*LinExp("signal_min") + 3*LinExp("signal_max") + 10 + 1
 
 
-class TestPostQuantisationTransformCoeffBoundsLookup(object):
+def test_find_synthesis_filter_bounds():
+    coeff_arrays = make_symbol_coeff_arrays(1, 0)
     
-    @pytest.fixture
-    def coeff_arrays(self):
-        # Mocked up with examples of all useful InfiniteArray variants
-        a = SymbolArray(2, "a")
-        b = RightShiftedArray(SymbolArray(2, "b"), 1)
-        c = InterleavedArray(a, b, 0)
-        coeff_arrays = {2: {"LH": a, "HL": b, "HH": c}}
-        return coeff_arrays
+    expr = (
+        1*coeff_arrays[0]["LL"][0, 0] +
+        2*coeff_arrays[0]["LL"][1, 0] +
+        -4*coeff_arrays[0]["LL"][2, 0] +
+        10*coeff_arrays[1]["HH"][0, 0] +
+        20*coeff_arrays[1]["HH"][1, 0] +
+        -40*coeff_arrays[1]["HH"][2, 0] +
+        100*LinExp.new_affine_error_symbol() +
+        1
+    )
     
-    def test_simple_symbol(self, coeff_arrays):
-        lookup = PostQuantisationTransformCoeffBoundsLookup(coeff_arrays, -100, 1000)
-        assert lookup[2, "LH", 0, 0] == (
-            maximum_dequantised_magnitude(-100),
-            maximum_dequantised_magnitude(1000),
-        )
-    
-    def test_includes_error_terms(self, coeff_arrays):
-        lookup = PostQuantisationTransformCoeffBoundsLookup(coeff_arrays, -100, 1000)
-        assert lookup[2, "HL", 0, 0] == (
-            maximum_dequantised_magnitude(-50.5),
-            maximum_dequantised_magnitude(500.5),
-        )
-    
-    def test_caching(self, coeff_arrays):
-        lookup = PostQuantisationTransformCoeffBoundsLookup(coeff_arrays, -100, 1000)
-        
-        assert len(lookup._cache) == 0
-        
-        assert lookup[2, "HH", 0, 0] == (
-            maximum_dequantised_magnitude(-100),
-            maximum_dequantised_magnitude(1000),
-        )
-        assert len(lookup._cache) == 1
-        
-        assert lookup[2, "HH", 2, 0] == (
-            maximum_dequantised_magnitude(-100),
-            maximum_dequantised_magnitude(1000),
-        )
-        assert lookup[2, "HH", 2, 1] == (
-            maximum_dequantised_magnitude(-100),
-            maximum_dequantised_magnitude(1000),
-        )
-        assert len(lookup._cache) == 1
-        
-        assert lookup[2, "HH", 1, 0] == (
-            maximum_dequantised_magnitude(-50.5),
-            maximum_dequantised_magnitude(500.5),
-        )
-        assert len(lookup._cache) == 2
-        
-        assert lookup[2, "HH", 3, 0] == (
-            maximum_dequantised_magnitude(-50.5),
-            maximum_dequantised_magnitude(500.5),
-        )
-        assert lookup[2, "HH", 3, 1] == (
-            maximum_dequantised_magnitude(-50.5),
-            maximum_dequantised_magnitude(500.5),
-        )
-        assert len(lookup._cache) == 2
-
-
-coeff_arrays = make_symbol_coeff_arrays(2, 0)
-
-@pytest.mark.parametrize("expr,exp_lower,exp_upper", [
-    # Constant, no errors, no variables
-    (0, 0, 0),
-    (123, 123, 123),
-    (-123, -123, -123),
-    # Error term, no variables
-    (affine_error_with_range(-123, 1234), -123, 1234),
-    # Variable, no error term, no constants
-    (coeff_arrays[2]["LH"][0, 0], -10, 100),
-    (coeff_arrays[1]["HH"][2, 3]*-20, -20000, 2000),
-    # Everything!
-    (
-        coeff_arrays[1]["HH"][2, 3] + 10 + affine_error_with_range(-5, 15),
-        -100 + 10 - 5,
-        1000 + 10 + 15,
-    ),
-])
-def test_find_synthesis_filter_bounds(expr, exp_lower, exp_upper):
-    # Mocked up
-    coeff_value_ranges = {
-        (2, "LH", 0, 0): (-10, 100),
-        (1, "HH", 2, 3): (-100, 1000),
-    }
-    
-    assert synthesis_filter_bounds(expr, coeff_value_ranges) == (exp_lower, exp_upper)
+    lower_bound, upper_bound = synthesis_filter_bounds(expr)
+    assert lower_bound == (
+        3*LinExp("coeff_0_LL_min") + -4*LinExp("coeff_0_LL_max") +
+        30*LinExp("coeff_1_HH_min") + -40*LinExp("coeff_1_HH_max") +
+        -100 +
+        1
+    )
+    assert upper_bound == (
+        -4*LinExp("coeff_0_LL_min") + 3*LinExp("coeff_0_LL_max") +
+        -40*LinExp("coeff_1_HH_min") + 30*LinExp("coeff_1_HH_max") +
+        +100 +
+        1
+    )
 
 
 def test_integration():
@@ -148,7 +77,6 @@ def test_integration():
     filter_params = LIFTING_FILTERS[WaveletFilters.haar_with_shift]
     dwt_depth = 1
     dwt_depth_ho = 1
-    
     
     input_picture_array = SymbolArray(2)
     analysis_coeff_arrays, analysis_intermediate_values = analysis_transform(
@@ -164,38 +92,43 @@ def test_integration():
         input_coeff_arrays,
     )
     
-    input_lower, input_upper = -512, 511
+    signal_min = LinExp("signal_min")
+    signal_max = LinExp("signal_max")
+    
+    example_range = {signal_min: -512, signal_max: 511}
     
     # Input signal bounds should be as specified
     assert analysis_filter_bounds(
         analysis_intermediate_values[(2, "Input")][0, 0],
-        input_lower, input_upper,
-    ) == (input_lower, input_upper)
+    ) == (signal_min, signal_max)
     
     # Output of final analysis filter should require a greater depth (NB: for
     # the Haar transform it is the high-pass bands which gain the largest
     # signal range)
     analysis_output_lower, analysis_output_upper = analysis_filter_bounds(
         analysis_intermediate_values[(1, "H")][0, 0],
-        input_lower, input_upper,
     )
-    assert analysis_output_lower < input_lower
-    assert analysis_output_upper > input_upper
+    assert analysis_output_lower.subs(example_range) < signal_min.subs(example_range)
+    assert analysis_output_upper.subs(example_range) > signal_max.subs(example_range)
     
-    analysis_coeff_array_bounds = PostQuantisationTransformCoeffBoundsLookup(
-        analysis_coeff_arrays,
-        input_lower,
-        input_upper,
-    )
+    example_coeff_range = {
+        "coeff_{}_{}_{}".format(level, orient, minmax):
+            maximum_dequantised_magnitude(int(round(value.subs(example_range).constant)))
+        for level, orients in analysis_coeff_arrays.items()
+        for orient, expr in orients.items()
+        for minmax, value in zip(["min", "max"], analysis_filter_bounds(expr))
+    }
     
     # Signal range should shrink down by end of synthesis process but should
     # still be larger than the original signal
-    final_output_lower, final_output_upper = synthesis_filter_bounds(
-        synthesis_output[0, 0],
-        analysis_coeff_array_bounds,
-    )
-    assert final_output_upper < analysis_output_upper
-    assert final_output_lower > analysis_output_lower
+    final_output_lower, final_output_upper = synthesis_filter_bounds(synthesis_output[0, 0])
     
-    assert final_output_upper > input_upper
-    assert final_output_lower < input_lower
+    assert final_output_upper.subs(example_coeff_range) < analysis_output_upper.subs(example_range)
+    assert final_output_lower.subs(example_coeff_range) > analysis_output_lower.subs(example_range)
+    
+    assert final_output_upper.subs(example_coeff_range) > signal_max.subs(example_range)
+    assert final_output_lower.subs(example_coeff_range) < signal_min.subs(example_range)
+
+
+def test_parse_coeff_symbol_name():
+    assert parse_coeff_symbol_name("coeff_123_HL_min") == (123, "HL", "min")
