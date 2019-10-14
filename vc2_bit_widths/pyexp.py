@@ -202,13 +202,14 @@ class PyExp(object):
     # * subs
     
     def __init__(self):
-        self._inline = False
+        pass
     
     def set_inline(self, inline):
         """
-        Hint whether this expression should be inlined or not.
+        Hint whether this expression should be inlined or not. Returns True if
+        the hint will be obeyed, False otherwise.
         """
-        self._inline = inline
+        return False
     
     def get_dependencies(self):
         r"""
@@ -283,22 +284,39 @@ class PyExp(object):
         else:
             return self
     
-    def _inline_iff_used_once(self, _visited=None):
+    def _auto_inline(self, max_depth=64):
         """
-        Recursively inline all dependencies whose values are only used.
+        Recursively inline all dependencies whose values are only used once and
+        values which are used in sufficiently deeply nested expressions as to
+        cause a stack overflow in Python's parser.
         """
-        visited = _visited if _visited is not None else set()
-
-        if self in visited:
-            # Used in multiple places, don't inline
-            self.set_inline(False)
-        else:
-            # Initially assume used only once
-            self.set_inline(True)
-            
-            visited.add(self)
-            for dependant in self.get_dependencies():
-                dependant._inline_iff_used_once(visited)
+        visited = set()
+        exp_depths = {}
+        
+        to_visit = [self]
+        
+        while to_visit:
+            exp = to_visit.pop(-1)
+            depth = exp_depths.setdefault(exp, 0)
+            if exp in visited:
+                # Used in multiple places, don't inline
+                if exp.set_inline(False):
+                    # Only reset depth if inline hint is obeyed
+                    exp_depths[exp] = 0
+            else:
+                # Initially assume used only once and inline unless depth is
+                # very deep
+                if depth < max_depth:
+                    exp.set_inline(True)
+                else:
+                    if exp.set_inline(False):
+                        depth = 0
+                
+                visited.add(exp)
+                for dependant in exp.get_dependencies():
+                    to_visit.append(dependant)
+                    if depth + 1 > exp_depths.get(dependant, 0):
+                        exp_depths[dependant] = depth + 1
     
     def get_all_argument_names(self):
         """
@@ -308,14 +326,14 @@ class PyExp(object):
         visited = set()
         argument_names = set()
         
-        def visit(exp):
+        to_visit = [self]
+        while to_visit:
+            exp = to_visit.pop(-1)
             if exp not in visited:
                 visited.add(exp)
                 argument_names.update(exp.get_argument_names())
                 for dep in exp.get_dependencies():
-                    visit(dep)
-        
-        visit(self)
+                    to_visit.append(dep)
         
         return sorted(argument_names)
     
@@ -331,7 +349,7 @@ class PyExp(object):
         function_name : str
             The name to give to the generated function
         """
-        self._inline_iff_used_once()
+        self._auto_inline()
         
         # The PyExps visited so far
         visited = set()
@@ -340,17 +358,17 @@ class PyExp(object):
         # to generate the final output.
         statements = []
         
-        def visit(exp):
+        to_visit = [self]
+        while to_visit:
+            exp = to_visit.pop(-1)
             if exp not in visited:
                 visited.add(exp)
                 
                 # Add definitions for all dependencies first
                 for dep in exp.get_dependencies():
-                    visit(dep)
+                    to_visit.append(dep)
                 
-                statements.append(exp.get_definitions())
-        
-        visit(self)
+                statements.insert(0, exp.get_definitions())
         
         statements.append("return {}".format(self.get_expression()))
         
@@ -657,6 +675,12 @@ class BinaryOperator(PyExp):
         self._lhs = lhs
         self._rhs = rhs
         self._operator = operator
+        
+        self._inline = False
+    
+    def set_inline(self, inline):
+        self._inline = inline
+        return True
     
     @property
     def lhs(self):

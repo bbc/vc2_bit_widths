@@ -265,7 +265,7 @@ class TestOperators(object):
         assert s.key is c
 
 
-class TestInlineIffUsedOnce(object):
+class TestAutoInline(object):
     
     def test_only_used_once(self):
         a = Argument("a")
@@ -275,7 +275,7 @@ class TestInlineIffUsedOnce(object):
         a_plus_b = a + b
         a_plus_b_plus_c = a_plus_b + c
         
-        a_plus_b_plus_c._inline_iff_used_once()
+        a_plus_b_plus_c._auto_inline()
         
         assert a_plus_b_plus_c._inline is True
         assert a_plus_b._inline is True
@@ -288,10 +288,25 @@ class TestInlineIffUsedOnce(object):
         a_plus_b = a + b
         twice_a_plus_b = a_plus_b + a_plus_b
         
-        twice_a_plus_b._inline_iff_used_once()
+        twice_a_plus_b._auto_inline()
         
         assert twice_a_plus_b._inline is True
         assert a_plus_b._inline is False
+    
+    def test_nested_out_of_lineable_values(self):
+        a = Argument("a")
+        b = a + 1  # Depth 2 -> 0 (de-inlined)
+        c = b + 1  # Depth 1
+        d = c + 1  # Depth 2 -> 0 (de-inlined)
+        e = d + 1  # Depth 1
+        f = e + 1  # Depth 0
+        
+        f._auto_inline(2)
+        assert not b._inline
+        assert c._inline
+        assert not d._inline
+        assert e._inline
+        assert f._inline
 
 
 class TestGetAllArgumentNames(object):
@@ -396,3 +411,14 @@ def test_make_function():
     f = abc.make_function()
     
     assert f(a=1, b=2, c=10) == (1 + 2) * 10
+
+
+def test_deeply_nested_expression():
+    a = Argument("a")
+    nest_depth = 1000
+    for _ in range(nest_depth):
+        a += 1
+    
+    f = a.make_function()
+    
+    assert f(10) == 10 + nest_depth
