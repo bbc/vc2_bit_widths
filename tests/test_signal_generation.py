@@ -241,6 +241,7 @@ class TestMakeAnalysisMaximisingSignal(object):
         # output value within the limits of the affine arithmetic bounds
         value_min = -512
         value_max = 255
+        signal_range = {"signal_min": value_min, "signal_max": value_max}
         
         for level, orients in transform_coeffs.items():
             for orient, target_array in orients.items():
@@ -256,7 +257,9 @@ class TestMakeAnalysisMaximisingSignal(object):
                         # Find the expected bounds for values in the targeted
                         # transform coefficient
                         target_filter = target_array[new_tx, new_ty]
-                        lower_bound, upper_bound = analysis_filter_bounds(target_filter, value_min, value_max)
+                        lower_bound, upper_bound = analysis_filter_bounds(target_filter)
+                        lower_bound = lower_bound.subs(signal_range).constant
+                        upper_bound = upper_bound.subs(signal_range).constant
                         
                         # Create a test picture and encode it with the VC-2
                         # pseudocode
