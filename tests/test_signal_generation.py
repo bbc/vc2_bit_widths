@@ -20,21 +20,22 @@ from vc2_bit_widths.infinite_arrays import SymbolArray
 
 from vc2_bit_widths.vc2_filters import (
     make_symbol_coeff_arrays,
+    make_variable_coeff_arrays,
     analysis_transform,
     synthesis_transform,
 )
 
 from vc2_bit_widths.signal_bounds import analysis_filter_bounds
 
+from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
+    FastPartialAnalyseQuantiseSynthesise,
+)
+
 from vc2_bit_widths.signal_generation import (
     get_maximising_inputs,
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
-    partial_analysis_to_matrix,
-    partial_synthesis_to_matrix,
-    make_quantisation_factor_sweep,
-    apply_quantisation_sweep,
-    find_quantisation_index_with_greatest_output_magnitude,
+    choose_random_indices_of,
     greedy_stochastic_search,
     improve_synthesis_maximising_signal,
 )
@@ -573,225 +574,125 @@ class TestMakeSynthesisMaximisingSignal(object):
         assert num_periods_made_larger_by_test_signal > (num_periods / 2.0)
 
 
-def test_partial_analysis_to_matrix():
-    input_symbols = ["p0", "p1", "p2"]
-    transform_coeff_symbols = ["l", "h"]
-    transform_coeff_expressions = {
-        "l": (LinExp("p0") + LinExp("p1") + LinExp("p2"))/2,
-        "h": LinExp("p0") - LinExp("p1"),
-    }
+def test_choose_random_indices_of():
+    rand = np.random.RandomState(1)
+    array = np.empty((2, 3, 4))
     
-    analysis_matrix = partial_analysis_to_matrix(
-        input_symbols,
-        transform_coeff_symbols,
-        transform_coeff_expressions,
-    )
+    ia = choose_random_indices_of(array, 1000, rand)
     
-    input_vector = np.array([100, -200, 300])
+    assert len(ia) == 3
     
-    matrix_result = dict(zip(
-        transform_coeff_symbols,
-        np.matmul(analysis_matrix, input_vector),
-    ))
+    assert len(ia[0]) == 1000
+    assert len(ia[1]) == 1000
+    assert len(ia[2]) == 1000
     
-    direct_result = {
-        sym: expr.subs(dict(zip(input_symbols, input_vector))).constant
-        for sym, expr in transform_coeff_expressions.items()
-    }
-    
-    assert matrix_result == direct_result
-
-
-def test_partial_synthesis_to_matrix():
-    transform_coeff_symbols = ["l", "h"]
-    synthesis_expression = LinExp("l") - (2*LinExp("h"))
-    
-    synthesis_matrix = partial_synthesis_to_matrix(
-        transform_coeff_symbols,
-        synthesis_expression,
-    )
-    
-    transform_coeffs = np.array([100, -200])
-    
-    matrix_result = np.matmul(synthesis_matrix, transform_coeffs)
-    
-    direct_result = synthesis_expression.subs(
-        dict(zip(transform_coeff_symbols, transform_coeffs))
-    ).constant
-    
-    assert matrix_result == direct_result
-
-
-def test_make_quantisation_factor_sweep():
-    quantisation_indices = [0, 4, 8]  # Factors 1, 2, 4
-    
-    quantisation_matrix = {0: {"L": 0}, 1: {"H": 4}}
-    
-    transform_coeff_symbols = [
-        (("coeff", 0, "L"), 0, 0),
-        (("coeff", 1, "H"), 0, 0),
-        (("coeff", 0, "L"), 1, 1),
-        (("coeff", 1, "H"), 1, 1),
-    ]
-    
-    quantisation_factor_matrix = make_quantisation_factor_sweep(
-        quantisation_indices,
-        quantisation_matrix,
-        transform_coeff_symbols,
-    )
-    
-    assert np.array_equal(quantisation_factor_matrix, np.array([
-        [1, 2, 4],
-        [1, 1, 2],
-        [1, 2, 4],
-        [1, 1, 2],
-    ]))
-
-
-def test_apply_quantisation_sweep():
-    quantisation_factor_matrix = np.array([
-        [1, 2, 4],
-        [1, 1, 2],
-        [1, 2, 4],
-        [1, 1, 2],
-    ])
-    
-    transform_coeff_vector = np.array([
-        128,
-        1024,
-        -128,
-        0
-    ])
-    
-    transform_coeff_matrix = apply_quantisation_sweep(
-        quantisation_factor_matrix,
-        transform_coeff_vector,
-    )
-    
-    assert np.array_equal(transform_coeff_matrix, np.array([
-        [ 128,  129,  130],
-        [1024, 1024, 1025],
-        [-128, -129, -130],
-        [   0,    0,    0],
-    ]))
-
-
-def test_find_quantisation_index_with_greatest_output_magnitude():
-    input_vector = [100, -200, 300, -400]
-    
-    analysis_matrix = np.array([
-        [-1, -1, -1, -1],
-        [0,   1, -1,  0],
-    ])
-    
-    # Transform coeffs = [
-    #    200,
-    #    -500,
-    # ]
-    
-    quantisation_indices = [0, 4, 8]
-    quantisation_factor_matrix = np.array([
-        [1, 2, 4],
-        [1, 1, 2],
-    ])
-    
-    # Quantised transform coeffs = [
-    #    [ 200,  201,  202].
-    #    [-500, -500, -501],
-    # ]
-    
-    synthesis_matrix = np.array([[-1, 1]])
-    
-    # Decoded values = [[
-    #    -700,
-    #    -701,
-    #    -703,
-    # ]]
-    
-    decoded_value, qi = find_quantisation_index_with_greatest_output_magnitude(
-        input_vector,
-        analysis_matrix,
-        quantisation_indices,
-        quantisation_factor_matrix,
-        synthesis_matrix,
-    )
-    
-    assert decoded_value == -703
-    assert qi == 8
+    assert set(ia[0]) == set(range(2))
+    assert set(ia[1]) == set(range(3))
+    assert set(ia[2]) == set(range(4))
 
 
 def test_greedy_stochastic_search():
     # This test is fairly crude. It just tests that the search terminates, does
     # not crash and improves on the initial input signal, however slightly.
     
-    # The initial filter and inputs used here are essentially arbitrary and
-    # chosen randomly.
-    input_min = -512
-    input_max = 255
-    input_vector = np.array([input_max, input_min, input_max, input_min])
-    analysis_matrix = np.array([
-        [-1, 1, 1, -1],
-        [ 0, 1,-1,  0],
-    ])
-    quantisation_indices = [0, 4, 8, 12, 16]
-    quantisation_factor_matrix = np.array([
-        [1, 2, 4, 8, 16],
-        [1, 1, 2, 4,  8],
-    ])
-    synthesis_matrix = np.array([[-1, 1]])
+    wavelet_index = WaveletFilters.le_gall_5_3
+    wavelet_index_ho = WaveletFilters.le_gall_5_3
+    dwt_depth = 1
+    dwt_depth_ho = 0
     
-    # Determine the initial input performance (without random search)
-    base_decoded_value, base_qi = find_quantisation_index_with_greatest_output_magnitude(
-        input_vector,
-        analysis_matrix,
+    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
+    quantisation_matrix = QUANTISATION_MATRICES[(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+    )]
+    
+    quantisation_indices = list(range(64))
+
+    input_min = -511
+    input_max = 256
+
+    width = 16
+    height = 8
+    
+    # Arbitrary test signal
+    rand = np.random.RandomState(1)
+    input_picture = rand.choice((input_min, input_max), (height, width))
+    
+    # Restrict search-space to bottom-right three quarters only
+    search_slice = (slice(height//4, None), slice(width//4, None))
+    
+    # Arbitrary output pixel
+    output_array, intermediate_arrays = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
+    )
+    synthesis_pyexp = output_array[width//2, height//2]
+    
+    codec = FastPartialAnalyseQuantiseSynthesise(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        quantisation_matrix,
         quantisation_indices,
-        quantisation_factor_matrix,
-        synthesis_matrix,
+        synthesis_pyexp,
     )
     
     kwargs = {
-        "starting_input_vector": input_vector,
+        "starting_picture": input_picture.copy(),
+        "search_slice": search_slice,
         "input_min": input_min,
         "input_max": input_max,
-        "analysis_matrix": analysis_matrix,
-        "quantisation_indices": quantisation_indices,
-        "quantisation_factor_matrix": quantisation_factor_matrix,
-        "synthesis_matrix": synthesis_matrix,
+        "codec": codec,
         "random_state": np.random.RandomState(1),
         "added_corruptions_per_iteration": 1,
         "removed_corruptions_per_iteration": 1,
         "added_iterations_per_improvement": 50,
     }
     
-    # Check that a zero-iteration search produces identical results
-    new_input_vector, new_decoded_value, new_qi = greedy_stochastic_search(
+    # Get the baseline after no searches performed
+    base_input_picture, base_decoded_value, base_qi, total_iterations = greedy_stochastic_search(
         base_iterations=0,
         **kwargs
     )
-    assert np.array_equal(new_input_vector, input_vector)
-    assert new_decoded_value == base_decoded_value
-    assert new_qi == base_qi
+    assert total_iterations == 0
     
     # Check that when run for some time we get an improved result
-    new_input_vector, new_decoded_value, new_qi = greedy_stochastic_search(
+    new_input_picture, new_decoded_value, new_qi, total_iterations = greedy_stochastic_search(
         base_iterations=100,
         **kwargs
     )
-    assert not np.array_equal(new_input_vector, input_vector)
+    assert not np.array_equal(new_input_picture, base_input_picture)
     assert abs(new_decoded_value) > abs(base_decoded_value)
     assert new_qi in quantisation_indices
+    assert total_iterations > 100
     
-    # Check that the result is in range
-    for value in new_input_vector:
-        assert input_min <= value <= input_max
+    # Check haven't mutated the supplied starting picture argument
+    assert np.array_equal(kwargs["starting_picture"], input_picture)
+    
+    # Check that only the specified slice was modified
+    before = input_picture.copy()
+    before[search_slice] = 0
+    after = new_input_picture.copy()
+    after[search_slice] = 0
+    assert np.array_equal(before, after)
+    
+    # Check that all values are in range
+    assert np.all((new_input_picture >= input_min) & (new_input_picture <= input_max))
 
 
-@pytest.mark.xfail
 def test_improve_synthesis_maximising_signal():
-    # This test will simply attempt to maximise a real filter test signal and
-    # verify that the procedure appears to produce an improved result.
+    # This test will simply attempt to maximise a real test signal and verify
+    # that the procedure appears to produce an improved result.
     
-    # Create filter descriptions (of an arbtirary, smallish filter)
+    # Create filter descriptions (of an arbtirary, smallish, asymmetric filter)
     wavelet_index = WaveletFilters.le_gall_5_3
     filter_params = LIFTING_FILTERS[wavelet_index]
     dwt_depth = 1
@@ -809,47 +710,58 @@ def test_improve_synthesis_maximising_signal():
         dwt_depth_ho,
     )]
     
-    analysis_input_array = SymbolArray(2)
-    analysis_coeff_arrays, analysis_intermediate_values = analysis_transform(
+    analysis_input_linexp_array = SymbolArray(2)
+    analysis_coeff_linexp_arrays, _ = analysis_transform(
         filter_params, filter_params,
         dwt_depth, dwt_depth_ho,
-        analysis_input_array,
+        analysis_input_linexp_array,
     )
     
-    synthesis_input_arrays = make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho)
-    synthesis_output_array, synthesis_intermediate_arrays = synthesis_transform(
+    synthesis_input_linexp_arrays = make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho)
+    synthesis_output_linexp_array, _ = synthesis_transform(
         filter_params, filter_params,
         dwt_depth, dwt_depth_ho,
-        synthesis_input_arrays,
+        synthesis_input_linexp_arrays,
+    )
+    
+    synthesis_input_pyexp_arrays = make_variable_coeff_arrays(dwt_depth, dwt_depth_ho)
+    synthesis_output_pyexp_array, _ = synthesis_transform(
+        filter_params, filter_params,
+        dwt_depth, dwt_depth_ho,
+        synthesis_input_pyexp_arrays,
     )
     
     # Make an arbitrary choice of target to maximise
-    synthesis_target_array = synthesis_output_array
+    synthesis_target_linexp_array = synthesis_output_linexp_array
+    synthesis_target_pyexp_array = synthesis_output_pyexp_array
     
     # Run against all filter phases as some phases may happen to be maximised
     # by the test signal anyway
     num_improved_phases = 0
-    for tx in range(synthesis_target_array.period[0]):
-        for ty in range(synthesis_target_array.period[1]):
+    for tx in range(synthesis_target_linexp_array.period[0]):
+        for ty in range(synthesis_target_linexp_array.period[1]):
             # Produce test signal
             test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_synthesis_maximising_signal(
-                analysis_input_array,
-                analysis_coeff_arrays,
-                synthesis_target_array,
-                synthesis_output_array,
+                analysis_input_linexp_array,
+                analysis_coeff_linexp_arrays,
+                synthesis_target_linexp_array,
+                synthesis_output_linexp_array,
                 tx, ty,
             )
             
-            synthesis_target_expression = synthesis_target_array[new_tx, new_ty]
+            synthesis_pyexp = synthesis_target_pyexp_array[new_tx, new_ty]
             
             kwargs = {
+                "h_filter_params": filter_params,
+                "v_filter_params": filter_params,
+                "dwt_depth": dwt_depth,
+                "dwt_depth_ho": dwt_depth_ho,
+                "quantisation_matrix": quantisation_matrix,
+                "synthesis_pyexp": synthesis_pyexp,
                 "test_signal": test_signal,
-                "analysis_transform_coeff_arrays": analysis_coeff_arrays,
-                "synthesis_target_expression": synthesis_target_expression,
                 "input_min": input_min,
                 "input_max": input_max,
                 "max_quantisation_index": max_quantisation_index,
-                "quantisation_matrix": quantisation_matrix,
                 "random_state": np.random.RandomState(1),
                 "added_corruptions_per_iteration": (len(test_signal)+19)//20,  # 5%
                 "removed_corruptions_per_iteration": (len(test_signal)+8)//5,  # 20%
@@ -857,33 +769,38 @@ def test_improve_synthesis_maximising_signal():
             }
             
             # Run without any greedy searches to get 'baseline' figure
-            base_test_signal, base_decoded_value, base_qi = improve_synthesis_maximising_signal(
+            base_test_signal, base_decoded_value, base_qi, base_total_iterations = improve_synthesis_maximising_signal(
                 number_of_searches=1,
                 base_iterations=0,
                 **kwargs
             )
             
             # Run with greedy search to verify better result
-            imp_test_signal, imp_decoded_value, imp_qi = improve_synthesis_maximising_signal(
-                number_of_searches=10,
+            imp_test_signal, imp_decoded_value, imp_qi, imp_total_iterations = improve_synthesis_maximising_signal(
+                number_of_searches=3,
                 base_iterations=100,
                 **kwargs
             )
+            assert imp_total_iterations >= 3 * 100
             
-            # Ensure new test signal is in range
+            # Ensure new test signal is normalised to polarities
             for value in imp_test_signal.values():
-                assert input_min <= value <= input_max
+                assert value in (-1, +1)
             
+            # Should have improved over the test pattern alone
             if abs(imp_decoded_value) > abs(base_decoded_value):
                 num_improved_phases += 1
             
-            # Check to see if estimate of target value is plausible
+            # Check to see if decoded value matches what the pseudocode decoder
+            # would produce
             xs, ys = zip(*imp_test_signal)
             width = max(xs) + 1
             height = max(ys) + 1
             imp_test_signal_picture = [
                 [
-                    imp_test_signal.get((x, y), 0)
+                    input_min
+                    if imp_test_signal.get((x, y), 0) < 0 else
+                    input_max
                     for x in range(width)
                 ]
                 for y in range(height)
@@ -908,9 +825,7 @@ def test_improve_synthesis_maximising_signal():
                 **kwargs
             )[new_ty][new_tx]
             
-            assert np.isclose(imp_decoded_value, actual_decoded_value, rtol=0.9)
+            assert imp_decoded_value == actual_decoded_value
             
-    # Consider the procedure to work if at least half of the filter phases are
-    # improved by the greedy search
-    num_phases = float(synthesis_target_array.period[0] * synthesis_target_array.period[1])
-    assert num_improved_phases / num_phases > 0.5
+    # Consider the procedure to work if some of the phases are improved
+    assert num_improved_phases >= 1

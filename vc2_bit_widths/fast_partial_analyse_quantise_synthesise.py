@@ -366,6 +366,8 @@ class FastPartialAnalyseQuantiseSynthesise(object):
         self._dwt_depth = dwt_depth
         self._dwt_depth_ho = dwt_depth_ho
         
+        self._quantisation_indices = quantisation_indices
+        
         exp, transform_coeffs_used = exp_coeff_nested_dicts_to_list(synthesis_exp)
         
         self._decode = exp.make_function("_decode")
@@ -384,10 +386,15 @@ class FastPartialAnalyseQuantiseSynthesise(object):
             self._quantisation_factor_matrix,
             self._quantisation_offset_matrix,
         ) = make_quantisation_factor_sweep(
-            quantisation_indices,
+            self._quantisation_indices,
             quantisation_matrix,
             transform_coeffs_used,
         )
+    
+    @property
+    def quantisation_indices(self):
+        """The quantisation indices used during decoding."""
+        return self._quantisation_indices
     
     def analyse_quantise_synthesise(self, picture):
         """

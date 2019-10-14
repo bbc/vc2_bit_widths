@@ -24,12 +24,11 @@ import numpy as np
 from vc2_bit_widths.linexp import (
     LinExp,
     AAError,
-    strip_affine_errors,
 )
 
-from vc2_bit_widths.infinite_arrays import lcm
-
-from vc2_bit_widths.quantisation import quant_factor
+from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
+    FastPartialAnalyseQuantiseSynthesise,
+)
 
 
 def get_maximising_inputs(expression):
@@ -303,193 +302,9 @@ def make_synthesis_maximising_signal(
     return test_signal, tx, ty, mx, my, tmx, tmy
 
 
-def partial_analysis_to_matrix(input_symbols, transform_coeff_symbols, transform_coeff_expressions):
-    """
-    Produce a matrix representation of a partial analysis transform.
-    
-    The returned :py:mod:`numpy` matrix may be used to relatively efficiently
-    compute the values of a small set of transform coefficients. Where only a
-    subset of the transform coefficients are required, this can be more
-    efficient than using a Python-based lifting filter to perform the same
-    computation.
-    
-    Parameters
-    ==========
-    input_symbols : [sym, ...]
-        An enumeration of input (pixel) symbols used in the transform
-        coefficient expressions. This list should contain exactly the set of
-        symbols used by the transform coefficients to be computed by the
-        analysis transform.
-    transform_coeff_symbols : [sym, ...]
-        An enumeration of the symbols representing each of the transform
-        coefficients to be computed by the analysis transform.
-    transform_coeff_expressions : {sym: :py;class:`~vc2_bit_widths.linexp.LinExp`, ...}
-        For each symbol in transform_coeff_symbols, an expression which
-        describes the function used to compute that value in terms of the
-        symbols in input_symbols.
-    
-    Returns
-    =======
-    matrix : :py:class:`numpy.array`
-        A matrix with ``len(input_symbols)`` columns and
-        ``len(transform_coeff_symbols)`` rows. When multiplied with a vector of
-        pixel values (in the order given by input_symbols), produces a vector
-        with the values of the transform coefficients (in the order given by
-        transform_coeff_symbols).
-    """
-    analysis_matrix = np.zeros(
-        (
-            len(transform_coeff_symbols),
-            len(input_symbols),
-        ),
-        dtype=float
-    )
-    
-    for transform_coeff_sym, expr in transform_coeff_expressions.items():
-        row = transform_coeff_symbols.index(transform_coeff_sym)
-        for input_sym, coeff in expr:
-            col = input_symbols.index(input_sym)
-            analysis_matrix[row, col] = coeff
-    
-    return analysis_matrix
-
-
-def partial_synthesis_to_matrix(transform_coeff_symbols, synthesis_expression):
-    """
-    Produce a matrix representation of a synthesis transform producing a single
-    value.
-    
-    The returned :py:mod:`numpy` matrix may be used to synthesise a single
-    value from a set of transform coefficients. When only a single output pixel
-    is of interest, this will matrix operation will be faster than a Python
-    based lifting-based computation.
-    
-    Parameters
-    ==========
-    transform_coeff_symbols : [sym, ...]
-        An enumeration of the symbols representing each of the transform
-        coefficients used by the synthesis transform.
-    synthesis_expression : :py;class:`~vc2_bit_widths.linexp.LinExp`
-        An expression which describes the function used to compute the
-        synthesised value in terms of the symbols in transform_coeff_symbols.
-    
-    Returns
-    =======
-    matrix : :py:class:`numpy.array`
-        A row-matrix with ``len(transform_coeff_symbols)`` columns. When
-        multiplied with a vector of transform coefficients (in the order given by
-        input_symbols), produces a scalar with the synthesised result.
-    """
-    return np.array([[
-        synthesis_expression[sym]
-        for sym in transform_coeff_symbols
-    ]], dtype=float)
-
-
-def make_quantisation_factor_sweep(
-    quantisation_indices,
-    quantisation_matrix,
-    transform_coeff_symbols,
-):
-    """
-    Return a matrix of quantisation factors where each column may be used to
-    quantise a vector of transform coefficients by a different overall
-    quantisation factor.
-    
-    Parameters
-    ==========
-    quantisation_indices : [int, ...]
-        An iterable of quantisation indices to use.
-    quantisation_matrix : {level: {orient: int, ...}, ...}
-        The VC-2 quantisation matrix to use.
-    transform_coeff_symbols : [((prefix, level, orient), x, y), , ...]
-        The symbol for each transform coefficient value to be quantised, with
-        symbols of the type produced by
-        :py:func:`~vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays`.
-    
-    Returns
-    =======
-    matrix : :py:class:`numpy.array`
-        A matrix with ``len(quantisation_indices)`` columns and
-        ``len(transform_coeff_symbols)`` rows. For each entry in
-        quantisation_indices, a column of quantisation factors is provided to
-        be applied to a transform coefficient vector (in the order given by
-        transform_coeff_symbols).
-    """
-    # A row-vector giving the quantisation factor to be used in each output
-    # column
-    quantisation_factors = np.array([[
-        quant_factor(qi) / 4.0
-        for qi in quantisation_indices
-    ]])
-    
-    # A column-vector giving quantisation factor adjustments for each transform
-    # coefficient according to the VC-2 quantisation matrix.
-    quantisation_factor_adjustments = np.array([[
-        4.0 / quant_factor(quantisation_matrix[level][coeff])
-        for ((prefix, level, coeff), x, y) in transform_coeff_symbols
-    ]]).T
-    
-    # A matrix of quantisation factors. Each entry corresponds with the
-    # quantisation factor used for each output matrix value.
-    quantisation_factor_matrix = np.clip(
-        np.matmul(quantisation_factor_adjustments, quantisation_factors),
-        1.0,
-        None,
-    )
-    
-    return quantisation_factor_matrix
-
-
-def apply_quantisation_sweep(quantisation_factor_matrix, transform_coeff_vector):
-    """
-    Given a vector containing a set of transform coefficients, quantise then
-    dequantise every value by the quantisation factors given in the supplied
-    matrix.
-    
-    Parameters
-    ==========
-    quantisation_factor_matrix : :py:class:`numpy.array`
-        An matrix of quantisation factors to use during quantisation, as
-        returned by :py:func:`make_quantisation_factor_sweep`. Each column
-        gives a set of quantisation factors to apply to each transform
-        coefficient.
-    transform_coeff_vector : :py:class:`numpy.array`
-        The transform coefficients as a vector, as produced by
-        :py:func:`partial_analysis_to_matrix`.
-    
-    Returns
-    =======
-    matrix : :py:class:`numpy.array`
-        A matrix with the same shape as quantisation_factor_matrix. Each column
-        of this matrix represents the supplied transform coefficient values as
-        they would appear after quantisation and dequantisation with the
-        corresponding quantisation index in quantisation_indices.
-    """
-    # Quantise every transform coefficient by every quantisation index
-    transform_coeff_matrix = np.tile(
-        np.reshape(transform_coeff_vector, (len(transform_coeff_vector), 1)),
-        (1, quantisation_factor_matrix.shape[1]),
-    )
-    transform_coeff_matrix = np.fix(
-        transform_coeff_matrix / quantisation_factor_matrix
-    )
-    
-    # Dequantise again
-    transform_coeff_matrix = np.fix(
-        (transform_coeff_matrix + (np.sign(transform_coeff_matrix)*0.5)) *
-        quantisation_factor_matrix
-    )
-    
-    return transform_coeff_matrix
-
-
 def find_quantisation_index_with_greatest_output_magnitude(
-    input_vector,
-    analysis_matrix,
-    quantisation_indices,
-    quantisation_factor_matrix,
-    synthesis_matrix,
+    picture,
+    codec,
 ):
     """
     Find the quantisation index which causes the decoded value to have the
@@ -497,56 +312,55 @@ def find_quantisation_index_with_greatest_output_magnitude(
     
     Parameters
     ==========
-    input_vector : :py:class:`numpy.array`
-        The vector of input pixels to be encoded using the analysis_matrix.
-    analysis_matrix : :py:class:`numpy.array`
-        The matrix which implements a partial analysis transform on
-        input_vector. See :py:func:`partial_analysis_to_matrix`.
-    quantisation_indices : [int, ...]
-        The quantisation indices used to produce the quantisation_factor_matrix
-        (see :py:func:`make_quantisation_factor_sweep`).
-    quantisation_factor_matrix : :py:class:`numpy.array`
-        A matrix of quantisation factors to apply to the transform coefficients
-        encoded by the analysis_matrix. This should have one column per
-        quantisation index and one row per transform coefficient. See
-        :py:func:`make_quantisation_factor_sweep`.
-    synthesis_matrix : :py:class:`numpy.array`
-        The matrix which implements a partial synthesis transform on the
-        encoded transform coefficients producing a single result. See
-        :py:func:`partial_synthesis_to_matrix`.
+    picture : :py:class:`numpy.array`
+        The pixels to be encoded and decoded. This array will be modified
+        during the call.
+    codec : :py:class:`~vc2_bit_widths.fast_partial_analyse_quantise_synthesise.FastPartialAnalyseQuantiseSynthesise`
+        An encoder/quantiser/decoder object to evaluate the picture with.
     
     Returns
     =======
-    greatest_decoded_value : float
+    greatest_decoded_value : int
         The decoded value with the greatest magnitude of any quantisation index
         tested.
     quantisation_index : int
         The quantisation index which produced the decoded value with the
         greatest magnitude.
     """
-    transform_coeff_vector = np.matmul(analysis_matrix, input_vector)
-    
-    # Each column is a transform_coeff_vector quantised by a different
-    # quantisation index.
-    transform_coeff_matrix = apply_quantisation_sweep(
-        quantisation_factor_matrix,
-        transform_coeff_vector,
-    )
-    
-    decoded_values = np.matmul(synthesis_matrix, transform_coeff_matrix)
-    
+    decoded_values = codec.analyse_quantise_synthesise(picture)
     i = np.argmax(np.abs(decoded_values))
-    return (decoded_values[0, i], quantisation_indices[i])
+    return (decoded_values[i], codec.quantisation_indices[i])
+
+
+def choose_random_indices_of(array, num_indices, random_state):
+    """
+    Generate an index array for :py:class:`array` containing ``num_indices``
+    independent random indices (possibly including repeats).
+    
+    Parameters
+    ==========
+    array : :py:class:`numpy.array`
+    num_indices : int
+    random_state : :py:class:`numpy.random.RandomState`
+    
+    Returns
+    =======
+    ([i, ...], [j, ...], ...)
+        An index array (or rather, a tuple of index arrays) which index random
+        entries in ``array``.
+    """
+    return tuple(
+        random_state.randint(0, s, num_indices)
+        for s in array.shape
+    )
 
 
 def greedy_stochastic_search(
-    starting_input_vector,
+    starting_picture,
+    search_slice,
     input_min,
     input_max,
-    analysis_matrix,
-    quantisation_indices,
-    quantisation_factor_matrix,
-    synthesis_matrix,
+    codec,
     random_state,
     added_corruptions_per_iteration,
     removed_corruptions_per_iteration,
@@ -555,11 +369,11 @@ def greedy_stochastic_search(
 ):
     """
     Use a greedy stochastic search to find perturbations to the supplied test
-    signal which produce larger decoded values after quantisation.
+    picture which produce larger decoded values after quantisation.
     
     At a high-level the greedy search proceeds as follows:
     
-    1. Make some random changes to the input vector.
+    1. Make some random changes to the input picture.
     2. See if these changes made the decoded output larger. If they did, keep
        the changes, if they didn't, discard them.
     3. Go to step 1.
@@ -569,111 +383,122 @@ def greedy_stochastic_search(
     ``base_iterations`` and decremented after every iteration. If the iteration
     produced an larger output value, the counter is incremented by
     ``added_iterations_per_improvement``. Once the counter reaches zero, the
-    search terminates and the best vector found is returned.
+    search terminates and the best picture found is returned.
     
     Parameters
     ==========
-    starting_input_vector : :py:class:`numpy.array`
-        The vector of input pixel values to use as the starting-point for the
+    starting_picture : :py:class:`numpy.array`
+        The picture to use as the starting-point for the search.
+    search_slice
+        A :py:mod:`numpy` compatible array slice specification which defines
+        the region of ``starting_picture`` which should be mutated during the
         search.
     input_min : number
     input_max : number
-        The range for random values which may be inserted into the vector.
-    analysis_matrix : :py:class:`numpy.array`
-    quantisation_indices : [int, ...]
-    quantisation_factor_matrix : :py:class:`numpy.array`
-    synthesis_matrix : :py:class:`numpy.array`
-        Parameters for
-        :py:func:`find_quantisation_index_with_greatest_output_magnitude`.
+        The value ranges for random values which may be inserted into the
+        picture.
+    codec : :py:class:`~vc2_bit_widths.fast_partial_analyse_quantise_synthesise.FastPartialAnalyseQuantiseSynthesise`
+        An encoder/quantiser/decoder object which will be used to test each
+        picture.
     random_state : :py:class:`numpy.random.RandomState`
-        The random number generator to use during the search.
+        The random number generator to use for the search.
     added_corruptions_per_iteration : int
-        The number of vector entries to assign with a random value during each
-        search attempt.
+        The number of pixels to assign with a random value during each search
+        attempt.
     removed_corruptions_per_iteration : int
-        The number of vector entries to reset to their original value during
+        The number of pixels entries to reset to their original value during
         each search attempt.
     base_iterations : int
         The initial number of search iterations to perform.
     added_iterations_per_improvement : int
         The number of additional search iterations to perform whenever an
-        improved vector is found.
+        improved picture is found.
     
     Returns
     =======
-    input_vector : :py:class:`numpy.array`
-        The input vector which produced the decoded value with the greatest
-        magnitude after quantisation.
+    picture : :py:class:`numpy.array`
+        The perturbed picture which produced the decoded value with the
+        greatest magnitude after quantisation.
     greatest_decoded_value : float
         The value produced by decoding the input at the worst-case quantisation
         index.
     quantisation_index : int
         The quantisation index which yielded the largest decoded value.
+    total_iterations : int
+        The number of search iterations used.
     """
     # Use the input with no corruption as the baseline for the search
-    best_input_vector = starting_input_vector.astype(float)
+    best_picture = starting_picture.copy()
+    cur_picture = best_picture.copy()
     best_decoded_value, best_qi = find_quantisation_index_with_greatest_output_magnitude(
-        best_input_vector,
-        analysis_matrix,
-        quantisation_indices,
-        quantisation_factor_matrix,
-        synthesis_matrix,
+        cur_picture,
+        codec,
     )
     
-    # Pre-allocate a working copy of the input vector
-    cur_input_vector = np.empty_like(best_input_vector)
+    # Array to use as the working array for the partial encode/decode (since
+    # this corrupts the array passed in)
+    working_array = np.empty_like(cur_picture)
     
+    total_iterations = 0
     iterations_remaining = base_iterations
     while iterations_remaining > 0:
+        total_iterations += 1
         iterations_remaining -= 1
         
-        cur_input_vector[:] = best_input_vector
+        cur_picture[:] = best_picture
+        
+        # Slice out the picture 
+        starting_slice = starting_picture[search_slice]
+        cur_slice = cur_picture[search_slice]
         
         # Restore a random set of indices in the vector to their original value
-        reset_indices = random_state.randint(
-            0, len(cur_input_vector),
+        reset_indices = choose_random_indices_of(
+            cur_slice,
             removed_corruptions_per_iteration,
+            random_state,
         )
-        cur_input_vector[reset_indices] = starting_input_vector[reset_indices]
+        cur_slice[reset_indices] = starting_slice[reset_indices]
         
         # Corrupt a random set of indices in the vector
-        corrupt_indices = random_state.randint(
-            0, len(cur_input_vector),
+        corrupt_indices = choose_random_indices_of(
+            cur_slice,
             added_corruptions_per_iteration,
+            random_state,
         )
-        cur_input_vector[corrupt_indices] = random_state.choice(
+        cur_slice[corrupt_indices] = random_state.choice(
             (input_min, input_max),
             added_corruptions_per_iteration,
         )
         
         # Find the largest decoded value for the newly modified input vector
+        working_array[:] = cur_picture
         cur_decoded_value, cur_qi = find_quantisation_index_with_greatest_output_magnitude(
-            cur_input_vector,
-            analysis_matrix,
-            quantisation_indices,
-            quantisation_factor_matrix,
-            synthesis_matrix,
+            working_array,
+            codec,
         )
         
         # Keep the input vector iff it is an improvement on the previous best
         if abs(cur_decoded_value) > abs(best_decoded_value):
-            best_input_vector[:] = cur_input_vector
+            best_picture[:] = cur_picture
             best_decoded_value = cur_decoded_value
             best_qi = cur_qi
             
             iterations_remaining += added_iterations_per_improvement
     
-    return best_input_vector, best_decoded_value, best_qi
+    return best_picture, best_decoded_value, best_qi, total_iterations
 
 
 def improve_synthesis_maximising_signal(
+    h_filter_params,
+    v_filter_params,
+    dwt_depth,
+    dwt_depth_ho,
+    quantisation_matrix,
+    synthesis_pyexp,
     test_signal,
-    analysis_transform_coeff_arrays,
-    synthesis_target_expression,
     input_min,
     input_max,
     max_quantisation_index,
-    quantisation_matrix,
     random_state,
     number_of_searches,
     added_corruptions_per_iteration,
@@ -682,7 +507,7 @@ def improve_synthesis_maximising_signal(
     added_iterations_per_improvement,
 ):
     """
-    Improve a test signal generated by
+    'Improve' a test signal generated by
     :py:func:`make_synthesis_maximising_signal` using repeated greedy
     stochastic search.
     
@@ -694,15 +519,27 @@ def improve_synthesis_maximising_signal(
     
     Parameters
     ==========
+    h_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+    v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+        Horizontal and vertical filter *synthesis* (not analysis!) filter
+        parameters (e.g. from :py:data:`vc2_data_tables.LIFTING_FILTERS`)
+        defining the wavelet transform used.
+    dwt_depth : int
+    dwt_depth_ho : int
+        The transform depth used by the filters.
+    quantisation_matrix : {level: {orient: int, ...}, ...}
+        The VC-2 quantisation matrix to use.
+    synthesis_pyexp : :py:class:`~vc2_bit_widths.PyExp`
+        A :py:class:`~vc2_bit_widths.PyExp` expression which defines the
+        synthesis process for the decoder value the test signal is
+        maximising/minimising. Such an expression is usually obtained from the
+        use of :py:func;`~vc2_bit_widths.vc2_filters.synthesis_transform` and
+        :py:func;`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
     test_signal : {(x, y): polarity, ...}
-        The test signal to improve.
-    analysis_transform_coeff_arrays : {level: {orient: :py:class:`~vc2_bit_widths.infinite_arrays.InfiniteArray`, ...}}
-        The final output arrays from a compatible analysis filter for the
-        synthesis filter whose values will be maximised. These should be
-        provided as a nested dictionary of the form produced by
-        :py:func:`~vc2_bit_widths.vc2_filters.analysis_transform`.
-    synthesis_target_expression : :py:class:`~vc2_bit_widths.linexp.LinExp`
-        An expression describing the decoding process for the target value.
+        The test signal to 'improve'. This test signal must be translated such
+        that no analysis or synthesis step depends on VC-2's edge extension
+        behaviour. This will be the case for test signals produced by
+        :py:class:`make_synthesis_maximising_signal`.
     input_min : int
     input_max : int
         The minimum and maximum value which may be used in the test signal.
@@ -710,8 +547,6 @@ def improve_synthesis_maximising_signal(
         The maximum quantisation index to use. This should be set high enough
         that at the highest quantisation level all transform coefficients are
         quantised to zero.
-    quantisation_matrix : {level: {orient: int, ...}, ...}
-        The VC-2 quantisation matrix to use.
     random_state : :py:class:`numpy.random.RandomState`
         The random number generator to use during the search.
     number_of_searches : int
@@ -727,111 +562,69 @@ def improve_synthesis_maximising_signal(
     
     Returns
     =======
-    improved_test_signal : {(x, y), value, ...}
-        The improved test signal found during the search. Values (not
-        polarities) are given in this dictionary and will be in the range
-        input_min to input_max.
+    improved_test_signal : {(x, y): polarity, ...}
+        The improved test signal found during the search.
     quantisation_index : int
         The quantisation index which produces the most extreme value in the
         target for this test signal.
-    approximate_decoded_value : float
-        An approximation of the value that this test signal will produce in the
-        target decoder value when the specified quantisation index is used for
-        all slices.
-        
-        .. note::
-        
-            For performance reasons, a real VC-2 encoder and decoder are not
-            used. Instead, an optimised floating-point approximation is used.
-            As such the expected value is only an approximation of the output
-            of a real VC-2 decoder.
+    decoded_value : int
+        The value that this test signal will produce in the target decoder
+        value when the specified quantisation index is used for all slices.
+    total_iterations : int
+        The total number of search iterations used.
     """
-    # This function essentially consists of three steps:
-    #
-    # 1. Convert the test signal and encoder/decoder/quantiser descriptions
-    #    into matrix form suitable for greedy_stochastic_search()
-    #
-    # 2. Run greedy_stochastic_search a few times.
-    #
-    # 3. Convert improved test signal description from greedy_stochastic_search
-    #    into a more useful form.
+    # Convert test signal into picture array with true signal levels
+    xs, ys = zip(*test_signal)
+    x0 = min(xs)
+    y0 = min(ys)
+    x1 = max(xs)
+    y1 = max(ys)
+    search_slice = (slice(y0, y1+1), slice(x0, x1+1))
     
-    # Remove error/constant terms in synthesis expression: these will not be
-    # included in the evaluation
-    synthesis_target_expression = strip_affine_errors(synthesis_target_expression)
-    synthesis_target_expression -= synthesis_target_expression[None]
+    # Round picture width/height up to be compatible with the current lifting
+    # filter
+    x_multiple = 2**(dwt_depth + dwt_depth_ho)
+    y_multiple = 2**(dwt_depth)
+    width = (((x1 + 1) + x_multiple - 1) // x_multiple) * x_multiple
+    height = (((y1 + 1) + y_multiple - 1) // y_multiple) * y_multiple
     
-    # Collect all of the input/transform coeff symbols and transform
-    # coefficient expressions used for the target
-    # value
-    input_symbols = set()
-    transform_coeff_symbols = set()
-    transform_coeff_expressions = {}
-    for coeff_sym in synthesis_target_expression.symbols():
-        transform_coeff_symbols.add(coeff_sym)
-        
-        (_, level, orient), x, y = coeff_sym
-        coeff_expr = analysis_transform_coeff_arrays[level][orient][x, y]
-        
-        # Remove error/constant terms in the analysis expressions too
-        coeff_expr = strip_affine_errors(coeff_expr)
-        coeff_expr -= coeff_expr[None]
-        
-        transform_coeff_expressions[coeff_sym] = coeff_expr
-        
-        for input_sym in coeff_expr.symbols():
-            input_symbols.add(input_sym)
+    test_picture = np.array([
+        [
+            0
+            if test_signal.get((x, y), 0) == 0 else
+            input_min
+            if test_signal.get((x, y), 0) < 0 else
+            input_max
+            for x in range(width)
+        ]
+        for y in range(height)
+    ], dtype=int)
     
-    # Sort the symbols to ensure repeatable behaviour
-    input_symbols = sorted(input_symbols)
-    transform_coeff_symbols = sorted(transform_coeff_symbols)
-    
-    # Compile the analysis and synthesis filters for the target value into
-    # matrices for evaluation during greedy random search
-    analysis_matrix = partial_analysis_to_matrix(
-        input_symbols,
-        transform_coeff_symbols,
-        transform_coeff_expressions,
-    )
-    synthesis_matrix = partial_synthesis_to_matrix(
-        transform_coeff_symbols,
-        synthesis_target_expression,
-    )
-    
-    # Compile the quantisation indices into a matrix of quantisation factors to
-    # perform bulk quantisation of the transform coefficients
-    quantisation_indices = list(range(max_quantisation_index + 1))
-    quantisation_factor_matrix = make_quantisation_factor_sweep(
-        quantisation_indices,
+    # Prepare the encoder/quantiser/decoder
+    quantisation_indices = list(range(max_quantisation_index))
+    codec = FastPartialAnalyseQuantiseSynthesise(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
         quantisation_matrix,
-        transform_coeff_symbols,
+        quantisation_indices,
+        synthesis_pyexp,
     )
     
-    # Convert the test signal into vector form (to allow
-    # encoding/quantisation/decoding using the above matrices)
-    base_input_vector = np.array([
-        0
-        if test_signal.get((x, y), 0) == 0 else
-        input_max
-        if test_signal[(x, y)] > 0 else
-        input_min
-        for prefix, x, y in input_symbols
-    ])
-    
-    # Run the greedy search, keeping the best result.
-    best_input_vector = None
+    # Run the greedy search several times, keeping the best result.
+    best_picture = None
     best_decoded_value = None
     best_qi = None
+    total_iterations = 0
     assert number_of_searches >= 1
     for _ in range(number_of_searches):
-        new_input_vector, new_decoded_value, new_qi = greedy_stochastic_search(
-            base_input_vector,
+        new_picture, new_decoded_value, new_qi, new_iterations = greedy_stochastic_search(
+            test_picture,
+            search_slice,
             input_min,
             input_max,
-            analysis_matrix,
-            quantisation_indices,
-            quantisation_factor_matrix,
-            synthesis_matrix,
+            codec,
             random_state,
             added_corruptions_per_iteration,
             removed_corruptions_per_iteration,
@@ -839,18 +632,21 @@ def improve_synthesis_maximising_signal(
             added_iterations_per_improvement,
         )
         
+        total_iterations += new_iterations
+        
         if (
             best_decoded_value is None or
             abs(new_decoded_value) > abs(best_decoded_value)
         ):
-            best_input_vector = new_input_vector
+            best_picture = new_picture
             best_decoded_value = new_decoded_value
             best_qi = new_qi
     
-    # Convert test signal description back from vector form
-    improved_test_signal = dict(zip(
-        ((x, y) for (prefix, x, y) in input_symbols),
-        map(int, best_input_vector),
-    ))
+    # Convert test picture description back from vector form
+    improved_test_signal = {
+        (x, y): 1 if best_picture[y, x] == input_max else -1
+        for (x, y) in test_signal
+        if best_picture[y, x] in (input_min, input_max)
+    }
     
-    return improved_test_signal, best_decoded_value, best_qi
+    return improved_test_signal, best_decoded_value, best_qi, total_iterations
