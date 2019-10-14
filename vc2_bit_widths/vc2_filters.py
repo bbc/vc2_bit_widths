@@ -36,7 +36,7 @@ __all__ = [
 
 import math
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from vc2_conformance.decoder.transform_data_syntax import quant_factor
 
@@ -231,7 +231,7 @@ def analysis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_ho
         The 'array_name' part of the key is a string giving a name following
         the naming convention shown in the figure above.
     """
-    intermediate_values = {}
+    intermediate_values = OrderedDict()
     
     h_filter_params = convert_between_synthesis_and_analysis(h_filter_params)
     v_filter_params = convert_between_synthesis_and_analysis(v_filter_params)
@@ -332,7 +332,7 @@ def synthesis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_h
         The 'array_name' part of the key is a string giving a name following
         the naming convention shown in the figure above.
     """
-    intermediate_values = {}
+    intermediate_values = OrderedDict()
     
     if dwt_depth_ho > 0:
         output = coeff_arrays[0]["L"]
@@ -378,3 +378,4 @@ def synthesis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_h
         )
     
     return output, intermediate_values
+
