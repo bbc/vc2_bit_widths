@@ -7,6 +7,8 @@ from vc2_bit_widths.linexp import (
     affine_error_with_range,
 )
 
+from fractions import Fraction
+
 from vc2_bit_widths.quantisation import maximum_dequantised_magnitude
 
 from vc2_bit_widths.infinite_arrays import (
@@ -24,7 +26,11 @@ from vc2_bit_widths.vc2_filters import (
 from vc2_bit_widths.signal_bounds import (
     analysis_filter_bounds,
     synthesis_filter_bounds,
-    parse_coeff_symbol_name,
+    round_away_from_zero,
+    signed_integer_range,
+    evaluate_analysis_filter_bounds,
+    evaluate_synthesis_filter_bounds,
+    twos_compliment_bits,
 )
 
 
@@ -130,5 +136,70 @@ def test_integration():
     assert final_output_lower.subs(example_coeff_range) < signal_min.subs(example_range)
 
 
-def test_parse_coeff_symbol_name():
-    assert parse_coeff_symbol_name("coeff_123_HL_min") == (123, "HL", "min")
+def test_round_away_from_zero():
+    assert round_away_from_zero(Fraction(0, 1)) == 0
+    
+    assert round_away_from_zero(Fraction(20, 10)) == 2
+    assert round_away_from_zero(Fraction(21, 10)) == 3
+    
+    assert round_away_from_zero(Fraction(-20, 10)) == -2
+    assert round_away_from_zero(Fraction(-21, 10)) == -3
+
+
+def test_signed_integer_range():
+    assert signed_integer_range(8) == (-128, 127)
+
+
+def test_twos_compliment_bits():
+    assert twos_compliment_bits(126) == 8
+    assert twos_compliment_bits(127) == 8
+    assert twos_compliment_bits(128) == 9
+    
+    assert twos_compliment_bits(-127) == 8
+    assert twos_compliment_bits(-128) == 8
+    assert twos_compliment_bits(-129) == 9
+
+
+def test_evaluate_analysis_filter_bounds():
+    expr = LinExp(("pixel", 0, 0)) + 1000
+    lower_bound_exp, upper_bound_exp = analysis_filter_bounds(expr)
+    
+    lower_bound, upper_bound = evaluate_analysis_filter_bounds(
+        lower_bound_exp,
+        upper_bound_exp,
+        10,
+    )
+    
+    assert isinstance(lower_bound, int)
+    assert isinstance(upper_bound, int)
+    
+    assert lower_bound == 1000 - 512
+    assert upper_bound == 1000 + 511
+
+
+@pytest.mark.parametrize("dc_band_name", ["L", "LL"])
+@pytest.mark.parametrize("coeff_bounds_dc_index", [0, 1])
+def test_evaluate_synthesis_filter_bounds(dc_band_name, coeff_bounds_dc_index):
+    expr = (
+        LinExp((("coeff", 0, dc_band_name), 1, 2)) +
+        LinExp((("coeff", 2, "HH"), 3, 4)) +
+        10000
+    )
+    lower_bound_exp, upper_bound_exp = synthesis_filter_bounds(expr)
+    
+    coeff_bounds = {
+        (coeff_bounds_dc_index, dc_band_name): (-100, 200),
+        (2, "HH"): (-1000, 2000),
+    }
+    
+    lower_bound, upper_bound = evaluate_synthesis_filter_bounds(
+        lower_bound_exp,
+        upper_bound_exp,
+        coeff_bounds,
+    )
+    
+    assert isinstance(lower_bound, int)
+    assert isinstance(upper_bound, int)
+    
+    assert lower_bound == 10000 - 100 - 1000
+    assert upper_bound == 10000 + 200 + 2000

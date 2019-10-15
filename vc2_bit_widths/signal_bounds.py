@@ -1,4 +1,4 @@
-"""
+r"""
 Find Bounds for Filter Output Values
 ====================================
 
@@ -9,15 +9,29 @@ quantisation errors. As a consequence, the computed ranges will over-estimate
 the true range of values possible but are guaranteed to not be an
 under-estimate.
 
-TODO: Describe how quantisation is modelled (i.e. as independent).
+The following functions compute :py:class:`~vc2_bit_widths.linexp.LinExp`\ s
+which give the upper and lower bounds of a particular filter expression in
+terms of input picture signal ranges or transform coefficient ranges.
 
 .. autofunction:: analysis_filter_bounds
 
 .. autofunction:: synthesis_filter_bounds
 
-.. autofunction:: parse_coeff_symbol_name
+The following utility functions may be used to substitute concrete numbers into
+the output of the above to get concrete lower and upper bounds.
+
+.. autofunction:: evaluate_analysis_filter_bounds
+
+.. autofunction:: evaluate_synthesis_filter_bounds
+
+Finally the following utility function may be used to find the number of bits
+required to hold a particular value:
+
+.. autofunction:: twos_compliment_bits
 
 """
+
+import math
 
 from vc2_bit_widths.linexp import (
     LinExp,
@@ -25,6 +39,35 @@ from vc2_bit_widths.linexp import (
     affine_lower_bound,
     affine_upper_bound,
 )
+
+
+def round_away_from_zero(value):
+    """Round a number away from zero."""
+    if value < 0:
+        return math.floor(value)
+    else:
+        return math.ceil(value)
+
+
+def signed_integer_range(num_bits):
+    """
+    Return the lower- and upper-bound values for a signed integer with the
+    specified number of bits.
+    """
+    return (
+        -1 << (num_bits - 1),
+        (1 << (num_bits - 1)) - 1,
+    )
+
+
+def twos_compliment_bits(value):
+    """
+    How many bits does the provided integer require for a two's compliment
+    (signed) integer representation?
+    """
+    if value < 0:
+        value = -value - 1
+    return value.bit_length() + 1
 
 
 def analysis_filter_bounds(expression):
@@ -44,7 +87,8 @@ def analysis_filter_bounds(expression):
     
     Returns
     =======
-    (lower_bound, upper_bound) : :py:class:`~vc2_bit_widths.linexp.LinExp`
+    lower_bound : :py:class:`~vc2_bit_widths.linexp.LinExp`
+    upper_bound : :py:class:`~vc2_bit_widths.linexp.LinExp`
         Lower and upper bounds for the signal level in terms of the symbols
         ``LinExp("signal_min")`` and ``LinExp("signal_max")``, representing the
         minimum and maximum signal picture levels respectively.
@@ -65,6 +109,40 @@ def analysis_filter_bounds(expression):
         for sym, coeff in expression
         if sym is not None and not isinstance(sym, AAError)
     }))
+    
+    return (lower_bound, upper_bound)
+
+
+def evaluate_analysis_filter_bounds(lower_bound_exp, upper_bound_exp, num_bits):
+    """
+    Convert a pair of symbolic analysis filter bounds into concrete, numerical
+    lower/upper bounds for an input picture signal with the specified number of
+    bits.
+    
+    Parameters
+    ==========
+    lower_bound_exp : :py:class:`~vc2_bit_widths.linexp.LinExp`
+    upper_bound_exp : :py:class:`~vc2_bit_widths.linexp.LinExp`
+        Analysis filter bounds expressions from
+        :py:func:`analysis_filter_bounds`.
+    num_bits : int
+        The number of bits in the signal values being analysed.
+    
+    Returns
+    =======
+    lower_bound : int
+    upper_bound : int
+        The concrete (numerical) bounds for the analysis filter given
+        ``num_bits`` input pictures.
+    """
+    signal_min, signal_max = signed_integer_range(num_bits)
+    signal_range = {
+        "signal_min": signal_min,
+        "signal_max": signal_max,
+    }
+    
+    lower_bound = round_away_from_zero(lower_bound_exp.subs(signal_range).constant)
+    upper_bound = round_away_from_zero(upper_bound_exp.subs(signal_range).constant)
     
     return (lower_bound, upper_bound)
 
@@ -92,8 +170,7 @@ def synthesis_filter_bounds(expression):
         the form ``LinExp("signal_LEVEL_ORIENT_min")`` and
         ``LinExp("signal_LEVEL_ORIENT_max")``, representing the minimum and
         maximum signal levels for transform coefficients in level ``LEVEL`` and
-        orientation ``ORIENT`` respectively. See also
-        :py:func:`parse_coeff_symbol_name`.
+        orientation ``ORIENT`` respectively.
     """
     # Replace all transform coefficients with affine error terms scaled to
     # appropriate ranges
@@ -120,21 +197,46 @@ def synthesis_filter_bounds(expression):
     return (lower_bound, upper_bound)
 
 
-def parse_coeff_symbol_name(symbol_name):
+def evaluate_synthesis_filter_bounds(lower_bound_exp, upper_bound_exp, coeff_bounds):
     """
-    Extract the fields from a symbol name produced by
-    :py:func:`synthesis_filter_bounds`.
+    Convert a pair of symbolic synthesis filter bounds into concrete, numerical
+    lower/upper bounds given the bounds of the input transform coefficients.
     
     Parameters
     ==========
-    symbol_name : str
-        A symbol name from :py:class:`synthesis_filter_bounds`.
+    lower_bound_exp : :py:class:`~vc2_bit_widths.linexp.LinExp`
+    upper_bound_exp : :py:class:`~vc2_bit_widths.linexp.LinExp`
+        Synthesis filter bounds expressions from
+        :py:func:`synthesis_filter_bounds`.
+    coeff_bounds : {(level, orient): (lower_bound, upper_bound), ...}
+        For each transform coefficient, the concrete lower and upper bounds
+        (e.g. as computed using :py:func:`evaluate_analysis_filter_bounds` and
+        :py:func:`vc2_bit_widths.quantisation.maximum_dequantised_magnitude`
+        for each transform subband).
+        
+        As a convenience, the DC band may be provided as either (0, "L")/(0,
+        "LL"), as is convention in the main VC-2 specification, or (1, "L")/(1,
+        "LL"), as is convention in the bit width guide tables.
     
     Returns
     =======
-    (level, orient, minmax)
-        The level (int), orientation (str) and "min" or "max" extracted from
-        the symbol.
+    lower_bound : int
+    upper_bound : int
+        The concrete (numerical) bounds for the synthesis filter.
     """
-    _, level, orient, minmax = symbol_name.split("_")
-    return (int(level), orient, minmax)
+    coeff_bounds = coeff_bounds.copy()
+    if (1, "L") in coeff_bounds:
+        coeff_bounds[(0, "L")] = coeff_bounds.pop((1, "L"))
+    if (1, "LL") in coeff_bounds:
+        coeff_bounds[(0, "LL")] = coeff_bounds.pop((1, "LL"))
+    
+    signal_range = {
+        "coeff_{}_{}_{}".format(level, orient, minmax): value
+        for (level, orient), bounds in coeff_bounds.items()
+        for minmax, value in zip(["min", "max"], bounds)
+    }
+    
+    lower_bound = round_away_from_zero(lower_bound_exp.subs(signal_range).constant)
+    upper_bound = round_away_from_zero(upper_bound_exp.subs(signal_range).constant)
+    
+    return (lower_bound, upper_bound)
