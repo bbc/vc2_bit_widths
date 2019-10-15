@@ -358,19 +358,27 @@ class PyExp(object):
         # to generate the final output.
         statements = []
         
-        to_visit = [self]
-        while to_visit:
-            exp = to_visit.pop(-1)
-            if exp not in visited:
-                visited.add(exp)
-                
-                # Add definitions for all dependencies first
-                for dep in exp.get_dependencies():
-                    to_visit.append(dep)
-                
-                statements.insert(0, exp.get_definitions())
-        
-        statements.append("return {}".format(self.get_expression()))
+        # A stack of (action, argument) pairs which will be used to iterate
+        # over this expression and dependencies in execution order.
+        #
+        # Two types of action are defined:
+        # * "emit": Add a value to be added to the statements list
+        # * "visit": Visit a particular expression emitting any dependencies'
+        #   definitions and the expression's definition.
+        stack = [
+            ("emit", "return {}".format(self.get_expression())),
+            ("visit", self),
+        ]
+        while stack:
+            action, argument = stack.pop(-1)
+            if action == "visit":
+                if argument not in visited:
+                    visited.add(argument)
+                    stack.append(("emit", argument.get_definitions()))
+                    for dep in argument.get_dependencies():
+                        stack.append(("visit", dep))
+            elif action == "emit":
+                statements.append(argument)
         
         return (
             "def {}({}):\n"
