@@ -29,6 +29,8 @@ required to hold a particular value:
 
 .. autofunction:: twos_compliment_bits
 
+.. autofunction:: signed_integer_range
+
 """
 
 import math
