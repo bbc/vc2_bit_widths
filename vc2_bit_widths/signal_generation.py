@@ -601,7 +601,7 @@ def improve_synthesis_maximising_signal(
     ], dtype=int)
     
     # Prepare the encoder/quantiser/decoder
-    quantisation_indices = list(range(max_quantisation_index))
+    quantisation_indices = list(range(max_quantisation_index + 1))
     codec = FastPartialAnalyseQuantiseSynthesise(
         h_filter_params,
         v_filter_params,
