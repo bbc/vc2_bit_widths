@@ -106,6 +106,7 @@ def test_symbol_array():
     a = SymbolArray(3, "foo")
     
     assert a.period == (1, 1, 1)
+    assert a.nop is True
     assert a.relative_step_size_to(a) == (1, 1, 1)
     assert a.relative_step_size_to(SymbolArray(2, "bar")) is None
     
@@ -118,6 +119,7 @@ def test_variable_array():
     a = VariableArray(3, Argument("arg"))
     
     assert a.period == (1, 1, 1)
+    assert a.nop is True
     assert a.relative_step_size_to(a) == (1, 1, 1)
     assert a.relative_step_size_to(VariableArray(2, Argument("arg"))) is None
     
@@ -146,6 +148,10 @@ class RepeatingSymbolArray(SymbolArray):
     @property
     def period(self):
         return self._period
+    
+    @property
+    def nop(self):
+        return True
 
 
 def test_repeating_symbol_array():
@@ -153,6 +159,7 @@ def test_repeating_symbol_array():
     
     assert a.ndim == 2
     assert a.period == (3, 2)
+    assert a.nop is True
     
     assert len(set(
         a[x, y]
@@ -224,6 +231,11 @@ class TestLiftedArray(object):
         a = SymbolArray(2, "a")
         with pytest.raises(TypeError):
             LiftedArray(a, stage, 2)
+    
+    def test_nop(self, stage):
+        a = SymbolArray(2, "a")
+        l = LiftedArray(a, stage, 0)
+        assert l.nop is False
     
     def test_correctness(self, stage):
         # This test checks that the filter implemented is equivalent to what
@@ -301,6 +313,11 @@ class TestSubsampledArray(object):
         with pytest.raises(TypeError):
             SubsampledArray(a, steps, offsets)
     
+    def test_nop(self):
+        a = SymbolArray(3, "v")
+        s = SubsampledArray(a, (1, 2, 3), (0, 10, 20))
+        assert s.nop is True
+    
     def test_subsampling(self):
         a = SymbolArray(3, "v")
         s = SubsampledArray(a, (1, 2, 3), (0, 10, 20))
@@ -348,6 +365,12 @@ class TestInterleavedArray(object):
         
         with pytest.raises(TypeError):
             InterleavedArray(a, b, 0)
+    
+    def test_nop(self):
+        a = SymbolArray(2, "a")
+        b = SymbolArray(2, "b")
+        i = InterleavedArray(a, b, 1)
+        assert i.nop is True
     
     def test_interleave_dimension_out_of_range(self):
         a = SymbolArray(2, "a")
@@ -460,6 +483,11 @@ class TestRightShiftedArray(object):
         assert sa.period == (1, 2, 3)
         assert period_empirically_correct(sa)
     
+    def test_nop(self):
+        s = SymbolArray(1)
+        assert RightShiftedArray(s, 3).nop is False
+        assert RightShiftedArray(s, 0).nop is True
+    
     def test_relative_step_size_to(self):
         a = SymbolArray(2)
         s = SubsampledArray(a, (2, 3), (0, 0))
@@ -485,6 +513,11 @@ class TestLeftShiftedArray(object):
         sa = LeftShiftedArray(a, 3)
         assert sa.period == (1, 2, 3)
         assert period_empirically_correct(sa)
+    
+    def test_nop(self):
+        s = SymbolArray(1)
+        assert LeftShiftedArray(s, 3).nop is False
+        assert LeftShiftedArray(s, 0).nop is True
     
     def test_relative_step_size_to(self):
         a = SymbolArray(2)

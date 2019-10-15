@@ -269,6 +269,15 @@ class InfiniteArray(object):
         """
         raise NotImplementedError()
     
+    @property
+    def nop(self):
+        """
+        True if this :py:class:`InfiniteArray` is a no-operation (nop), i.e. it
+        just views values in other arrays. False if some computation is
+        performed.
+        """
+        raise NotImplementedError()
+    
     def relative_step_size_to(self, other):
         r"""
         For a step along a dimension in this array, compute the equivalent step
@@ -329,6 +338,10 @@ class SymbolArray(InfiniteArray):
     def period(self):
         return (1, ) * self.ndim
     
+    @property
+    def nop(self):
+        return True
+    
     def relative_step_size_to(self, other):
         if other is self:
             return (Fraction(1), ) * self.ndim
@@ -374,6 +387,10 @@ class VariableArray(InfiniteArray):
     @property
     def period(self):
         return (1, ) * self.ndim
+    
+    @property
+    def nop(self):
+        return True
     
     def relative_step_size_to(self, other):
         if other is self:
@@ -534,6 +551,10 @@ class LiftedArray(InfiniteArray):
             for dim, p in enumerate(self._input_array.period)
         )
     
+    @property
+    def nop(self):
+        return False
+    
     def relative_step_size_to(self, other):
         if other is self:
             return (Fraction(1), ) * self.ndim
@@ -579,6 +600,10 @@ class RightShiftedArray(InfiniteArray):
     def period(self):
         return self._input_array.period
     
+    @property
+    def nop(self):
+        return self._shift_bits == 0
+    
     def relative_step_size_to(self, other):
         if other is self:
             return (Fraction(1), ) * self.ndim
@@ -611,6 +636,10 @@ class LeftShiftedArray(InfiniteArray):
     @property
     def period(self):
         return self._input_array.period
+    
+    @property
+    def nop(self):
+        return self._shift_bits == 0
     
     def relative_step_size_to(self, other):
         if other is self:
@@ -693,6 +722,10 @@ class SubsampledArray(InfiniteArray):
             lcm(p, step)//step
             for p, step in zip(self._input_array.period, self._steps)
         )
+    
+    @property
+    def nop(self):
+        return True
     
     def relative_step_size_to(self, other):
         if other is self:
@@ -812,6 +845,10 @@ class InterleavedArray(InfiniteArray):
                 self._array_odd.period,
             ))
         )
+    
+    @property
+    def nop(self):
+        return True
     
     def relative_step_size_to(self, other):
         if other is self:
