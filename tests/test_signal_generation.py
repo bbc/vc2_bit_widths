@@ -663,21 +663,22 @@ def test_greedy_stochastic_search():
     }
     
     # Get the baseline after no searches performed
-    base_input_picture, base_decoded_value, base_qi, total_iterations = greedy_stochastic_search(
+    base_input_picture, base_decoded_value, base_qi, decoded_values = greedy_stochastic_search(
         base_iterations=0,
         **kwargs
     )
-    assert total_iterations == 0
+    assert decoded_values == []
     
     # Check that when run for some time we get an improved result
-    new_input_picture, new_decoded_value, new_qi, total_iterations = greedy_stochastic_search(
+    new_input_picture, new_decoded_value, new_qi, decoded_values = greedy_stochastic_search(
         base_iterations=100,
         **kwargs
     )
     assert not np.array_equal(new_input_picture, base_input_picture)
     assert abs(new_decoded_value) > abs(base_decoded_value)
     assert new_qi in quantisation_indices
-    assert total_iterations > 100
+    assert len(decoded_values) > 100
+    assert decoded_values[-1] == new_decoded_value
     
     # Check haven't mutated the supplied starting picture argument
     assert np.array_equal(kwargs["starting_picture"], input_picture)

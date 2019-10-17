@@ -429,8 +429,10 @@ def greedy_stochastic_search(
         index.
     quantisation_index : int
         The quantisation index which yielded the largest decoded value.
-    total_iterations : int
-        The number of search iterations used.
+    decoded_values : [int, ...]
+        The largest decoded value found during each search iteration.
+        Indirectly indicates the number of search iterations performed. May be
+        used as an aid to tuning search parameters.
     """
     # Use the input with no corruption as the baseline for the search
     best_picture = starting_picture.copy()
@@ -444,10 +446,9 @@ def greedy_stochastic_search(
     # this corrupts the array passed in)
     working_array = np.empty_like(cur_picture)
     
-    total_iterations = 0
+    decoded_values = []
     iterations_remaining = base_iterations
     while iterations_remaining > 0:
-        total_iterations += 1
         iterations_remaining -= 1
         
         cur_picture[:] = best_picture
@@ -482,6 +483,8 @@ def greedy_stochastic_search(
             codec,
         )
         
+        decoded_values.append(cur_decoded_value)
+        
         # Keep the input vector iff it is an improvement on the previous best
         if abs(cur_decoded_value) > abs(best_decoded_value):
             best_picture[:] = cur_picture
@@ -490,7 +493,7 @@ def greedy_stochastic_search(
             
             iterations_remaining += added_iterations_per_improvement
     
-    return best_picture, best_decoded_value, best_qi, total_iterations
+    return best_picture, best_decoded_value, best_qi, decoded_values
 
 
 def improve_synthesis_maximising_signal(
@@ -645,7 +648,7 @@ def improve_synthesis_maximising_signal(
     improvement_found = False
     assert number_of_searches >= 1
     for search_no in range(number_of_searches):
-        new_picture, new_decoded_value, new_qi, new_iterations = greedy_stochastic_search(
+        new_picture, new_decoded_value, new_qi, decoded_values = greedy_stochastic_search(
             test_picture,
             search_slice,
             input_min,
@@ -658,7 +661,7 @@ def improve_synthesis_maximising_signal(
             added_iterations_per_improvement,
         )
         
-        total_iterations += new_iterations
+        total_iterations += len(decoded_values)
         
         logger.info(
             "Search %d of %d found value = %d (qi=%d) after %d iterations.",
@@ -666,7 +669,7 @@ def improve_synthesis_maximising_signal(
             number_of_searches,
             new_decoded_value,
             new_qi,
-            new_iterations,
+            len(decoded_values),
         )
         
         if (
