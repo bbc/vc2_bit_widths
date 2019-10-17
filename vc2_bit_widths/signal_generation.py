@@ -496,6 +496,63 @@ def greedy_stochastic_search(
     return best_picture, best_decoded_value, best_qi, decoded_values
 
 
+def convert_test_signal_to_picture_and_slice(
+    test_signal,
+    input_min,
+    input_max,
+    dwt_depth,
+    dwt_depth_ho,
+):
+    """
+    Convert a description of a test signal (in terms of polarities) into a test
+    picture in a :py:class:`numpy.array`, padded ready for processing with a
+    filter with the specified transform depths.
+    
+    Parameters
+    ==========
+    test_signal : {(x, y): polarity, ...}
+    input_min : int
+    input_max : int
+        The full signal range to expand the test signal to.
+    dwt_depth : int
+    dwt_depth_ho : int
+        The transform depth used by the filters.
+    
+    Returns
+    =======
+    test_picture : :py:class:`numpy.array`
+    search_slice : (:py:class:`slice`, :py:class:`slice`)
+        A 2D slice out of ``test_picture`` which contains the active pixels in
+        ``test_signal`` (i.e. excluding any padding).
+    """
+    xs, ys = zip(*test_signal)
+    x0 = min(xs)
+    y0 = min(ys)
+    x1 = max(xs)
+    y1 = max(ys)
+    search_slice = (slice(y0, y1+1), slice(x0, x1+1))
+    
+    # Round picture width/height up to be compatible with the lifting filter
+    x_multiple = 2**(dwt_depth + dwt_depth_ho)
+    y_multiple = 2**(dwt_depth)
+    width = (((x1 + 1) + x_multiple - 1) // x_multiple) * x_multiple
+    height = (((y1 + 1) + y_multiple - 1) // y_multiple) * y_multiple
+    
+    test_picture = np.array([
+        [
+            0
+            if test_signal.get((x, y), 0) == 0 else
+            input_min
+            if test_signal.get((x, y), 0) < 0 else
+            input_max
+            for x in range(width)
+        ]
+        for y in range(height)
+    ], dtype=int)
+    
+    return test_picture, search_slice
+
+
 def improve_synthesis_maximising_signal(
     h_filter_params,
     v_filter_params,
@@ -585,32 +642,13 @@ def improve_synthesis_maximising_signal(
     total_iterations : int
         The total number of search iterations used.
     """
-    # Convert test signal into picture array with true signal levels
-    xs, ys = zip(*test_signal)
-    x0 = min(xs)
-    y0 = min(ys)
-    x1 = max(xs)
-    y1 = max(ys)
-    search_slice = (slice(y0, y1+1), slice(x0, x1+1))
-    
-    # Round picture width/height up to be compatible with the current lifting
-    # filter
-    x_multiple = 2**(dwt_depth + dwt_depth_ho)
-    y_multiple = 2**(dwt_depth)
-    width = (((x1 + 1) + x_multiple - 1) // x_multiple) * x_multiple
-    height = (((y1 + 1) + y_multiple - 1) // y_multiple) * y_multiple
-    
-    test_picture = np.array([
-        [
-            0
-            if test_signal.get((x, y), 0) == 0 else
-            input_min
-            if test_signal.get((x, y), 0) < 0 else
-            input_max
-            for x in range(width)
-        ]
-        for y in range(height)
-    ], dtype=int)
+    test_picture, search_slice = convert_test_signal_to_picture_and_slice(
+        test_signal,
+        input_min,
+        input_max,
+        dwt_depth,
+        dwt_depth_ho,
+    )
     
     # Prepare the encoder/quantiser/decoder
     quantisation_indices = list(range(max_quantisation_index + 1))

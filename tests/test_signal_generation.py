@@ -39,6 +39,7 @@ from vc2_bit_widths.signal_generation import (
     make_synthesis_maximising_signal,
     choose_random_indices_of,
     greedy_stochastic_search,
+    convert_test_signal_to_picture_and_slice,
     improve_synthesis_maximising_signal,
 )
 
@@ -692,6 +693,62 @@ def test_greedy_stochastic_search():
     
     # Check that all values are in range
     assert np.all((new_input_picture >= input_min) & (new_input_picture <= input_max))
+
+
+class TestConvertTestSignalToPictureAndSlice(object):
+    
+    def test_conversion_to_array(self):
+        test_picture, search_slice = convert_test_signal_to_picture_and_slice(
+            # NB: Coordinates are (x, y) here
+            test_signal={
+                (2, 3): +1,
+                (4, 5): -1,
+            },
+            input_min=-512,
+            input_max=511,
+            dwt_depth=3,
+            dwt_depth_ho=0,
+        )
+        
+        assert np.array_equal(test_picture, np.array([
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 511, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, -512, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+        ]))
+        
+        # NB: Coordinates are (y, x) here!
+        assert search_slice == (slice(3, 6), slice(2, 5))
+    
+    @pytest.mark.parametrize("dwt_depth,dwt_depth_ho,exp_shape", [
+        (0, 0, (7, 7)),
+        (1, 0, (8, 8)),
+        (0, 1, (7, 8)),
+        (2, 0, (8, 8)),
+        (0, 2, (7, 8)),
+        (3, 0, (8, 8)),
+        (0, 3, (7, 8)),
+        (4, 0, (16, 16)),
+        (0, 4, (7, 16)),
+        (1, 3, (8, 16)),
+    ])
+    def test_rounding_up_sizes(self, dwt_depth, dwt_depth_ho, exp_shape):
+        test_picture, search_slice = convert_test_signal_to_picture_and_slice(
+            # NB: Coordinates are (x, y) here
+            test_signal={
+                (6, 6): +1,
+            },
+            input_min=-512,
+            input_max=511,
+            dwt_depth=dwt_depth,
+            dwt_depth_ho=dwt_depth_ho,
+        )
+        
+        assert test_picture.shape == exp_shape
 
 
 class TestImproveSynthesisMaximisingSignal(object):
