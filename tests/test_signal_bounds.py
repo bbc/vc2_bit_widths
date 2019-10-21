@@ -9,7 +9,10 @@ from vc2_bit_widths.linexp import (
 
 from fractions import Fraction
 
-from vc2_bit_widths.quantisation import maximum_dequantised_magnitude
+from vc2_bit_widths.quantisation import (
+    maximum_dequantised_magnitude,
+    forward_quant,
+)
 
 from vc2_bit_widths.infinite_arrays import (
     SymbolArray,
@@ -24,13 +27,14 @@ from vc2_bit_widths.vc2_filters import (
 )
 
 from vc2_bit_widths.signal_bounds import (
-    analysis_filter_bounds,
-    synthesis_filter_bounds,
     round_away_from_zero,
     signed_integer_range,
-    evaluate_analysis_filter_bounds,
-    evaluate_synthesis_filter_bounds,
     twos_compliment_bits,
+    analysis_filter_bounds,
+    evaluate_analysis_filter_bounds,
+    quantisation_index_upper_bound,
+    synthesis_filter_bounds,
+    evaluate_synthesis_filter_bounds,
 )
 
 
@@ -177,9 +181,27 @@ def test_evaluate_analysis_filter_bounds():
     assert upper_bound == 1000 + 511
 
 
+def test_quantisation_index_upper_bound():
+    # Largest value = 1023 in (1, "H") -> value_max_qi = 40
+    coeff_bounds = {
+        (0, "L"): (-511, 255),
+        (1, "H"): (-256, 1023),
+    }
+    # Matrix value for (1, "H") -> 100
+    quantisation_matrix = {
+        0: {"L": 10},
+        1: {"H": 100},
+    }
+    
+    assert quantisation_index_upper_bound(coeff_bounds, quantisation_matrix) == 140
+    
+    # Sanity check
+    assert forward_quant(1023, 140 - 100) == 0
+    assert forward_quant(1023, 140 - 100 - 1) != 0
+
+
 @pytest.mark.parametrize("dc_band_name", ["L", "LL"])
-@pytest.mark.parametrize("coeff_bounds_dc_index", [0, 1])
-def test_evaluate_synthesis_filter_bounds(dc_band_name, coeff_bounds_dc_index):
+def test_evaluate_synthesis_filter_bounds(dc_band_name):
     expr = (
         LinExp((("coeff", 0, dc_band_name), 1, 2)) +
         LinExp((("coeff", 2, "HH"), 3, 4)) +
@@ -188,7 +210,7 @@ def test_evaluate_synthesis_filter_bounds(dc_band_name, coeff_bounds_dc_index):
     lower_bound_exp, upper_bound_exp = synthesis_filter_bounds(expr)
     
     coeff_bounds = {
-        (coeff_bounds_dc_index, dc_band_name): (-100, 200),
+        (0, dc_band_name): (-100, 200),
         (2, "HH"): (-1000, 2000),
     }
     

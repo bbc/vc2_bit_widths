@@ -42,6 +42,8 @@ from vc2_bit_widths.linexp import (
     affine_upper_bound,
 )
 
+from vc2_bit_widths.quantisation import maximum_useful_quantisation_index
+
 
 def round_away_from_zero(value):
     """Round a number away from zero."""
@@ -149,6 +151,43 @@ def evaluate_analysis_filter_bounds(lower_bound_exp, upper_bound_exp, num_bits):
     return (lower_bound, upper_bound)
 
 
+def quantisation_index_upper_bound(coeff_bounds, quantisation_matrix):
+    """
+    Find the largest quantisation index which could usefully be used by an
+    encoder for the transform coefficient bounds supplied.
+    
+    Parameters
+    ==========
+    coeff_bounds : {(level, orient): (lower_bound, upper_bound), ...}
+        For each transform coefficient, the concrete lower and upper bounds
+        (e.g. as computed using :py:func:`evaluate_analysis_filter_bounds` and
+        :py:func:`vc2_bit_widths.quantisation.maximum_dequantised_magnitude`
+        for each transform subband).
+    quantisation_matrix : {level: {orient: value, ...}, ...}
+        The quantisation matrix in use.
+    
+    Returns
+    =======
+    quantisation_index : int
+        The upper bound for the quantisation indices sensibly used by an
+        encoder. This value will be the smallest quantisation index which will
+        quantise any/all transform coefficients to zero.
+    """
+    max_qi = 0
+    for level, orients in quantisation_matrix.items():
+        for orient, matrix_value in orients.items():
+            lower_bound, upper_bound = coeff_bounds[(level, orient)]
+            value_max_qi = max(
+                maximum_useful_quantisation_index(lower_bound),
+                maximum_useful_quantisation_index(upper_bound),
+            )
+            value_max_qi += matrix_value
+            
+            max_qi = max(max_qi, value_max_qi)
+
+    return max_qi
+
+
 def synthesis_filter_bounds(expression):
     """
     Find the lower- and upper bound reachable in a
@@ -215,10 +254,6 @@ def evaluate_synthesis_filter_bounds(lower_bound_exp, upper_bound_exp, coeff_bou
         (e.g. as computed using :py:func:`evaluate_analysis_filter_bounds` and
         :py:func:`vc2_bit_widths.quantisation.maximum_dequantised_magnitude`
         for each transform subband).
-        
-        As a convenience, the DC band may be provided as either (0, "L")/(0,
-        "LL"), as is convention in the main VC-2 specification, or (1, "L")/(1,
-        "LL"), as is convention in the bit width guide tables.
     
     Returns
     =======
@@ -226,12 +261,6 @@ def evaluate_synthesis_filter_bounds(lower_bound_exp, upper_bound_exp, coeff_bou
     upper_bound : int
         The concrete (numerical) bounds for the synthesis filter.
     """
-    coeff_bounds = coeff_bounds.copy()
-    if (1, "L") in coeff_bounds:
-        coeff_bounds[(0, "L")] = coeff_bounds.pop((1, "L"))
-    if (1, "LL") in coeff_bounds:
-        coeff_bounds[(0, "LL")] = coeff_bounds.pop((1, "LL"))
-    
     signal_range = {
         "coeff_{}_{}_{}".format(level, orient, minmax): value
         for (level, orient), bounds in coeff_bounds.items()
@@ -242,3 +271,4 @@ def evaluate_synthesis_filter_bounds(lower_bound_exp, upper_bound_exp, coeff_bou
     upper_bound = round_away_from_zero(upper_bound_exp.subs(signal_range).constant)
     
     return (lower_bound, upper_bound)
+
