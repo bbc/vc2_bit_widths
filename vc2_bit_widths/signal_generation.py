@@ -19,6 +19,8 @@ import logging
 
 from functools import reduce
 
+from collections import namedtuple
+
 from fractions import Fraction
 
 import numpy as np
@@ -34,6 +36,49 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
 
 
 logger = logging.getLogger(__name__)
+
+
+TestSignalSpecification = namedtuple(
+    "TestSignalSpecification",
+    "target,picture,picture_translation_multiple,target_translation_multiple",
+)
+"""
+A definition of a test signal for a VC-2 filter. This test signal is intended
+to maximise the value of a particular intermediate or output value of a VC-2
+filter.
+
+Test signals for both for analysis and synthesis filters are defined in terms
+of a picture. For analysis filters, the picture should be fed to an encoder and
+the resulting transform coefficients analysed. For synthesis filters, the
+picture should be fed to an encoder where it may be quantised before being fed
+to a decoder.
+
+The pictures defined for a test signal tend to be quite small and may be
+relocated within a larger picture if required. Translations are only permitted
+by multiples of ``picture_translation_multiple`` and have the effect of moving
+the coordinate of the maximised target value by an equivalent multiple of
+``target_translation_multiple``.
+
+Parameters
+==========
+target : (tx, ty)
+    The target coordinate which is maximised by this test signal.
+picture : {(x, y): polarity, ...}
+    The input picture to be fed into a VC-2 encoder. Only those pixels defined
+    in this dictionary need be set -- all other pixels may be set to arbitrary
+    values and have no effect.
+    
+    The 'polarity' value will be either +1 or -1. When +1, the corresponding
+    pixel should be set to its maximum signal value. When -1, the pixel should
+    be set to its minimum value.
+    
+    To produce a test signal which minimises, rather than maximises the target
+    value, the meaning of the polarity should be inverted.
+picture_translation_multiple : (mx, my)
+target_translation_multiple : (tmx, tmy)
+    The multiples by which picture pixel coordinates and target array
+    coordinates may be translated when relocating the test signal.
+"""
 
 
 def get_maximising_inputs(expression):
@@ -91,34 +136,7 @@ def make_analysis_maximising_signal(input_array, target_array, tx, ty):
     
     Returns
     =======
-    test_signal : {(x, y): +1 or -1, ...}
-        The input pixel coordinates and polarities which define the test
-        pattern.
-        
-        Pixels which should be set to their maximum value are specified as +1,
-        pixels to be set to their minimum value are specified as -1. All other
-        pixels may be set arbitrarily.
-        
-        All pixel coordinates will be non-negative.
-        
-        For a test pattern which *minimises* the target value, invert this test
-        pattern.
-    
-    tx, ty : int
-        The coordinates of the value in the target_array which will be
-        maximised by the returned test signal and may differ from the supplied
-        tx and ty coordinates. The returned coordinates will be the
-        top-left-most coordinates which do not require a pixel at a negative
-        coordinate in the test signal.
-    
-    mx, my : int
-        ('Multiple-X'/'Multiple-Y') The multiple by which the test signal may
-        be translated while still eliciting an equivalent filter response.
-    
-    tmx, tmy : int
-        ('Target-Multiple-X'/'Target-Multiple-Y') For a translation of the test
-        signal by mx and my, the target value's coordinates will be translated
-        by this amount.
+    test_signal : :py:class:`TestSignalSpecification`
     """
     test_signal = {
         (x, y): polarity
@@ -150,7 +168,12 @@ def make_analysis_maximising_signal(input_array, target_array, tx, ty):
     tx -= translate_steps_x * tmx
     ty -= translate_steps_y * tmy
     
-    return test_signal, tx, ty, mx, my, tmx, tmy
+    return TestSignalSpecification(
+        target=(tx, ty),
+        picture=test_signal,
+        picture_translation_multiple=(mx, my),
+        target_translation_multiple=(tmx, tmy),
+    )
 
 
 def make_synthesis_maximising_signal(
@@ -193,37 +216,7 @@ def make_synthesis_maximising_signal(
     
     Returns
     =======
-    test_signal : {(x, y): +1 or -1, ...}
-        The input pixel coordinates and polarities which define the test
-        pattern. This pattern should be encoded by a VC-2 encoder and the
-        encoded signal presented to the decoder under test. The pattern is
-        likely to produce more extreme values in the target decoder value when
-        the encoder is configured to use very low bit-rates.
-        
-        Pixels which should be set to their maximum value are specified as +1,
-        pixels to be set to their minimum value are specified as -1. All other
-        pixels may be set arbitrarily.
-        
-        All pixel coordinates will be non-negative.
-        
-        For a test pattern which *minimises* the target value, invert this test
-        pattern.
-    
-    tx, ty : int
-        The coordinates of the value in the target_array which will be
-        maximised by the returned test signal and may differ from the supplied
-        tx and ty coordinates. The returned coordinates will be the
-        top-left-most coordinates which do not require a pixel at a negative
-        coordinate in the test signal.
-    
-    mx, my : int
-        ('Multiple-X'/'Multiple-Y') The multiple by which the test signal may
-        be translated while still eliciting an equivalent filter response.
-    
-    tmx, tmy : int
-        ('Target-Multiple-X'/'Target-Multiple-Y') For a translation of the test
-        signal by mx and my, the target value's coordinates will be translated
-        by this amount.
+    test_signal : :py:class:`TestSignalSpecification`
     """
     # Enumerate the transform coefficients which maximise the target value
     # {(level, orient, x, y): coeff, ...}
@@ -304,7 +297,12 @@ def make_synthesis_maximising_signal(
     tx -= translate_steps_x * tmx
     ty -= translate_steps_y * tmy
     
-    return test_signal, tx, ty, mx, my, tmx, tmy
+    return TestSignalSpecification(
+        target=(tx, ty),
+        picture=test_signal,
+        picture_translation_multiple=(mx, my),
+        target_translation_multiple=(tmx, tmy),
+    )
 
 
 def find_quantisation_index_with_greatest_output_magnitude(

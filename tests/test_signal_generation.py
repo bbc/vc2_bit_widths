@@ -185,34 +185,41 @@ class TestMakeAnalysisMaximisingSignal(object):
         for (level, name), target_array in intermediate_arrays.items():
             for tx in range(target_array.period[0]):
                 for ty in range(target_array.period[1]):
-                    test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_analysis_maximising_signal(
+                    ts = make_analysis_maximising_signal(
                         input_array,
                         target_array,
                         tx, ty,
                     )
                     
+                    new_tx, new_ty = ts.target
                     assert new_tx >= 0
                     assert new_ty >= 0
                     
                     # Ensure that, as promised, the returned test patterns
                     # don't use any negative pixel coordinates
-                    assert all(x >= 0 and y >= 0 for (x, y) in test_signal)
+                    assert all(x >= 0 and y >= 0 for (x, y) in ts.picture)
                     
                     # Also ensure that the returned test pattern is as close to
                     # the edge of the picture as possible (that is, moving one
                     # multiple left or up moves us off the edge of the picture)
-                    assert any(x < mx for (x, y) in test_signal)
-                    assert any(y < my for (x, y) in test_signal)
+                    mx, my = ts.picture_translation_multiple
+                    assert any(x < mx for (x, y) in ts.picture)
+                    assert any(y < my for (x, y) in ts.picture)
     
     def test_translation_is_valid(self, input_array, intermediate_arrays):
         for (level, name), target_array in intermediate_arrays.items():
             for tx in range(target_array.period[0]):
                 for ty in range(target_array.period[1]):
-                    test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_analysis_maximising_signal(
+                    ts = make_analysis_maximising_signal(
                         input_array,
                         target_array,
                         tx, ty,
                     )
+                    
+                    new_tx, new_ty = ts.target
+                    mx, my = ts.picture_translation_multiple
+                    tmx, tmy = ts.target_translation_multiple
+                    
                     # Check that the translated values really are processed by
                     # an equivalent filter to the offset passed in
                     dx = (new_tx - tx) * mx // tmx
@@ -251,7 +258,7 @@ class TestMakeAnalysisMaximisingSignal(object):
                 for tx in range(target_array.period[0]):
                     for ty in range(target_array.period[1]):
                         # Produce a test pattern
-                        test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_analysis_maximising_signal(
+                        ts = make_analysis_maximising_signal(
                             input_array,
                             target_array,
                             tx, ty,
@@ -259,6 +266,7 @@ class TestMakeAnalysisMaximisingSignal(object):
                         
                         # Find the expected bounds for values in the targeted
                         # transform coefficient
+                        new_tx, new_ty = ts.target
                         target_filter = target_array[new_tx, new_ty]
                         lower_bound, upper_bound = analysis_filter_bounds(target_filter)
                         lower_bound = lower_bound.subs(signal_range).constant
@@ -266,15 +274,15 @@ class TestMakeAnalysisMaximisingSignal(object):
                         
                         # Create a test picture and encode it with the VC-2
                         # pseudocode
-                        xs, ys = zip(*test_signal)
+                        xs, ys = zip(*ts.picture)
                         width = max(xs) + 1
                         height = max(ys) + 1
                         test_signal_picture = [
                             [
                                 0
-                                if (x, y) not in test_signal else
+                                if (x, y) not in ts.picture else
                                 value_max
-                                if test_signal[(x, y)] > 0 else
+                                if ts.picture[(x, y)] > 0 else
                                 value_min
                                 for x in range(width)
                             ]
@@ -363,27 +371,30 @@ class TestMakeSynthesisMaximisingSignal(object):
         for (level, name), synthesis_target_array in synthesis_intermediate_arrays.items():
             for tx in range(synthesis_target_array.period[0]):
                 for ty in range(synthesis_target_array.period[1]):
-                    test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_synthesis_maximising_signal(
+                    ts = make_synthesis_maximising_signal(
                         analysis_input_array,
                         analysis_transform_coeff_arrays,
                         synthesis_target_array,
                         synthesis_output_array,
                         tx, ty,
                     )
+                    new_tx, new_ty = ts.target
                     assert new_tx >= 0
                     assert new_ty >= 0
                     
                     # Ensure that, as promised, the returned test patterns
                     # don't use any negative pixel coordinates
-                    assert all(x >= 0 and y >= 0 for (x, y) in test_signal)
+                    assert all(x >= 0 and y >= 0 for (x, y) in ts.picture)
                     
                     # Also ensure that the returned test pattern is as close to
                     # the edge of the picture as possible (that is, moving one
                     # multiple left or up moves us off the edge of the picture)
                     # or if not, that the target value is as close as possible
                     # to the edge in that dimension.
-                    assert any(x < mx or new_tx < tmx for (x, y) in test_signal)
-                    assert any(y < my or new_ty < tmy for (x, y) in test_signal)
+                    mx, my = ts.picture_translation_multiple
+                    tmx, tmy = ts.target_translation_multiple
+                    assert any(x < mx or new_tx < tmx for (x, y) in ts.picture)
+                    assert any(y < my or new_ty < tmy for (x, y) in ts.picture)
     
     def test_translation_is_valid(
         self, analysis_input_array, analysis_transform_coeff_arrays,
@@ -392,13 +403,16 @@ class TestMakeSynthesisMaximisingSignal(object):
         for (level, name), synthesis_target_array in synthesis_intermediate_arrays.items():
             for tx in range(synthesis_target_array.period[0]):
                 for ty in range(synthesis_target_array.period[1]):
-                    test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_synthesis_maximising_signal(
+                    ts = make_synthesis_maximising_signal(
                         analysis_input_array,
                         analysis_transform_coeff_arrays,
                         synthesis_target_array,
                         synthesis_output_array,
                         tx, ty,
                     )
+                    new_tx, new_ty = ts.target
+                    mx, my = ts.picture_translation_multiple
+                    tmx, tmy = ts.target_translation_multiple
                     
                     def full_filter(synthesis_expression):
                         """
@@ -452,7 +466,7 @@ class TestMakeSynthesisMaximisingSignal(object):
         for tx in range(synthesis_output_array.period[0]):
             for ty in range(synthesis_output_array.period[1]):
                 # Produce a test pattern
-                test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_synthesis_maximising_signal(
+                ts = make_synthesis_maximising_signal(
                     analysis_input_array,
                     analysis_transform_coeff_arrays,
                     synthesis_output_array,
@@ -462,21 +476,22 @@ class TestMakeSynthesisMaximisingSignal(object):
                 
                 # Create a test picture and encode/decode it with the VC-2
                 # pseudocode (with no quantisaton)
-                xs, ys = zip(*test_signal)
+                xs, ys = zip(*ts.picture)
                 width = max(xs) + 1
                 height = max(ys) + 1
                 test_signal_picture = [
                     [
                         0
-                        if (x, y) not in test_signal else
+                        if (x, y) not in ts.picture else
                         value_max
-                        if test_signal[(x, y)] > 0 else
+                        if ts.picture[(x, y)] > 0 else
                         value_min
                         for x in range(width)
                     ]
                     for y in range(height)
                 ]
                 
+                new_tx, new_ty = ts.target
                 kwargs = {
                     "width": width,
                     "height": height,
@@ -509,7 +524,7 @@ class TestMakeSynthesisMaximisingSignal(object):
         for tx in range(synthesis_output_array.period[0]):
             for ty in range(synthesis_output_array.period[1]):
                 # Produce a test pattern
-                test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_synthesis_maximising_signal(
+                ts = make_synthesis_maximising_signal(
                     analysis_input_array,
                     analysis_transform_coeff_arrays,
                     synthesis_output_array,
@@ -517,7 +532,7 @@ class TestMakeSynthesisMaximisingSignal(object):
                     tx, ty,
                 )
                 
-                xs, ys = zip(*test_signal)
+                xs, ys = zip(*ts.picture)
                 width = max(xs) + 1
                 height = max(ys) + 1
                 
@@ -525,9 +540,9 @@ class TestMakeSynthesisMaximisingSignal(object):
                 test_signal_picture = [
                     [
                         0
-                        if (x, y) not in test_signal else
+                        if (x, y) not in ts.picture else
                         value_max
-                        if test_signal[(x, y)] > 0 else
+                        if ts.picture[(x, y)] > 0 else
                         value_min
                         for x in range(width)
                     ]
@@ -535,6 +550,7 @@ class TestMakeSynthesisMaximisingSignal(object):
                 ]
                 
                 # Create picture where just the target pixel is set
+                new_tx, new_ty = ts.target
                 just_target_picture = [
                     [
                         int((x, y) == (new_tx, new_ty)) * value_max
@@ -880,7 +896,7 @@ class TestImproveSynthesisMaximisingSignal(object):
         for tx in range(synthesis_target_linexp_array.period[0]):
             for ty in range(synthesis_target_linexp_array.period[1]):
                 # Produce test signal
-                test_signal, new_tx, new_ty, mx, my, tmx, tmy = make_synthesis_maximising_signal(
+                ts = make_synthesis_maximising_signal(
                     analysis_input_linexp_array,
                     analysis_coeff_linexp_arrays,
                     synthesis_target_linexp_array,
@@ -888,6 +904,7 @@ class TestImproveSynthesisMaximisingSignal(object):
                     tx, ty,
                 )
                 
+                new_tx, new_ty = ts.target
                 synthesis_pyexp = synthesis_target_pyexp_array[new_tx, new_ty]
                 
                 kwargs = {
@@ -897,13 +914,13 @@ class TestImproveSynthesisMaximisingSignal(object):
                     "dwt_depth_ho": dwt_depth_ho,
                     "quantisation_matrix": quantisation_matrix,
                     "synthesis_pyexp": synthesis_pyexp,
-                    "test_signal": test_signal,
+                    "test_signal": ts.picture,
                     "input_min": input_min,
                     "input_max": input_max,
                     "max_quantisation_index": max_quantisation_index,
                     "random_state": np.random.RandomState(1),
-                    "added_corruptions_per_iteration": (len(test_signal)+19)//20,  # 5%
-                    "removed_corruptions_per_iteration": (len(test_signal)+8)//5,  # 20%
+                    "added_corruptions_per_iteration": (len(ts.picture)+19)//20,  # 5%
+                    "removed_corruptions_per_iteration": (len(ts.picture)+8)//5,  # 20%
                     "added_iterations_per_improvement": 50,
                     "terminate_early": None,
                 }
