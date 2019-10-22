@@ -32,7 +32,6 @@ from vc2_bit_widths.signal_bounds import (
     twos_compliment_bits,
     analysis_filter_bounds,
     evaluate_analysis_filter_bounds,
-    quantisation_index_upper_bound,
     synthesis_filter_bounds,
     evaluate_synthesis_filter_bounds,
 )
@@ -179,25 +178,6 @@ def test_evaluate_analysis_filter_bounds():
     
     assert lower_bound == 1000 - 512
     assert upper_bound == 1000 + 511
-
-
-def test_quantisation_index_upper_bound():
-    # Largest value = 1023 in (1, "H") -> value_max_qi = 40
-    coeff_bounds = {
-        (0, "L"): (-511, 255),
-        (1, "H"): (-256, 1023),
-    }
-    # Matrix value for (1, "H") -> 100
-    quantisation_matrix = {
-        0: {"L": 10},
-        1: {"H": 100},
-    }
-    
-    assert quantisation_index_upper_bound(coeff_bounds, quantisation_matrix) == 140
-    
-    # Sanity check
-    assert forward_quant(1023, 140 - 100) == 0
-    assert forward_quant(1023, 140 - 100 - 1) != 0
 
 
 @pytest.mark.parametrize("dc_band_name", ["L", "LL"])

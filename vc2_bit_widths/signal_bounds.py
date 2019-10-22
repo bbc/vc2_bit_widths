@@ -151,43 +151,6 @@ def evaluate_analysis_filter_bounds(lower_bound_exp, upper_bound_exp, num_bits):
     return (lower_bound, upper_bound)
 
 
-def quantisation_index_upper_bound(coeff_bounds, quantisation_matrix):
-    """
-    Find the largest quantisation index which could usefully be used by an
-    encoder for the transform coefficient bounds supplied.
-    
-    Parameters
-    ==========
-    coeff_bounds : {(level, orient): (lower_bound, upper_bound), ...}
-        For each transform coefficient, the concrete lower and upper bounds
-        (e.g. as computed using :py:func:`evaluate_analysis_filter_bounds` and
-        :py:func:`vc2_bit_widths.quantisation.maximum_dequantised_magnitude`
-        for each transform subband).
-    quantisation_matrix : {level: {orient: value, ...}, ...}
-        The quantisation matrix in use.
-    
-    Returns
-    =======
-    quantisation_index : int
-        The upper bound for the quantisation indices sensibly used by an
-        encoder. This value will be the smallest quantisation index which will
-        quantise any/all transform coefficients to zero.
-    """
-    max_qi = 0
-    for level, orients in quantisation_matrix.items():
-        for orient, matrix_value in orients.items():
-            lower_bound, upper_bound = coeff_bounds[(level, orient)]
-            value_max_qi = max(
-                maximum_useful_quantisation_index(lower_bound),
-                maximum_useful_quantisation_index(upper_bound),
-            )
-            value_max_qi += matrix_value
-            
-            max_qi = max(max_qi, value_max_qi)
-
-    return max_qi
-
-
 def synthesis_filter_bounds(expression):
     """
     Find the lower- and upper bound reachable in a
