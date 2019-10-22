@@ -33,6 +33,9 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
     FastPartialAnalyseQuantiseSynthesise,
 )
 
+# NB: Can't have any class names starting with 'Test' in a Pytest test file!
+from vc2_bit_widths.signal_generation import TestSignalSpecification as TSS
+
 from vc2_bit_widths.signal_generation import (
     get_maximising_inputs,
     make_analysis_maximising_signal,
@@ -40,7 +43,7 @@ from vc2_bit_widths.signal_generation import (
     choose_random_indices_of,
     greedy_stochastic_search,
     convert_test_signal_to_picture_and_slice,
-    improve_synthesis_maximising_signal,
+    optimise_synthesis_maximising_signal,
 )
 
 
@@ -767,7 +770,7 @@ class TestConvertTestSignalToPictureAndSlice(object):
         assert test_picture.shape == exp_shape
 
 
-class TestImproveSynthesisMaximisingSignal(object):
+class TestOptimiseSynthesisMaximisingSignal(object):
     
     @pytest.fixture
     def wavelet_index(self):
@@ -914,7 +917,7 @@ class TestImproveSynthesisMaximisingSignal(object):
                     "dwt_depth_ho": dwt_depth_ho,
                     "quantisation_matrix": quantisation_matrix,
                     "synthesis_pyexp": synthesis_pyexp,
-                    "test_signal": ts.picture,
+                    "test_signal": ts,
                     "input_min": input_min,
                     "input_max": input_max,
                     "max_quantisation_index": max_quantisation_index,
@@ -926,37 +929,42 @@ class TestImproveSynthesisMaximisingSignal(object):
                 }
                 
                 # Run without any greedy searches to get 'baseline' figure
-                base_test_signal, base_decoded_value, base_qi, base_total_iterations = improve_synthesis_maximising_signal(
+                base_ts = optimise_synthesis_maximising_signal(
                     number_of_searches=1,
                     base_iterations=0,
                     **kwargs
                 )
                 
+                # Verify unrelated test signal parameters passed through
+                assert base_ts.target == ts.target
+                assert base_ts.picture_translation_multiple == ts.picture_translation_multiple
+                assert base_ts.target_translation_multiple == ts.target_translation_multiple
+                
                 # Run with greedy search to verify better result
-                imp_test_signal, imp_decoded_value, imp_qi, imp_total_iterations = improve_synthesis_maximising_signal(
+                imp_ts = optimise_synthesis_maximising_signal(
                     number_of_searches=3,
                     base_iterations=100,
                     **kwargs
                 )
-                assert imp_total_iterations >= 3 * 100
+                assert imp_ts.num_search_iterations >= 3 * 100
                 
                 # Ensure new test signal is normalised to polarities
-                for value in imp_test_signal.values():
+                for value in imp_ts.picture.values():
                     assert value in (-1, +1)
                 
                 # Should have improved over the test pattern alone
-                if abs(imp_decoded_value) > abs(base_decoded_value):
+                if abs(imp_ts.decoded_value) > abs(base_ts.decoded_value):
                     num_improved_phases += 1
                 
                 # Check to see if decoded value matches what the pseudocode decoder
                 # would produce
-                xs, ys = zip(*imp_test_signal)
+                xs, ys = zip(*imp_ts.picture)
                 width = max(xs) + 1
                 height = max(ys) + 1
                 imp_test_signal_picture = [
                     [
                         input_min
-                        if imp_test_signal.get((x, y), 0) < 0 else
+                        if imp_ts.picture.get((x, y), 0) < 0 else
                         input_max
                         for x in range(width)
                     ]
@@ -976,13 +984,13 @@ class TestImproveSynthesisMaximisingSignal(object):
                             imp_test_signal_picture,
                             **kwargs
                         ),
-                        imp_qi,
+                        imp_ts.quantisation_index,
                         quantisation_matrix,
                     ),
                     **kwargs
                 )[new_ty][new_tx]
                 
-                assert imp_decoded_value == actual_decoded_value
+                assert imp_ts.decoded_value == actual_decoded_value
                 
         # Consider the procedure to work if some of the phases are improved
         assert num_improved_phases >= 1
@@ -995,7 +1003,12 @@ class TestImproveSynthesisMaximisingSignal(object):
         input_min = -512
         input_max = 511
         
-        test_signal = {(0, 0): -1}
+        ts = TSS(
+            target=(0, 0),
+            picture={(0, 0): -1},
+            picture_translation_multiple=(0, 0),
+            target_translation_multiple=(0, 0),
+        )
         
         synthesis_pyexp = Argument("coeffs")[0]["LL"][0, 0]
         
@@ -1006,7 +1019,7 @@ class TestImproveSynthesisMaximisingSignal(object):
             "dwt_depth_ho": 0,
             "quantisation_matrix": {0: {"LL": 0}},
             "synthesis_pyexp": synthesis_pyexp,
-            "test_signal": test_signal,
+            "test_signal": ts,
             "input_min": input_min,
             "input_max": input_max,
             "max_quantisation_index": 1,
@@ -1020,26 +1033,26 @@ class TestImproveSynthesisMaximisingSignal(object):
         
         # Check that with terminate early disabled the search runs the full
         # base set of iterations but finds no improvement
-        new_test_signal, new_decoded_value, new_qi, new_total_iterations = improve_synthesis_maximising_signal(
+        new_ts = optimise_synthesis_maximising_signal(
             terminate_early=None,
             **kwargs
         )
-        assert new_test_signal == test_signal
-        assert new_total_iterations == 100 * 10
+        assert new_ts.picture == ts.picture
+        assert new_ts.num_search_iterations == 100 * 10
         
         # Check terminate early allows early termination after the specified
         # number of iterations
-        new_test_signal, new_decoded_value, new_qi, new_total_iterations = improve_synthesis_maximising_signal(
+        new_ts = optimise_synthesis_maximising_signal(
             terminate_early=3,
             **kwargs
         )
-        assert new_test_signal == test_signal
-        assert new_total_iterations == 100 * 3
+        assert new_ts.picture == ts.picture
+        assert new_ts.num_search_iterations == 100 * 3
         
         # Should run all iterations if an improvement is found
-        kwargs["test_signal"] = {(0, 0): +1}
-        new_test_signal, new_decoded_value, new_qi, new_total_iterations = improve_synthesis_maximising_signal(
+        kwargs["test_signal"].picture[(0, 0)] = +1
+        new_ts = optimise_synthesis_maximising_signal(
             terminate_early=3,
             **kwargs
         )
-        assert new_total_iterations >= 100 * 10
+        assert new_ts.num_search_iterations >= 100 * 10
