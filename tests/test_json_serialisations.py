@@ -21,6 +21,8 @@ from vc2_bit_widths.json_serialisations import (
     deserialise_namedtuple,
     serialise_test_signals,
     deserialise_test_signals,
+    serialise_quantisation_matrix,
+    deserialise_quantisation_matrix,
 )
 
 
@@ -150,3 +152,12 @@ def test_serialise_test_signals():
     ]
     
     assert deserialise_test_signals(OptimisedTestSignalSpecification, after) == before
+
+
+def test_serialise_quantisation_matrix():
+    before = {0: {"L": 2}, 1: {"H": 0}}
+    after = serialise_quantisation_matrix(before)
+    assert after == {"0": {"L": 2}, "1": {"H": 0}}
+    
+    after = json_roundtrip(after)
+    assert deserialise_quantisation_matrix(after) == before

@@ -278,3 +278,28 @@ def deserialise_test_signals(spec_namedtuple_type, test_signals):
         key: deserialise_namedtuple(spec_namedtuple_type, value)
         for key, value in deserialise_intermediate_value_dictionary(test_signals).items()
     }
+
+
+def serialise_quantisation_matrix(quantisation_matrix):
+    """
+    Convert a quantisation matrix into JSON-serialisable form.
+    
+    For example::
+        >>> before = {0: {"L": 2}, 1: {"H": 0}}
+        >>> serialise_quantisation_matrix(before)
+        {"0": {"L": 2}, "1": {"H": 0}}
+    """
+    return {
+        str(level): orients
+        for level, orients in quantisation_matrix.items()
+    }
+
+
+def deserialise_quantisation_matrix(quantisation_matrix):
+    """
+    Inverse of :py:func:`serialise_quantisation_matrix`.
+    """
+    return {
+        int(level): orients
+        for level, orients in quantisation_matrix.items()
+    }
