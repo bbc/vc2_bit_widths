@@ -769,6 +769,10 @@ def optimise_synthesis_maximising_signal(
         if best_picture[y, x] in (input_min, input_max)
     }
     
+    # Convert out of Numpy int type (which cannot be serialised into JSON
+    # later)
+    best_decoded_value = int(best_decoded_value)
+    
     return OptimisedTestSignalSpecification(
         target=test_signal.target,
         picture=optimised_picture,
