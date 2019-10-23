@@ -30,9 +30,10 @@ setup(
     install_requires=["vc2_data_tables", "enum34", "numpy", "six"],
     entry_points = {
         "console_scripts": [
-            "vc2-compute-bit-widths=vc2_bit_widths.scripts.vc2_compute_bit_widths:main",
+            "vc2-static-filter-analysis=vc2_bit_widths.scripts.vc2_static_filter_analysis:main",
             "vc2-bit-widths-table=vc2_bit_widths.scripts.vc2_bit_widths_table:main",
-            "vc2-optimise-test-signals=vc2_bit_widths.scripts.vc2_optimise_test_signals:main",
+            "vc2-maximum-quantisation-index=vc2_bit_widths.scripts.vc2_maximum_quantisation_index:main",
+            "vc2-optimise-synthesis-test-signals=vc2_bit_widths.scripts.vc2_optimise_synthesis_test_signals:main",
         ],
     },
 )
