@@ -16,6 +16,7 @@ from vc2_bit_widths.helpers import (
     evaluate_filter_bounds,
     quantisation_index_bound,
     optimise_synthesis_test_signals,
+    evaluate_test_signal_outputs,
 )
 
 
@@ -303,3 +304,107 @@ def test_optimise_synthesis_test_signals():
         decoded_picture = idwt(state, quantised_coeffs)
         
         assert decoded_picture[ty][tx] == ts.decoded_value
+
+
+def test_evaluate_test_signal_outputs():
+    wavelet_index = WaveletFilters.haar_with_shift
+    wavelet_index_ho = WaveletFilters.le_gall_5_3
+    dwt_depth = 1
+    dwt_depth_ho = 0
+    
+    quantisation_matrix = {
+        0: {"LL": 0},
+        1: {"LH": 1, "HL": 2, "HH": 3},
+    }
+    
+    picture_bit_width = 10
+    input_min = -512
+    input_max = 511
+    
+    (
+        analysis_signal_bounds,
+        synthesis_signal_bounds,
+        analysis_test_signals,
+        synthesis_test_signals,
+    ) = static_filter_analysis(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+    )
+    
+    (
+        concrete_analysis_signal_bounds,
+        concrete_synthesis_signal_bounds,
+    ) = evaluate_filter_bounds(
+        analysis_signal_bounds,
+        synthesis_signal_bounds,
+        picture_bit_width,
+    )
+    
+    max_quantisation_index = quantisation_index_bound(
+        concrete_analysis_signal_bounds,
+        quantisation_matrix,
+    )
+    
+    # Run a null-search to determine the actual decoded output of the synthesis
+    # test patterns generated... (bodge)
+    random_state = np.random.RandomState(1)
+    number_of_searches = 1
+    terminate_early = None
+    added_corruption_rate = 0
+    removed_corruption_rate = 0.0
+    base_iterations = 0
+    added_iterations_per_improvement = 0
+    optimised_synthesis_test_signals = optimise_synthesis_test_signals(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        quantisation_matrix,
+        picture_bit_width,
+        synthesis_test_signals,
+        max_quantisation_index,
+        random_state,
+        number_of_searches,
+        terminate_early,
+        added_corruption_rate,
+        removed_corruption_rate,
+        base_iterations,
+        added_iterations_per_improvement,
+    )
+    
+    (
+        analysis_test_signal_outputs,
+        synthesis_test_signal_outputs,
+    ) = evaluate_test_signal_outputs(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        picture_bit_width,
+        quantisation_matrix,
+        max_quantisation_index,
+        analysis_test_signals,
+        optimised_synthesis_test_signals,
+    )
+    
+    # Analysis values should be similar to the bounds
+    for (level, array_name, x, y), (minimum, maximum) in analysis_test_signal_outputs.items():
+        lower_bound, upper_bound = concrete_analysis_signal_bounds[(level, array_name, x, y)]
+        
+        assert np.isclose(minimum, lower_bound, 0.01)
+        assert lower_bound <= minimum
+        
+        assert np.isclose(maximum, upper_bound, 0.01)
+        assert maximum <= upper_bound
+    
+    # Synthesis values should be equal to the optimiser's values
+    for (
+        (level, array_name, x, y),
+        ((minimum, min_qi), (maximum, max_qi)),
+    ) in synthesis_test_signal_outputs.items():
+        ts = optimised_synthesis_test_signals[(level, array_name, x, y)]
+        
+        assert ts.decoded_value == maximum
+        assert ts.quantisation_index == max_qi

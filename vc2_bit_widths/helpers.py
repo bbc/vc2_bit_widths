@@ -56,6 +56,8 @@ from vc2_bit_widths.signal_generation import (
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
     optimise_synthesis_maximising_signal,
+    evaluate_analysis_test_signal_output,
+    evaluate_synthesis_test_signal_output,
 )
 
 from vc2_bit_widths.quantisation import (
@@ -406,8 +408,8 @@ def optimise_synthesis_test_signals(
     """
     # Create PyExps for all synthesis filtering stages, used to decode test
     # encoded patterns
-    v_filter_params = LIFTING_FILTERS[wavelet_index]
     h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
     _, synthesis_pyexps = synthesis_transform(
         h_filter_params,
         v_filter_params,
@@ -502,3 +504,100 @@ def optimise_synthesis_test_signals(
         optimised_test_signals[(level, array_name, x, y)] = best_ts
     
     return optimised_test_signals
+
+
+def evaluate_test_signal_outputs(
+    wavelet_index,
+    wavelet_index_ho,
+    dwt_depth,
+    dwt_depth_ho,
+    picture_bit_width,
+    quantisation_matrix,
+    max_quantisation_index,
+    analysis_test_signals,
+    synthesis_test_signals,
+):
+    """
+    Given a set of test signals, compute the signal levels actually produced in
+    a real encoder/decoder.
+    
+    Parameters
+    ==========
+    wavelet_index : :py:class:`vc2_data_tables.WaveletFilters` or int
+    wavelet_index_ho : :py:class:`vc2_data_tables.WaveletFilters` or int
+    dwt_depth : int
+    dwt_depth_ho : int
+        The filter parameters.
+    picture_bit_width : int
+        The number of bits in the input pictures.
+    quantisation_matrix : {level: {orient: value, ...}, ...}
+        The quantisation matrix in use.
+    max_quantisation_index : int
+        The maximum quantisation index to use (e.g. from
+        :py:func:`quantisation_index_bound`).
+    analysis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
+    synthesis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
+        From :py:func:`static_filter_analysis` or
+        :py:func:`optimise_synthesis_test_signals`. The test signals to assess.
+    
+    Returns
+    =======
+    analysis_test_signal_outputs : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
+        The signal levels achieved for each of the provided analysis test
+        signals for minimising signal values and maximising values
+        respectively.
+    synthesis_test_signal_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
+        The signal levels achieved, and quantisation indices used to achieve
+        them, for each of the provided synthesis test signals. Given for
+        minimising signal values and maximising values respectively.
+    """
+    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
+    input_min, input_max = signed_integer_range(picture_bit_width)
+    
+    analysis_test_signal_outputs = OrderedDict(
+        ((level, array_name, x, y), evaluate_analysis_test_signal_output(
+            h_filter_params=h_filter_params,
+            v_filter_params=v_filter_params,
+            dwt_depth=dwt_depth,
+            dwt_depth_ho=dwt_depth_ho,
+            level=level,
+            array_name=array_name,
+            test_signal=test_signal,
+            input_min=input_min,
+            input_max=input_max,
+        ))
+        for (level, array_name, x, y), test_signal in
+        analysis_test_signals.items()
+    )
+    
+    _, synthesis_pyexps = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
+    )
+    
+    synthesis_test_signal_outputs = OrderedDict(
+        ((level, array_name, x, y), evaluate_synthesis_test_signal_output(
+            h_filter_params=h_filter_params,
+            v_filter_params=v_filter_params,
+            dwt_depth=dwt_depth,
+            dwt_depth_ho=dwt_depth_ho,
+            quantisation_matrix=quantisation_matrix,
+            synthesis_pyexp=synthesis_pyexps[(level, array_name)][test_signal.target],
+            test_signal=test_signal,
+            input_min=input_min,
+            input_max=input_max,
+            max_quantisation_index=max_quantisation_index,
+        ))
+        for (level, array_name, x, y), test_signal in
+        synthesis_test_signals.items()
+    )
+    
+    return (
+        analysis_test_signal_outputs,
+        synthesis_test_signal_outputs,
+    )
