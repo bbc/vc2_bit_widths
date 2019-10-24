@@ -27,7 +27,13 @@ from vc2_bit_widths.vc2_filters import (
     synthesis_transform,
 )
 
-from vc2_bit_widths.signal_bounds import analysis_filter_bounds
+from vc2_bit_widths.signal_bounds import (
+    analysis_filter_bounds,
+    synthesis_filter_bounds,
+    evaluate_analysis_filter_bounds,
+    evaluate_synthesis_filter_bounds,
+    signed_integer_range,
+)
 
 from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
     FastPartialAnalyseQuantiseSynthesise,
@@ -44,6 +50,8 @@ from vc2_bit_widths.signal_generation import (
     greedy_stochastic_search,
     convert_test_signal_to_picture_and_slice,
     optimise_synthesis_maximising_signal,
+    evaluate_analysis_test_signal_output,
+    evaluate_synthesis_test_signal_output,
 )
 
 
@@ -1056,3 +1064,164 @@ class TestOptimiseSynthesisMaximisingSignal(object):
             **kwargs
         )
         assert new_ts.num_search_iterations >= 100 * 10
+
+
+def test_evaluate_analysis_test_signal_output():
+    # In this test we check that the decoded values are plausible based on them
+    # being close to the predicted signal range
+    
+    wavelet_index = WaveletFilters.haar_with_shift
+    wavelet_index_ho = WaveletFilters.le_gall_5_3
+    dwt_depth = 1
+    dwt_depth_ho = 0
+    
+    picture_bit_width = 10
+    
+    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
+    input_min, input_max = signed_integer_range(picture_bit_width)
+    
+    input_array = SymbolArray(2)
+    _, intermediate_arrays = analysis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        input_array,
+    )
+    
+    for (level, array_name), target_array in intermediate_arrays.items():
+        for x in range(target_array.period[0]):
+            for y in range(target_array.period[1]):
+                # Compute the expected bounds for this value
+                lower_bound, upper_bound = evaluate_analysis_filter_bounds(
+                    *analysis_filter_bounds(target_array[x, y]),
+                    num_bits=picture_bit_width,
+                )
+                
+                # Create a test signal
+                test_signal = make_analysis_maximising_signal(
+                    input_array,
+                    target_array,
+                    x, y,
+                )
+                
+                # Find the actual values
+                lower_value, upper_value = evaluate_analysis_test_signal_output(
+                    h_filter_params,
+                    v_filter_params,
+                    dwt_depth,
+                    dwt_depth_ho,
+                    level,
+                    array_name,
+                    test_signal,
+                    input_min,
+                    input_max,
+                )
+                
+                assert np.isclose(lower_value, lower_bound, rtol=0.01)
+                assert np.isclose(upper_value, upper_bound, rtol=0.01)
+
+
+def test_evaluate_synthesis_test_signal_output():
+    # In this test we simply check that the decoded values match those
+    # computed by the optimise_synthesis_maximising_signal function
+    
+    wavelet_index = WaveletFilters.haar_with_shift
+    wavelet_index_ho = WaveletFilters.le_gall_5_3
+    dwt_depth = 1
+    dwt_depth_ho = 0
+    
+    picture_bit_width = 10
+    
+    max_quantisation_index = 64
+    
+    quantisation_matrix = {
+        0: {"LL": 0},
+        1: {"LH": 1, "HL": 2, "HH": 3},
+    }
+    
+    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
+    input_min, input_max = signed_integer_range(picture_bit_width)
+    
+    input_array = SymbolArray(2)
+    analysis_transform_coeff_arrays, _ = analysis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        input_array,
+    )
+    
+    symbolic_coeff_arrays = make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho)
+    symbolic_output_array, symbolic_intermediate_arrays = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        symbolic_coeff_arrays,
+    )
+    
+    pyexp_coeff_arrays = make_variable_coeff_arrays(dwt_depth, dwt_depth_ho)
+    _, pyexp_intermediate_arrays = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        pyexp_coeff_arrays,
+    )
+    
+    for (level, array_name), target_array in symbolic_intermediate_arrays.items():
+        for x in range(target_array.period[0]):
+            for y in range(target_array.period[1]):
+                # Create a test signal
+                test_signal = make_synthesis_maximising_signal(
+                    input_array,
+                    analysis_transform_coeff_arrays,
+                    target_array,
+                    symbolic_output_array,
+                    x, y,
+                )
+                
+                synthesis_pyexp = pyexp_intermediate_arrays[(level, array_name)][x, y]
+                # Run with no-optimisation iterations but, as a side effect,
+                # compute the actual decoded value to compare with
+                test_signal = optimise_synthesis_maximising_signal(
+                    h_filter_params,
+                    v_filter_params,
+                    dwt_depth,
+                    dwt_depth_ho,
+                    quantisation_matrix,
+                    synthesis_pyexp,
+                    test_signal,
+                    input_min,
+                    input_max,
+                    max_quantisation_index,
+                    None,
+                    1,
+                    None,
+                    0.0,
+                    0.0,
+                    0,
+                    0,
+                )
+                
+                # Find the actual values
+                lower_value, upper_value = evaluate_synthesis_test_signal_output(
+                    h_filter_params,
+                    v_filter_params,
+                    dwt_depth,
+                    dwt_depth_ho,
+                    quantisation_matrix,
+                    synthesis_pyexp,
+                    test_signal,
+                    input_min,
+                    input_max,
+                    max_quantisation_index,
+                )
+                
+                assert upper_value[0] == test_signal.decoded_value
+                assert upper_value[1] == test_signal.quantisation_index

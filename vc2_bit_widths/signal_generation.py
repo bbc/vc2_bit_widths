@@ -30,6 +30,10 @@ from vc2_bit_widths.linexp import (
     AAError,
 )
 
+from vc2_bit_widths.fast_partial_analysis_transform import (
+    fast_partial_analysis_transform,
+)
+
 from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
     FastPartialAnalyseQuantiseSynthesise,
 )
@@ -782,3 +786,168 @@ def optimise_synthesis_maximising_signal(
         decoded_value=best_decoded_value,
         num_search_iterations=total_iterations,
     )
+
+
+def evaluate_analysis_test_signal_output(
+    h_filter_params,
+    v_filter_params,
+    dwt_depth,
+    dwt_depth_ho,
+    level,
+    array_name,
+    test_signal,
+    input_min,
+    input_max,
+):
+    """
+    Given an analysis test signal (e.g. created using
+    :py:func:`make_analysis_maximising_signal`), return the actual intermediate
+    encoder value when the signal is processed.
+    
+    Parameters
+    ==========
+    h_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+    v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+        Horizontal and vertical filter *synthesis* (not analysis!) filter
+        parameters (e.g. from :py:data:`vc2_data_tables.LIFTING_FILTERS`)
+        defining the wavelet transform used.
+    dwt_depth : int
+    dwt_depth_ho : int
+        The transform depth used by the filters.
+    level : int
+    array_name : str
+        The intermediate value in the encoder the test signal targets.
+    test_signal : :py:class:`TestSignalSpecification`
+        The test signal to evaluate.
+    input_min : int
+    input_max : int
+        The minimum and maximum value which may be used in the test signal.
+    
+    Returns
+    =======
+    encoded_minimum : int
+    encoded_maximum : int
+        The target encoder value when the test signal encoded with minimising
+        and maximising signal levels respectively.
+    """
+    tx, ty = test_signal.target
+    
+    return tuple(
+        fast_partial_analysis_transform(
+            h_filter_params,
+            v_filter_params,
+            dwt_depth,
+            dwt_depth_ho,
+            convert_test_signal_to_picture_and_slice(
+                test_signal.picture,
+                cur_min,
+                cur_max,
+                dwt_depth,
+                dwt_depth_ho,
+            )[0],
+            (level, array_name, tx, ty),
+        )
+        for cur_min, cur_max in [
+            # Minimise encoder output
+            (input_max, input_min),
+            # Maximise encoder output
+            (input_min, input_max),
+        ]
+    )
+
+
+def evaluate_synthesis_test_signal_output(
+    h_filter_params,
+    v_filter_params,
+    dwt_depth,
+    dwt_depth_ho,
+    quantisation_matrix,
+    synthesis_pyexp,
+    test_signal,
+    input_min,
+    input_max,
+    max_quantisation_index,
+):
+    """
+    Given a synthesis test signal (e.g. created using
+    :py:func:`make_synthesis_maximising_signal` or
+    :py:func:`optimise_synthesis_maximising_signal`), return the actual decoder
+    value, and worst-case quantisation index when the signal is processed.
+    
+    Parameters
+    ==========
+    h_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+    v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+        Horizontal and vertical filter *synthesis* (not analysis!) filter
+        parameters (e.g. from :py:data:`vc2_data_tables.LIFTING_FILTERS`)
+        defining the wavelet transform used.
+    dwt_depth : int
+    dwt_depth_ho : int
+        The transform depth used by the filters.
+    quantisation_matrix : {level: {orient: int, ...}, ...}
+        The VC-2 quantisation matrix to use.
+    synthesis_pyexp : :py:class:`~vc2_bit_widths.PyExp`
+        A :py:class:`~vc2_bit_widths.PyExp` expression which defines the
+        synthesis process for the decoder value the test signal is
+        maximising/minimising. Such an expression is usually obtained from the
+        use of :py:func;`~vc2_bit_widths.vc2_filters.synthesis_transform` and
+        :py:func;`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
+    test_signal : :py:class:`TestSignalSpecification`
+        The test signal to evaluate.
+    input_min : int
+    input_max : int
+        The minimum and maximum value which may be used in the test signal.
+    max_quantisation_index : int
+        The maximum quantisation index to use. This should be set high enough
+        that at the highest quantisation level all transform coefficients are
+        quantised to zero.
+    
+    Returns
+    =======
+    decoded_minimum : (value, quantisation_index)
+    decoded_maximum : (value, quantisation_index)
+        The target decoded value (and worst-case quantisation index) when the
+        test signal is encoded using minimising and maximising values
+        respectively.
+    """
+    quantisation_indices = list(range(max_quantisation_index + 1))
+    
+    codec = FastPartialAnalyseQuantiseSynthesise(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        quantisation_matrix,
+        quantisation_indices,
+        synthesis_pyexp,
+    )
+    
+    out = []
+    
+    for cur_min, cur_max in [
+        # Minimise encoder output
+        (input_max, input_min),
+        # Maximise encoder output
+        (input_min, input_max),
+    ]:
+        test_picture, _ = convert_test_signal_to_picture_and_slice(
+            test_signal.picture,
+            cur_min,
+            cur_max,
+            dwt_depth,
+            dwt_depth_ho,
+        )
+        
+        decoded_values = codec.analyse_quantise_synthesise(test_picture)
+        
+        i = np.argmax(np.abs(decoded_values))
+        
+        # NB: Force native Python integer type for JSON serialisability
+        out.append((
+            int(decoded_values[i]),
+            quantisation_indices[i]
+        ))
+    
+    return tuple(out)
+
+
