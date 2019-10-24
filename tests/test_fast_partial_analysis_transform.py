@@ -210,7 +210,7 @@ def test_h_stage(stage):
     # Check asymmetric transforms work
     (tables.WaveletFilters.haar_no_shift, tables.WaveletFilters.le_gall_5_3, 1, 2),
 ])
-def test_fast_partial_analysis_transform(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth_ho):
+def test_fast_partial_analysis_transform_no_target(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth_ho):
     # This test verifies the analysis transform produces identical results to
     # the pseudocode in the case where no edge effects are encountered.
     
@@ -286,3 +286,244 @@ def test_fast_partial_analysis_transform(wavelet_index, wavelet_index_ho, dwt_de
             matrix_array = matrix_out[level][orient]
             mask = edge_effect_free_pixel_mask[level][orient]
             assert np.array_equal(pseudocode_array[mask], matrix_array[mask])
+
+
+class TestFastPartialAnalysisTransformTarget(object):
+    # These tests check the intermediate values returned by the partial
+    # analysis transform. In this test we compare against a hand-computed model
+    # answers since the pseudocode cannot provide model answers.
+    
+    def test_2d(self):
+        wavelet_index = tables.WaveletFilters.haar_with_shift
+        wavelet_index_ho = tables.WaveletFilters.haar_with_shift
+        dwt_depth = 2
+        dwt_depth_ho = 0
+        
+        h_filter_params = tables.LIFTING_FILTERS[wavelet_index_ho]
+        v_filter_params = tables.LIFTING_FILTERS[wavelet_index]
+        
+        picture = np.array([
+            [ 1,  2,  3,  4],
+            [ 5,  6,  7,  8],
+            [ 9, 10, 11, 12],
+            [13, 14, 15, 16],
+        ])
+        
+        def check_target(level, array_name, model_answers):
+            for ty, row in enumerate(model_answers):
+                for tx, model_value in enumerate(row):
+                    assert fast_partial_analysis_transform(
+                        h_filter_params,
+                        v_filter_params,
+                        dwt_depth,
+                        dwt_depth_ho,
+                        picture.copy(),
+                        (level, array_name, tx, ty),
+                    ) == model_value
+        
+        check_target(2, "Input", picture)
+        
+        check_target(2, "DC", np.array([
+            [ 2,  4,  6,  8],
+            [10, 12, 14, 16],
+            [18, 20, 22, 24],
+            [26, 28, 30, 32],
+        ]))
+        
+        check_target(2, "DC'", np.array([
+            [ 2, 2,  6, 2],
+            [10, 2, 14, 2],
+            [18, 2, 22, 2],
+            [26, 2, 30, 2],
+        ]))
+        
+        check_target(2, "DC''", np.array([
+            [ 3, 2,  7, 2],
+            [11, 2, 15, 2],
+            [19, 2, 23, 2],
+            [27, 2, 31, 2],
+        ]))
+        
+        check_target(2, "L", np.array([
+            [ 3,  7],
+            [11, 15],
+            [19, 23],
+            [27, 31],
+        ]))
+        
+        check_target(2, "L'", np.array([
+            [ 3,  7],
+            [ 8,  8],
+            [19, 23],
+            [ 8,  8],
+        ]))
+        
+        check_target(2, "L''", np.array([
+            [ 7, 11],
+            [ 8,  8],
+            [23, 27],
+            [ 8,  8],
+        ]))
+        
+        check_target(2, "H", np.array([
+            [2, 2],
+            [2, 2],
+            [2, 2],
+            [2, 2],
+        ]))
+        
+        check_target(2, "H'", np.array([
+            [2, 2],
+            [0, 0],
+            [2, 2],
+            [0, 0],
+        ]))
+        
+        check_target(2, "H''", np.array([
+            [2, 2],
+            [0, 0],
+            [2, 2],
+            [0, 0],
+        ]))
+        
+        check_target(2, "HH", np.array([
+            [0, 0],
+            [0, 0],
+        ]))
+        
+        check_target(2, "HL", np.array([
+            [2, 2],
+            [2, 2],
+        ]))
+        
+        check_target(2, "LH", np.array([
+            [8, 8],
+            [8, 8],
+        ]))
+        
+        check_target(2, "LL", np.array([
+            [ 7, 11],
+            [23, 27],
+        ]))
+        
+        check_target(1, "Input", np.array([
+            [ 7, 11],
+            [23, 27],
+        ]))
+        
+        check_target(1, "Input", np.array([
+            [ 7, 11],
+            [23, 27],
+        ]))
+        
+        check_target(1, "DC", np.array([
+            [14, 22],
+            [46, 54],
+        ]))
+        
+        check_target(1, "DC'", np.array([
+            [14, 8],
+            [46, 8],
+        ]))
+        
+        check_target(1, "DC''", np.array([
+            [18, 8],
+            [50, 8],
+        ]))
+        
+        check_target(1, "L", np.array([
+            [18],
+            [50],
+        ]))
+        
+        check_target(1, "L'", np.array([
+            [18],
+            [32],
+        ]))
+        
+        check_target(1, "L''", np.array([
+            [34],
+            [32],
+        ]))
+        
+        check_target(1, "H", np.array([
+            [8],
+            [8],
+        ]))
+        
+        check_target(1, "H'", np.array([
+            [8],
+            [0],
+        ]))
+        
+        check_target(1, "H''", np.array([
+            [8],
+            [0],
+        ]))
+        
+        check_target(1, "HH", np.array([[0]]))
+        check_target(1, "HL", np.array([[8]]))
+        check_target(1, "LH", np.array([[32]]))
+        check_target(1, "LL", np.array([[34]]))
+    
+    def test_1d(self):
+        wavelet_index = tables.WaveletFilters.haar_with_shift
+        wavelet_index_ho = tables.WaveletFilters.haar_with_shift
+        dwt_depth = 0
+        dwt_depth_ho = 2
+        
+        h_filter_params = tables.LIFTING_FILTERS[wavelet_index_ho]
+        v_filter_params = tables.LIFTING_FILTERS[wavelet_index]
+        
+        picture = np.array([[1, 2, 3, 4]])
+        
+        def check_target(level, array_name, model_answers):
+            for ty, row in enumerate(model_answers):
+                for tx, model_value in enumerate(row):
+                    assert fast_partial_analysis_transform(
+                        h_filter_params,
+                        v_filter_params,
+                        dwt_depth,
+                        dwt_depth_ho,
+                        picture.copy(),
+                        (level, array_name, tx, ty),
+                    ) == model_value
+        
+        check_target(2, "Input", picture)
+        
+        check_target(2, "DC", np.array([[2, 4, 6, 8]]))
+        check_target(2, "DC'", np.array([[2, 2, 6, 2]]))
+        check_target(2, "DC''", np.array([[3, 2, 7, 2]]))
+        
+        check_target(2, "L", np.array([[3, 7]]))
+        check_target(2, "H", np.array([[2, 2]]))
+        
+        check_target(1, "Input", np.array([[3, 7]]))
+        
+        check_target(1, "DC", np.array([[6, 14]]))
+        check_target(1, "DC'", np.array([[6, 8]]))
+        check_target(1, "DC''", np.array([[10, 8]]))
+        
+        check_target(1, "L", np.array([[10]]))
+        check_target(1, "H", np.array([[8]]))
+    
+    def test_bad_target(self):
+        wavelet_index = tables.WaveletFilters.haar_with_shift
+        wavelet_index_ho = tables.WaveletFilters.haar_with_shift
+        dwt_depth = 0
+        dwt_depth_ho = 2
+        
+        h_filter_params = tables.LIFTING_FILTERS[wavelet_index_ho]
+        v_filter_params = tables.LIFTING_FILTERS[wavelet_index]
+        
+        picture = np.array([[1, 2, 3, 4]])
+        
+        with pytest.raises(ValueError):
+            fast_partial_analysis_transform(
+                h_filter_params,
+                v_filter_params,
+                dwt_depth,
+                dwt_depth_ho,
+                picture.copy(),
+                (4, "foo", 0, 0),
+            )

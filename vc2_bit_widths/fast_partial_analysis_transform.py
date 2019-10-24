@@ -4,11 +4,12 @@ Fast(-er) Partial VC-2 Wavelet Analysis Transform
 
 This module contains a :py:mod:`numpy`-based implementation of a VC-2-like
 integer lifting wavelet analysis (encoding) transform. This implementation is
-approximately 100x faster than executing the VC-2 pseudocode in Python.
+approximately 100x faster than executing the VC-2 pseudocode in Python. It also
+optionally may be used to extract intermediate results from the codec.
 
-This module is intended to be used to rapidly encode filter test pattern
-candidates produced inside :py:mod:`~vc2_bit_widths.signal_generation`. These
-test patterns are designed to exercise specific paths through an
+This module is primarily intended to be used to rapidly encode filter test
+pattern candidates produced inside :py:mod:`~vc2_bit_widths.signal_generation`.
+These test patterns are designed to exercise specific paths through an
 encoder-decoder pair. A property of these signals is that VC-2's edge extension
 behaviour is never used.
 
@@ -345,7 +346,14 @@ def v_stage(signal, accumulator1, accumulator2, lifting_stage, lifting_stage_sli
     )
 
 
-def fast_partial_analysis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_ho, signal):
+def fast_partial_analysis_transform(
+    h_filter_params,
+    v_filter_params,
+    dwt_depth,
+    dwt_depth_ho,
+    signal,
+    target=None,
+):
     """
     Perform a multi-level 2D analysis transform, ignoring edge effects.
     
@@ -363,12 +371,19 @@ def fast_partial_analysis_transform(h_filter_params, v_filter_params, dwt_depth,
         
         Width must be a multiple of ``2**(dwt_depth+dwt_depth_ho)`` pixels and
         height a multiple of ``2**dwt_depth`` pixels.
+    target : (level, array_name, tx, ty) or None
+        If None, the complete analysis transform will be performed. If a tuple
+        is given, the transform will run until the specified value has been
+        computed and this value alone will be returned.
     
     Returns
     =======
-    transform_coeffs : {level: {orient: :py:class:`numpy.array`, ...}, ...}
+    transform_coeffs : {level: {orient: :py:class:`numpy.array`, ...}, ...} or intermediate_value
         Subsampled views of the ``signal`` array (which will have been modified
         in-place).
+        
+        Alternatively, if the ``target`` argument is not None, the single
+        intermediate value requested will be returned.
     """
     h_filter_params = convert_between_synthesis_and_analysis(h_filter_params)
     v_filter_params = convert_between_synthesis_and_analysis(v_filter_params)
@@ -385,32 +400,68 @@ def fast_partial_analysis_transform(h_filter_params, v_filter_params, dwt_depth,
     for level in reversed(range(1, dwt_depth_ho + dwt_depth + 1)):
         out[level] = {}
         
+        if (target is not None and target[0] == level and target[1] == "Input"):
+            return signal[target[3], target[2]]
+        
         # Bit shift
         if h_filter_params.filter_bit_shift:
             signal <<= h_filter_params.filter_bit_shift
         
+        if (target is not None and target[0] == level and target[1] == "DC"):
+            return signal[target[3], target[2]]
+        
         # H-lift
         hacc1 = acc1.reshape(signal.shape[0], signal.shape[1]//2)
         hacc2 = acc2.reshape(signal.shape[0], signal.shape[1]//2)
-        for stage, stage_slices in zip(h_filter_params.stages, h_stage_slices):
+        for num, (stage, stage_slices) in enumerate(zip(h_filter_params.stages, h_stage_slices)):
             h_stage(signal, hacc1, hacc2, stage, stage_slices)
+            if target is not None and target[0] == level and target[1] == ("DC'" + "'"*num):
+                return signal[target[3], target[2]]
         
         if level > dwt_depth_ho:
+            if target is not None and target[0] == level:
+                if target[1] == "L":
+                    return signal[:, 0::2][target[3], target[2]]
+                if target[1] == "H":
+                    return signal[:, 1::2][target[3], target[2]]
+            
             # V-lift (in 2D stages only)
             vacc1 = acc1.reshape(signal.shape[0]//2, signal.shape[1])
             vacc2 = acc2.reshape(signal.shape[0]//2, signal.shape[1])
-            for stage, stage_slices in zip(v_filter_params.stages, v_stage_slices):
+            for num, (stage, stage_slices) in enumerate(zip(v_filter_params.stages, v_stage_slices)):
                 v_stage(signal, vacc1, vacc2, stage, stage_slices)
+                
+                if target is not None:
+                    if target[0] == level and target[1] == ("L'" + "'"*num):
+                        return signal[:, 0::2][target[3], target[2]]
+                    if target[0] == level and target[1] == ("H'" + "'"*num):
+                        return signal[:, 1::2][target[3], target[2]]
             
             # 2D Subsample
             out[level]["HL"] = signal[0::2, 1::2]
             out[level]["LH"] = signal[1::2, 0::2]
             out[level]["HH"] = signal[1::2, 1::2]
             signal = signal[0::2, 0::2]  # LL
+            
+            if target is not None and target[0] == level:
+                if target[1] == "HL":
+                    return out[level]["HL"][target[3], target[2]]
+                if target[1] == "LH":
+                    return out[level]["LH"][target[3], target[2]]
+                if target[1] == "HH":
+                    return out[level]["HH"][target[3], target[2]]
+                if target[1] == "LL":
+                    return signal[target[3], target[2]]
         else:
             # Horizontal-only Subsample
             out[level]["H"] = signal[:, 1::2]  # L
             signal = signal[:, 0::2]  # L
+            
+            if target is not None and target[0] == level:
+                if target[1] == "H":
+                    return out[level]["H"][target[3], target[2]]
+                if target[1] == "L":
+                    return signal[target[3], target[2]]
         
         # Resize accumulators to match subsampling
         acc1 = acc1[0:signal.size//2]
@@ -422,4 +473,7 @@ def fast_partial_analysis_transform(h_filter_params, v_filter_params, dwt_depth,
     else:
         out[0]["LL"] = signal
     
-    return out
+    if target is None:
+        return out
+    else:
+        raise ValueError("Target {} not part of transform!".format(target))
