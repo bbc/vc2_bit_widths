@@ -340,7 +340,7 @@ class SymbolArray(InfiniteArray):
     
     @property
     def nop(self):
-        return True
+        return False
     
     def relative_step_size_to(self, other):
         if other is self:
@@ -390,7 +390,7 @@ class VariableArray(InfiniteArray):
     
     @property
     def nop(self):
-        return True
+        return False
     
     def relative_step_size_to(self, other):
         if other is self:

@@ -106,7 +106,7 @@ def test_symbol_array():
     a = SymbolArray(3, "foo")
     
     assert a.period == (1, 1, 1)
-    assert a.nop is True
+    assert a.nop is False
     assert a.relative_step_size_to(a) == (1, 1, 1)
     assert a.relative_step_size_to(SymbolArray(2, "bar")) is None
     
@@ -119,7 +119,7 @@ def test_variable_array():
     a = VariableArray(3, Argument("arg"))
     
     assert a.period == (1, 1, 1)
-    assert a.nop is True
+    assert a.nop is False
     assert a.relative_step_size_to(a) == (1, 1, 1)
     assert a.relative_step_size_to(VariableArray(2, Argument("arg"))) is None
     
