@@ -519,7 +519,18 @@ def greedy_stochastic_search(
         decoded_values.append(cur_decoded_value)
         
         # Keep the input vector iff it is an improvement on the previous best
-        if abs(cur_decoded_value) > abs(best_decoded_value):
+        #
+        # NB: when given a -ve and +ve value with equal magnitude, the +ve one
+        # should be kept because this may require an additional bit to
+        # represent in two's compliment arithmetic (e.g. -512 is 10-bits, +512
+        # is 11-bits)
+        if (
+            abs(cur_decoded_value) > abs(best_decoded_value) or
+            (
+                abs(cur_decoded_value) == abs(best_decoded_value) and
+                cur_decoded_value > best_decoded_value
+            )
+        ):
             best_picture[:] = cur_picture
             best_decoded_value = cur_decoded_value
             best_qi = cur_qi
@@ -736,9 +747,17 @@ def optimise_synthesis_maximising_signal(
             len(decoded_values),
         )
         
+        # NB: when given a -ve and +ve value with equal magnitude, the +ve one
+        # should be kept because this may require an additional bit to
+        # represent in two's compliment arithmetic (e.g. -512 is 10-bits, +512
+        # is 11-bits)
         if (
             best_decoded_value is None or
-            abs(new_decoded_value) > abs(best_decoded_value)
+            abs(new_decoded_value) > abs(best_decoded_value) or
+            (
+                abs(new_decoded_value) == abs(best_decoded_value) and
+                new_decoded_value > best_decoded_value
+            )
         ):
             best_picture = new_picture
             best_decoded_value = new_decoded_value

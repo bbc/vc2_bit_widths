@@ -495,9 +495,17 @@ def optimise_synthesis_test_signals(
                 added_iterations_per_improvement=added_iterations_per_improvement,
             )
             
+            # NB: when given a -ve and +ve value with equal magnitude, the +ve one
+            # should be kept because this may require an additional bit to
+            # represent in two's compliment arithmetic (e.g. -512 is 10-bits, +512
+            # is 11-bits)
             if (
                 best_ts is None or
-                abs(new_ts.decoded_value) > abs(best_ts.decoded_value)
+                abs(new_ts.decoded_value) > abs(best_ts.decoded_value) or
+                (
+                    abs(new_ts.decoded_value) == abs(best_ts.decoded_value) and
+                    new_ts.decoded_value > best_ts.decoded_value
+                )
             ):
                 best_ts = new_ts
         
