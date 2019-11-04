@@ -832,8 +832,9 @@ def evaluate_analysis_test_signal_output(
     """
     tx, ty = test_signal.target
     
+    # NB: Casting to native int from numpy for JSON serialisability etc.
     return tuple(
-        fast_partial_analysis_transform(
+        int(fast_partial_analysis_transform(
             h_filter_params,
             v_filter_params,
             dwt_depth,
@@ -846,7 +847,7 @@ def evaluate_analysis_test_signal_output(
                 dwt_depth_ho,
             )[0],
             (level, array_name, tx, ty),
-        )
+        ))
         for cur_min, cur_max in [
             # Minimise encoder output
             (input_max, input_min),
@@ -949,5 +950,3 @@ def evaluate_synthesis_test_signal_output(
         ))
     
     return tuple(out)
-
-

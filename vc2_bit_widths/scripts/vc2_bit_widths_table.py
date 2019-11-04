@@ -14,22 +14,36 @@ from collections import OrderedDict
 
 from argparse import ArgumentParser, FileType
 
+from vc2_bit_widths.scripts.argument_parsers import (
+    parse_quantisation_matrix_argument,
+)
+
 from vc2_bit_widths.linexp import LinExp
 
 from vc2_bit_widths.signal_bounds import (
     twos_compliment_bits,
 )
 
+from vc2_bit_widths.signal_generation import (
+    TestSignalSpecification,
+    OptimisedTestSignalSpecification,
+)
+
 from vc2_bit_widths.helpers import (
     evaluate_filter_bounds,
+    quantisation_index_bound,
+    evaluate_test_signal_outputs,
+    add_omitted_synthesis_values,
 )
 
 from vc2_bit_widths.json_serialisations import (
     deserialise_signal_bounds,
+    deserialise_test_signals,
+    deserialise_quantisation_matrix,
 )
 
 
-def parse_args(args=None):
+def parse_args(arg_strings=None):
     parser = ArgumentParser(description="""
         Present computed bit width information in tabular form for input
         signals with a particular picture signal range.
@@ -45,11 +59,31 @@ def parse_args(args=None):
     )
     
     parser.add_argument(
-        "--picture-bit-widths", "-b",
-        type=int, nargs="+", default=[8, 10, 12, 16],
+        "optimised_synthesis_test_signals",
+        type=FileType("r"), nargs="?",
         help="""
-            The number of bits in the picture signal. Multiple widths may be
-            given and values will be computed for each.
+            A set of optimised synthesis test signals produced by
+            vc2-optimise-synthesis-test-signals.
+        """,
+    )
+    
+    parser.add_argument(
+        "--picture-bit-width", "-b",
+        type=int,
+        help="""
+            The number of bits in the picture signal.
+        """,
+    )
+    
+    parser.add_argument(
+        "--custom-quantisation-matrix", "-q",
+        nargs="+",
+        help="""
+            Use a custom quantisation matrix. Optional except for filters
+            without a default quantisation matrix defined. Should be specified
+            as a series 3-argument tuples giving the level, orientation and
+            quantisation matrix value for every entry in the quantisation
+            matrix.
         """,
     )
     
@@ -78,7 +112,26 @@ def parse_args(args=None):
         """
     )
     
-    return parser.parse_args(args)
+    args = parser.parse_args(arg_strings)
+    
+    if args.optimised_synthesis_test_signals is not None:
+        if (
+            args.picture_bit_width is not None or
+            args.custom_quantisation_matrix is not None
+        ):
+            parser.error(
+                "--picture-bit-width/-b and --custom-quantisation-matrix/-q "
+                "must not be used when optimised synthesis test signals "
+                "are provided"
+            )
+    else:
+        if args.picture_bit_width is None:
+            parser.error(
+                "A --picture-bit-width/-b argument or a set of "
+                "optimised synthesis test signals are required."
+            )
+    
+    return args
 
 
 def dict_aggregate(dictionary, key_map, value_reduce):
@@ -112,37 +165,6 @@ def dict_aggregate(dictionary, key_map, value_reduce):
     return out
 
 
-def dict_join(dictionaries):
-    """
-    Perform a join over a set of dictionaries.
-    
-    Parameters
-    ==========
-    dictionaries : [dict, ...]
-        A list of dictionaries which all have the same keys.
-    
-    Returns
-    =======
-    dictionary : {key, (dictionaries[0][key], dictionaries[1][key], ...), ...}
-        A joined dictionary where every value is a tuple containing the
-        corresponding values of the input dictionaries.
-    """
-    # Sanity check
-    assert len(dictionaries) >= 1
-    dict_keys = [set(d) for d in dictionaries]
-    assert all(d == dict_keys[0] for d in dict_keys[1:])
-    
-    out = type(dictionaries[0])()
-    
-    for key in dictionaries[0]:
-        out[key] = tuple(
-            d[key]
-            for d in dictionaries
-        )
-    
-    return out
-
-
 def strip_phase(key):
     level, array_name, x, y = key
     return (level, array_name)
@@ -166,40 +188,133 @@ def main(args=None):
         static_filter_analysis["synthesis_signal_bounds"]
     )
     
+    # Load precomputed test signals
+    analysis_test_signals = deserialise_test_signals(
+        TestSignalSpecification,
+        static_filter_analysis["analysis_test_signals"]
+    )
+    synthesis_test_signals = deserialise_test_signals(
+        TestSignalSpecification,
+        static_filter_analysis["synthesis_test_signals"]
+    )
+    
+    # Load optimised synthesis signal
+    if args.optimised_synthesis_test_signals is not None:
+        optimised_json = json.load(args.optimised_synthesis_test_signals)
+        
+        assert static_filter_analysis["wavelet_index"] == optimised_json["wavelet_index"]
+        assert static_filter_analysis["wavelet_index_ho"] == optimised_json["wavelet_index_ho"]
+        assert static_filter_analysis["dwt_depth"] == optimised_json["dwt_depth"]
+        assert static_filter_analysis["dwt_depth_ho"] == optimised_json["dwt_depth_ho"]
+        
+        args.picture_bit_width = optimised_json["picture_bit_width"]
+        
+        quantisation_matrix = deserialise_quantisation_matrix(
+            optimised_json["quantisation_matrix"]
+        )
+        
+        synthesis_test_signals = deserialise_test_signals(
+            OptimisedTestSignalSpecification,
+            optimised_json["optimised_synthesis_test_signals"]
+        )
+    else:
+        quantisation_matrix = parse_quantisation_matrix_argument(
+            args.custom_quantisation_matrix,
+            static_filter_analysis["wavelet_index"],
+            static_filter_analysis["wavelet_index_ho"],
+            static_filter_analysis["dwt_depth"],
+            static_filter_analysis["dwt_depth_ho"],
+        )
+    
     # Compute signal bounds for all specified bit widths
     #
     # analysis_bounds_dicts = [{(level, array_name, x, y): (lower_bound, upper_bound), ...}, ...]
     # synthesis_bounds_dicts = same as above
-    analysis_bounds_dicts, synthesis_bounds_dicts = zip(*(
-        evaluate_filter_bounds(
-            analysis_signal_bounds,
-            synthesis_signal_bounds,
-            picture_bit_width,
-        )
-        for picture_bit_width in args.picture_bit_widths
-    ))
+    concrete_analysis_bounds, concrete_synthesis_bounds = evaluate_filter_bounds(
+        analysis_signal_bounds,
+        synthesis_signal_bounds,
+        args.picture_bit_width,
+    )
+    
+    # Find the maximum quantisation index for each bit width
+    max_quantisation_index = quantisation_index_bound(
+        concrete_analysis_bounds,
+        quantisation_matrix,
+    )
+    
+    # Find test signal output values for each bit width
+    analysis_outputs, synthesis_outputs = evaluate_test_signal_outputs(
+        static_filter_analysis["wavelet_index"],
+        static_filter_analysis["wavelet_index_ho"],
+        static_filter_analysis["dwt_depth"],
+        static_filter_analysis["dwt_depth_ho"],
+        args.picture_bit_width,
+        quantisation_matrix,
+        max_quantisation_index,
+        analysis_test_signals,
+        synthesis_test_signals,
+    )
+    
+    # Re-add interleaved values (if absent)
+    synthesis_outputs = add_omitted_synthesis_values(
+        static_filter_analysis["wavelet_index"],
+        static_filter_analysis["wavelet_index_ho"],
+        static_filter_analysis["dwt_depth"],
+        static_filter_analysis["dwt_depth_ho"],
+        synthesis_outputs,
+    )
+    
+    # Strip quantisation index from synthesis output info and put bounds in the
+    # correct order (since the minimised/maximised test signals may actually
+    # produce outputs with the wrong sign in cases of extreme quantisation)
+    synthesis_outputs = OrderedDict(
+        (key, (min(lower, upper), max(lower, upper)))
+        for key, ((lower, _), (upper, _)) in synthesis_outputs.items()
+    )
     
     # Aggregate bounds to required level of detail (e.g. aggregate together all
     # filter phases)
     columns = ("level", "array_name", "x", "y")
     if not args.show_all_filter_phases:
         columns = ("level", "array_name")
-        analysis_bounds_dicts = [
-            dict_aggregate(d, strip_phase, combine_bounds)
-            for d in analysis_bounds_dicts
-        ]
-        synthesis_bounds_dicts = [
-            dict_aggregate(d, strip_phase, combine_bounds)
-            for d in synthesis_bounds_dicts
-        ]
+        concrete_analysis_bounds = dict_aggregate(
+            concrete_analysis_bounds,
+            strip_phase,
+            combine_bounds,
+        )
+        concrete_synthesis_bounds = dict_aggregate(
+            concrete_synthesis_bounds,
+            strip_phase,
+            combine_bounds,
+        )
+        analysis_outputs = dict_aggregate(
+            analysis_outputs,
+            strip_phase,
+            combine_bounds,
+        )
+        synthesis_outputs = dict_aggregate(
+            synthesis_outputs,
+            strip_phase,
+            combine_bounds,
+        )
     
-    analysis_bounds = dict_join(analysis_bounds_dicts)
-    synthesis_bounds = dict_join(synthesis_bounds_dicts)
-    
-    # Combine all bounds & bit widths
-    all_bounds = OrderedDict()
-    all_bounds.update((("analysis", ) + key, value) for key, value in analysis_bounds.items())
-    all_bounds.update((("synthesis", ) + key, value) for key, value in synthesis_bounds.items())
+    # Combine all bounds & outputs
+    all_bounds = OrderedDict(
+        (
+            (type_name, ) + key,
+            (
+                bounds[key][0],
+                outputs[key][0],
+                outputs[key][1],
+                bounds[key][1],
+            ),
+        )
+        for type_name, bounds, outputs in [
+            ("analysis", concrete_analysis_bounds, analysis_outputs),
+            ("synthesis", concrete_synthesis_bounds, synthesis_outputs),
+        ]
+        for key in bounds.keys()
+    )
     
     csv_writer = csv.writer(args.output)
     
@@ -207,20 +322,28 @@ def main(args=None):
     csv_writer.writerow(
         ("type", ) +
         columns +
-        (("lower", "upper", "bits")*len(args.picture_bit_widths))
+        ("lower_bound", "test_signal_min", "test_signal_max", "upper_bound", "bits")
     )
     
     # Data
-    for key, bounds in all_bounds.items():
-        bounds_and_bits = []
-        for lower_bound, upper_bound in bounds:
-            num_bits = max(
-                twos_compliment_bits(lower_bound),
-                twos_compliment_bits(upper_bound),
+    for key, (lower_bound, output_min, output_max, upper_bound) in all_bounds.items():
+        output_num_bits = max(
+            twos_compliment_bits(output_min),
+            twos_compliment_bits(output_max),
+        )
+        bounds_num_bits = max(
+            twos_compliment_bits(lower_bound),
+            twos_compliment_bits(upper_bound),
+        )
+        if output_num_bits == bounds_num_bits:
+            num_bits = str(bounds_num_bits)
+        else:
+            num_bits = "{}-{}".format(
+                output_num_bits,
+                bounds_num_bits,
             )
-            bounds_and_bits.append((lower_bound, upper_bound, num_bits))
         
-        csv_writer.writerow(key + sum(bounds_and_bits, tuple()))
+        csv_writer.writerow(key + (lower_bound, output_min, output_max, upper_bound, num_bits))
     
     return 0
 

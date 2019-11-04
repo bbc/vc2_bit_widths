@@ -23,7 +23,6 @@ from vc2_bit_widths.scripts.vc2_bit_widths_table import main as bwt
 
 from vc2_bit_widths.scripts.vc2_bit_widths_table import (
     dict_aggregate,
-    dict_join,
     combine_bounds,
 )
 
@@ -59,33 +58,6 @@ def test_dict_aggregate(dict_type):
     }
 
 
-@pytest.mark.parametrize("dict_type", [
-    dict,
-    OrderedDict,
-])
-def test_dict_join(dict_type):
-    d_tens = dict_type([
-        ("one", 10),
-        ("two", 20),
-        ("three", 30),
-    ])
-    d_hundreds = dict_type([
-        ("three", 300),
-        ("two", 200),
-        ("one", 100),
-    ])
-    
-    out = dict_join([d_tens, d_hundreds])
-    
-    assert isinstance(out, dict_type)
-    
-    assert out == {
-        "one": (10, 100),
-        "two": (20, 200),
-        "three": (30, 300),
-    }
-
-
 @pytest.mark.parametrize("a,b,exp", [
     # All same
     ((10, 100), (10, 100), (10, 100)),
@@ -116,21 +88,20 @@ def test_bit_widths(tmpdir, capsys):
     assert sfa(shlex.split("-w haar_with_shift -d 1 -o {}".format(f))) == 0
     
     # vc2-bit-widths-table
-    assert bwt(shlex.split("{} -b 8 10".format(f))) == 0
+    assert bwt(shlex.split("{} -b 10".format(f))) == 0
     
     csv_rows = list(csv.reader(capsys.readouterr().out.splitlines()))
     
     # Check all columns are present as expected
     assert csv_rows[0] == (
         ["type", "level", "array_name"] +
-        (["lower", "upper", "bits"] * 2)
+        ["lower_bound", "test_signal_min", "test_signal_max", "upper_bound", "bits"]
     )
     
     # Check correct bit widths were read from arguments
     csv_rows[1] == [
         "analysis", 1, "Input",
-        -128, 127, 8,
-        -512, 511, 10,
+        -512, -512, 511, 511, 10,
     ]
 
 
@@ -151,7 +122,7 @@ def test_aggregation_flag(tmpdir, capsys, arg, exp_phases):
     
     csv_rows = list(csv.reader(capsys.readouterr().out.splitlines()))
     
-    columns = csv_rows[0][:-3]
+    columns = csv_rows[0][:-5]
     
     # Check all phase columns are present as expected
     if exp_phases:
@@ -161,7 +132,7 @@ def test_aggregation_flag(tmpdir, capsys, arg, exp_phases):
     
     # Check the rows are as expected
     row_headers = [
-        tuple(row[:-3])
+        tuple(row[:-5])
         for row in csv_rows[1:]
     ]
     
@@ -225,17 +196,17 @@ def test_aggregation_correct(tmpdir, capsys):
     csv_raw = list(csv.reader(capsys.readouterr().out.splitlines()))
     
     aggregated_values = {
-        tuple(row[:-3]): tuple(row[-3:])
+        tuple(row[:-5]): tuple(row[-5:])
         for row in csv_aggregated
     }
     
     raw_values = {
-        tuple(row[:-3]): tuple(row[-3:])
+        tuple(row[:-5]): tuple(row[-5:])
         for row in csv_raw
     }
     
     # Hand checked example...
-    assert raw_values[("analysis", "1", "L''", "0", "0")] == ("-1025", "1024", "12")
-    assert raw_values[("analysis", "1", "L''", "0", "1")] == ("-2048", "2049", "13")
+    assert raw_values[("analysis", "1", "L''", "0", "0")] == ("-1025", "-1024", "1022", "1024", "11-12")
+    assert raw_values[("analysis", "1", "L''", "0", "1")] == ("-2048", "-2046", "2046", "2049", "12-13")
     
-    assert aggregated_values[("analysis", "1", "L''")] == ("-2048", "2049", "13")
+    assert aggregated_values[("analysis", "1", "L''")] == ("-2048", "-2046", "2046", "2049", "12-13")
