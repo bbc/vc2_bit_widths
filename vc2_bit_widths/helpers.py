@@ -570,8 +570,20 @@ def evaluate_test_signal_outputs(
     
     input_min, input_max = signed_integer_range(picture_bit_width)
     
-    analysis_test_signal_outputs = OrderedDict(
-        ((level, array_name, x, y), evaluate_analysis_test_signal_output(
+    analysis_test_signal_outputs = OrderedDict()
+    for i, ((level, array_name, x, y), test_signal) in enumerate(
+        analysis_test_signals.items()
+    ):
+        logger.info(
+            "Evaluating analysis test pattern %d of %d (Level %d, %s[%d, %d])...",
+            i + 1,
+            len(analysis_test_signals),
+            level,
+            array_name,
+            x,
+            y,
+        )
+        analysis_test_signal_outputs[(level, array_name, x, y)] = evaluate_analysis_test_signal_output(
             h_filter_params=h_filter_params,
             v_filter_params=v_filter_params,
             dwt_depth=dwt_depth,
@@ -581,10 +593,7 @@ def evaluate_test_signal_outputs(
             test_signal=test_signal,
             input_min=input_min,
             input_max=input_max,
-        ))
-        for (level, array_name, x, y), test_signal in
-        analysis_test_signals.items()
-    )
+        )
     
     _, synthesis_pyexps = synthesis_transform(
         h_filter_params,
@@ -594,8 +603,20 @@ def evaluate_test_signal_outputs(
         make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
     )
     
-    synthesis_test_signal_outputs = OrderedDict(
-        ((level, array_name, x, y), evaluate_synthesis_test_signal_output(
+    synthesis_test_signal_outputs = OrderedDict()
+    for i, ((level, array_name, x, y), test_signal) in enumerate(
+        synthesis_test_signals.items()
+    ):
+        logger.info(
+            "Evaluating synthesis test pattern %d of %d (Level %d, %s[%d, %d])...",
+            i + 1,
+            len(synthesis_test_signals),
+            level,
+            array_name,
+            x,
+            y,
+        )
+        synthesis_test_signal_outputs[(level, array_name, x, y)] = evaluate_synthesis_test_signal_output(
             h_filter_params=h_filter_params,
             v_filter_params=v_filter_params,
             dwt_depth=dwt_depth,
@@ -606,10 +627,7 @@ def evaluate_test_signal_outputs(
             input_min=input_min,
             input_max=input_max,
             max_quantisation_index=max_quantisation_index,
-        ))
-        for (level, array_name, x, y), test_signal in
-        synthesis_test_signals.items()
-    )
+        )
     
     return (
         analysis_test_signal_outputs,

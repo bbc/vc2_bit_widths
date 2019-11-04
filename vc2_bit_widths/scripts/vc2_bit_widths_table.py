@@ -10,6 +10,8 @@ import json
 
 import csv
 
+import logging
+
 from collections import OrderedDict
 
 from argparse import ArgumentParser, FileType
@@ -178,6 +180,9 @@ def combine_bounds(a, b):
 
 def main(args=None):
     args = parse_args(args)
+    
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
     
     # Load precomputed signal bounds
     static_filter_analysis = json.load(args.static_filter_analysis)
