@@ -317,6 +317,8 @@ def test_optimise_synthesis_test_signals():
     (WaveletFilters.haar_with_shift, WaveletFilters.le_gall_5_3, 1, 1),
     # A filter which has a different number of lifting stages to usual
     (WaveletFilters.haar_with_shift, WaveletFilters.daubechies_9_7, 0, 1),
+    # Decent depth, complex filter (with multiple high-pass band phases)
+    (WaveletFilters.le_gall_5_3, WaveletFilters.le_gall_5_3, 2, 0),
 ])
 def test_add_omitted_synthesis_values(
     wavelet_index,
@@ -326,7 +328,7 @@ def test_add_omitted_synthesis_values(
 ):
     quantisation_matrix = defaultdict(lambda: defaultdict(lambda: 0))
     picture_bit_width = 10
-    max_quantisation_index = 0
+    max_quantisation_index = 64
     random_state = np.random.RandomState()
     
     (_, _, _, test_signals) = static_filter_analysis(
@@ -373,6 +375,8 @@ def test_add_omitted_synthesis_values(
         (key, evaluated_test_signals[key])
         for key in optimised_test_signals
     )
+    # Sanity check
+    assert evaluated_test_signals != subset_evaluated_test_signals
     
     # Re-add the remaining entries
     desubsetted_evaluated_test_signals = add_omitted_synthesis_values(
@@ -382,7 +386,6 @@ def test_add_omitted_synthesis_values(
         dwt_depth_ho,
         subset_evaluated_test_signals,
     )
-    
     assert evaluated_test_signals == desubsetted_evaluated_test_signals
 
 

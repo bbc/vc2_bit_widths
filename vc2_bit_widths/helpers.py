@@ -19,10 +19,15 @@ can also be determined:
 
 .. autofunction:: quantisation_index_bound
 
-Finally, the test signals generated for the synthesis filter can be optimised
-and specialised for a particular codec configuration and bit depth:
+The test signals generated for the synthesis filter can be optimised and
+specialised for a particular codec configuration and bit depth:
 
 .. autofunction:: optimise_synthesis_test_signals
+
+Missing entries in the output of the above (due to removal of duplicate filter
+values, e.g. from interleaved arrays) may be reinstated using:
+
+.. autofunction:: add_omitted_synthesis_values
 
 """
 
@@ -637,7 +642,8 @@ def add_omitted_synthesis_values(
     full_synthesis_values : {(level, array_name, x, y): values, ...}
         The complete set of values with omitted (interleaved) values present.
     """
-    # NB: Used only to enumerate the complete set of arrays/test signals
+    # NB: Used only to enumerate the complete set of arrays/test signals and
+    # get array periods
     h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
     v_filter_params = LIFTING_FILTERS[wavelet_index]
     _, intermediate_arrays = synthesis_transform(
@@ -663,27 +669,21 @@ def add_omitted_synthesis_values(
                     if array_name.startswith("L'"):
                         if y % 2 == 0:
                             src_array_name = "LL"
-                            src_y = y // 2
                         else:
                             src_array_name = "LH"
-                            src_x = 0
-                            src_y = 0
+                        src_y = y // 2
                     elif array_name.startswith("H'"):
                         if y % 2 == 0:
                             src_array_name = "HL"
-                            src_y = y // 2
                         else:
                             src_array_name = "HH"
-                            src_x = 0
-                            src_y = 0
+                        src_y = y // 2
                     elif array_name.startswith("DC'"):
                         if x % 2 == 0:
                             src_array_name = "L"
-                            src_x = x // 2
                         else:
                             src_array_name = "H"
-                            src_x = 0
-                            src_y = 0
+                        src_x = x // 2
                     elif array_name == "Output":
                         src_array_name = "DC"
                     elif array_name == "LL" or array_name == "L":
@@ -693,6 +693,10 @@ def add_omitted_synthesis_values(
                         # Should never reach this point so long as only
                         # interleavings and nop-bit-shifts are omitted
                         assert False
+                
+                px, py = intermediate_arrays[(src_level, src_array_name)].period
+                src_x %= px
+                src_y %= py
                 
                 out[(level, array_name, x, y)] = synthesis_values.get((
                     src_level,
