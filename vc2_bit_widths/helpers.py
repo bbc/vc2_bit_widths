@@ -53,6 +53,7 @@ from vc2_bit_widths.signal_bounds import (
 
 from vc2_bit_widths.signal_generation import (
     TestSignalSpecification,
+    OptimisedTestSignalSpecification,
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
     optimise_synthesis_maximising_signal,
@@ -601,3 +602,108 @@ def evaluate_test_signal_outputs(
         analysis_test_signal_outputs,
         synthesis_test_signal_outputs,
     )
+
+
+def add_omitted_synthesis_values(
+    wavelet_index,
+    wavelet_index_ho,
+    dwt_depth,
+    dwt_depth_ho,
+    synthesis_values,
+):
+    """
+    Re-create entries from a test signal dictionary which have been omitted on
+    the basis of just being interleavings of other arrays.
+    
+    When :py:func;`optimise_synthesis_test_signals` is used, it only outputs
+    test signals for filter phases which are not simple interleavings of other
+    arrays. When producing human-readable tables of bit width information,
+    however, these omitted filters and phases are still required for display.
+    
+    Parameters
+    ==========
+    wavelet_index : :py:class:`vc2_data_tables.WaveletFilters` or int
+    wavelet_index_ho : :py:class:`vc2_data_tables.WaveletFilters` or int
+    dwt_depth : int
+    dwt_depth_ho : int
+        The filter parameters.
+    synthesis_values : {(level, array_name, x, y): values, ...}
+        A dictionary of values (one per filter and phase), e.g. from
+        :py:func:`evaluate_test_signal_outputs`, with values omitted for
+        interleaved values.
+    
+    Returns
+    =======
+    full_synthesis_values : {(level, array_name, x, y): values, ...}
+        The complete set of values with omitted (interleaved) values present.
+    """
+    # NB: Used only to enumerate the complete set of arrays/test signals
+    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
+    _, intermediate_arrays = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
+    )
+    
+    out = OrderedDict()
+    
+    for (level, array_name), array in intermediate_arrays.items():
+        for x in range(array.period[0]):
+            for y in range(array.period[1]):
+                # Below we work out which source array to use to populate the
+                # current array/phase
+                src_level = level
+                src_array_name = array_name
+                src_x = x
+                src_y = y
+                if (level, array_name, x, y) not in synthesis_values:
+                    if array_name.startswith("L'"):
+                        if y % 2 == 0:
+                            src_array_name = "LL"
+                            src_y = y // 2
+                        else:
+                            src_array_name = "LH"
+                            src_x = 0
+                            src_y = 0
+                    elif array_name.startswith("H'"):
+                        if y % 2 == 0:
+                            src_array_name = "HL"
+                            src_y = y // 2
+                        else:
+                            src_array_name = "HH"
+                            src_x = 0
+                            src_y = 0
+                    elif array_name.startswith("DC'"):
+                        if x % 2 == 0:
+                            src_array_name = "L"
+                            src_x = x // 2
+                        else:
+                            src_array_name = "H"
+                            src_x = 0
+                            src_y = 0
+                    elif array_name == "Output":
+                        src_array_name = "DC"
+                    elif array_name == "LL" or array_name == "L":
+                        src_level = level - 1
+                        src_array_name = "Output"
+                    else:
+                        # Should never reach this point so long as only
+                        # interleavings and nop-bit-shifts are omitted
+                        assert False
+                
+                out[(level, array_name, x, y)] = synthesis_values.get((
+                    src_level,
+                    src_array_name,
+                    src_x,
+                    src_y,
+                ), out.get((
+                    src_level,
+                    src_array_name,
+                    src_x,
+                    src_y,
+                )))
+    
+    return out

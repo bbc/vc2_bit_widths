@@ -2,6 +2,8 @@ import pytest
 
 import numpy as np
 
+from collections import defaultdict, OrderedDict
+
 from vc2_data_tables import WaveletFilters
 
 from vc2_conformance.state import State
@@ -17,6 +19,7 @@ from vc2_bit_widths.helpers import (
     quantisation_index_bound,
     optimise_synthesis_test_signals,
     evaluate_test_signal_outputs,
+    add_omitted_synthesis_values,
 )
 
 
@@ -304,6 +307,83 @@ def test_optimise_synthesis_test_signals():
         decoded_picture = idwt(state, quantised_coeffs)
         
         assert decoded_picture[ty][tx] == ts.decoded_value
+
+
+@pytest.mark.parametrize("wavelet_index,wavelet_index_ho,dwt_depth,dwt_depth_ho", [
+    # No-shift (2D and HO)
+    (WaveletFilters.haar_no_shift, WaveletFilters.haar_no_shift, 2, 0),
+    (WaveletFilters.haar_no_shift, WaveletFilters.haar_no_shift, 0, 2),
+    # A multi-level filter, testing 2D and 1D transforms
+    (WaveletFilters.haar_with_shift, WaveletFilters.le_gall_5_3, 1, 1),
+    # A filter which has a different number of lifting stages to usual
+    (WaveletFilters.haar_with_shift, WaveletFilters.daubechies_9_7, 0, 1),
+])
+def test_add_omitted_synthesis_values(
+    wavelet_index,
+    wavelet_index_ho,
+    dwt_depth,
+    dwt_depth_ho,
+):
+    quantisation_matrix = defaultdict(lambda: defaultdict(lambda: 0))
+    picture_bit_width = 10
+    max_quantisation_index = 0
+    random_state = np.random.RandomState()
+    
+    (_, _, _, test_signals) = static_filter_analysis(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+    )
+    
+    _, evaluated_test_signals = evaluate_test_signal_outputs(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        picture_bit_width,
+        quantisation_matrix,
+        max_quantisation_index,
+        {},
+        test_signals,
+    )
+    
+    # No-op optimisation to work out which arrays are retained
+    optimised_test_signals = optimise_synthesis_test_signals(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        quantisation_matrix,
+        picture_bit_width,
+        test_signals,
+        max_quantisation_index,
+        random_state,
+        number_of_searches=1,
+        terminate_early=0,
+        added_corruption_rate=0,
+        removed_corruption_rate=0,
+        base_iterations=0,
+        added_iterations_per_improvement=0,
+    )
+    
+    # Make a copy of the synthesis test signals with only those produced by the
+    # optimiser retained
+    subset_evaluated_test_signals = OrderedDict(
+        (key, evaluated_test_signals[key])
+        for key in optimised_test_signals
+    )
+    
+    # Re-add the remaining entries
+    desubsetted_evaluated_test_signals = add_omitted_synthesis_values(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        subset_evaluated_test_signals,
+    )
+    
+    assert evaluated_test_signals == desubsetted_evaluated_test_signals
 
 
 def test_evaluate_test_signal_outputs():
