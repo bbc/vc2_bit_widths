@@ -19,6 +19,8 @@ from vc2_bit_widths.json_serialisations import (
     deserialise_concrete_signal_bounds,
     serialise_namedtuple,
     deserialise_namedtuple,
+    serialise_picture,
+    deserialise_picture,
     serialise_test_signals,
     deserialise_test_signals,
     serialise_quantisation_matrix,
@@ -121,6 +123,42 @@ def test_serialise_namedtuple():
     assert type(deserialise_namedtuple(Point, after)) == type(before)
 
 
+def test_serialise_picture():
+    before = {
+        (10, 20): +1, (11, 20): -1, (12, 20): +1, (13, 20): -1, (14, 20): +1,
+        (10, 21): +1,               (12, 21): -1,               (14, 21): +1,
+        (10, 22): +1,                                           (14, 22): -1,
+    }
+    
+    after = serialise_picture(before)
+    
+    assert after["dx"] == 10
+    assert after["dy"] == 20
+    assert after["width"] == 5
+    assert after["height"] == 3
+    
+    # positive array:   mask array
+    #     10101           11111
+    #     1x0x1           10101
+    #     1xxx0           10001
+    
+    # Packed positive array: 1010110001100000________
+    #                        '----''----''----''----'
+    #                 Decimal  43     6     0
+    #                 Base64    r     G     A     =
+    assert after["positive"] == "rGA="
+    
+    # Packed mask array: 1111110101100010________
+    #                    '----''----''----''----'
+    #             Decimal  63    22     8
+    #             Base64    /     W     I     =
+    assert after["mask"] == "/WI="
+    
+    after = json_roundtrip(after)
+    
+    assert deserialise_picture(after) == before
+
+
 def test_serialise_test_signals():
     before = {
         (1, "LH", 2, 3): OptimisedTestSignalSpecification(
@@ -142,7 +180,7 @@ def test_serialise_test_signals():
             "array_name": "LH",
             "phase": [2, 3],
             "target": [4, 5],
-            "picture": [[10, 20, 1]],
+            "picture": serialise_picture({(10, 20): 1}),
             "picture_translation_multiple": [6, 7],
             "target_translation_multiple": [8, 9],
             "quantisation_index": 30,
