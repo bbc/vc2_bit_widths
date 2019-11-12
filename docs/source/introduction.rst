@@ -4,26 +4,21 @@ Introduction and tutorial
 =========================
 
 The VC-2 standard defines the video decoding process using infinite precision
-integer arithmetic. By contrast, real implementations will use fixed-width
-integers sized appropriately for the content being coded. If codec is built
-with too few bits of precision, potentially significant artefacts may result in
-the presence of unfortunate signals. Using too many bits may also be
-undesirable for efficiency or cost reasons.
-
-Unfortunately, using real pictures and noise signals to experimentally
-determine the necessary number of bits for a codec is prone to producing
-under-estimates, particularly for deeper transform depths or low bit rates.
+integer arithmetic. For practical implementations, however, fixed-width
+integers must be used to achieve useful performance. If a codec is built with
+too few bits of precision, potentially significant artefacts may be produced in
+the event of integer wrap-around or saturation. If too many bits are used,
+however, the implementation will consume more resources than necessary.
 
 Perhaps surprisingly, the question 'how many bits do I need?' is not a simple
-one to answer. This software attempts to provide reliable figures for necessary
-bit widths in VC-2 implementations as well as providing test patterns which
-produce extreme signals both internally and at the outputs of codec
-implementations.
+one to answer. This software attempts to provide reliable answers to this
+question, along with synthetic test patterns to verify implementations.
 
 Before introducing this software it is important to understand its limitations
 and the terminology it uses. These will be introduced in the next few sections
 before the command line and Python library interfaces of
 :py:mod:`vc2_bit_widths` is introduced.
+
 
 
 Caveats
