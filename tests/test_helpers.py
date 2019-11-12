@@ -4,7 +4,7 @@ import numpy as np
 
 from collections import defaultdict, OrderedDict
 
-from vc2_data_tables import WaveletFilters
+from vc2_data_tables import WaveletFilters, LIFTING_FILTERS
 
 from vc2_conformance.state import State
 
@@ -19,7 +19,6 @@ from vc2_bit_widths.helpers import (
     quantisation_index_bound,
     optimise_synthesis_test_signals,
     evaluate_test_signal_outputs,
-    add_omitted_synthesis_values,
 )
 
 
@@ -54,14 +53,21 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         concrete_analysis_signal_bounds,
         concrete_synthesis_signal_bounds,
     ) = evaluate_filter_bounds(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
         analysis_signal_bounds,
         synthesis_signal_bounds,
         picture_bit_width,
     )
     
     # Analysis/synthesis intermediate arrays should be consistent...
-    assert set(analysis_signal_bounds) == set(analysis_test_signals) == set(concrete_analysis_signal_bounds)
-    assert set(synthesis_signal_bounds) == set(synthesis_test_signals) == set(concrete_synthesis_signal_bounds)
+    assert set(analysis_signal_bounds) == set(analysis_test_signals)
+    assert set(synthesis_signal_bounds) == set(synthesis_test_signals)
+    
+    assert set(analysis_signal_bounds).issubset(concrete_analysis_signal_bounds)
+    assert set(synthesis_signal_bounds).issubset(concrete_synthesis_signal_bounds)
     
     # As a sanity check, ensure that the analysis test signals provided reach
     # the ranges expected when encoded by the pseudocode encoder
@@ -71,8 +77,17 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         dwt_depth=dwt_depth,
         dwt_depth_ho=dwt_depth_ho,
     )
-    for level, array_name in [(0, "LL"), (1, "LH"), (1, "HL"), (1, "HH")]:
-        ts = analysis_test_signals[(level or 1, array_name, 0, 0)]
+    # NB: The analysis_test_signals lookup omits the LL, etc. arrays as they're
+    # just a subsampling of the L'' and H'' arrays. Here we provide the
+    # equivalent subsampled array name and coordinate for the test signal.
+    for level, array_name, orig_array_name, orig_y in [
+        (0, "LL", "L''", 0),
+        (1, "LH", "L''", 1),
+        (1, "HL", "H''", 0),
+        (1, "HH", "H''", 1),
+    ]:
+        ts = analysis_test_signals[(level or 1, orig_array_name, 0, orig_y)]
+        
         exp_lower, exp_upper = concrete_analysis_signal_bounds[(level or 1, array_name, 0, 0)]
         
         xs, ys = zip(*ts.picture)
@@ -95,7 +110,11 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         max_picture[picture==+1] = input_max
         max_picture[picture==-1] = input_min
         
+        # NB: Target is in L'' or H'' so must modify ty to coordinates in LL,
+        # LH, HL and HH.
         tx, ty = ts.target
+        ty //= 2
+        
         actual_lower = dwt(state, min_picture.tolist())[level][array_name][ty][tx]
         actual_upper = dwt(state, max_picture.tolist())[level][array_name][ty][tx]
         
@@ -170,6 +189,10 @@ def test_quantisation_index_bound():
         concrete_analysis_signal_bounds,
         concrete_synthesis_signal_bounds,
     ) = evaluate_filter_bounds(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
         analysis_signal_bounds,
         synthesis_signal_bounds,
         picture_bit_width,
@@ -220,6 +243,10 @@ def test_optimise_synthesis_test_signals():
         concrete_analysis_signal_bounds,
         concrete_synthesis_signal_bounds,
     ) = evaluate_filter_bounds(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
         analysis_signal_bounds,
         synthesis_signal_bounds,
         picture_bit_width,
@@ -309,86 +336,6 @@ def test_optimise_synthesis_test_signals():
         assert decoded_picture[ty][tx] == ts.decoded_value
 
 
-@pytest.mark.parametrize("wavelet_index,wavelet_index_ho,dwt_depth,dwt_depth_ho", [
-    # No-shift (2D and HO)
-    (WaveletFilters.haar_no_shift, WaveletFilters.haar_no_shift, 2, 0),
-    (WaveletFilters.haar_no_shift, WaveletFilters.haar_no_shift, 0, 2),
-    # A multi-level filter, testing 2D and 1D transforms
-    (WaveletFilters.haar_with_shift, WaveletFilters.le_gall_5_3, 1, 1),
-    # A filter which has a different number of lifting stages to usual
-    (WaveletFilters.haar_with_shift, WaveletFilters.daubechies_9_7, 0, 1),
-    # Decent depth, complex filter (with multiple high-pass band phases)
-    (WaveletFilters.le_gall_5_3, WaveletFilters.le_gall_5_3, 2, 0),
-])
-def test_add_omitted_synthesis_values(
-    wavelet_index,
-    wavelet_index_ho,
-    dwt_depth,
-    dwt_depth_ho,
-):
-    quantisation_matrix = defaultdict(lambda: defaultdict(lambda: 0))
-    picture_bit_width = 10
-    max_quantisation_index = 64
-    random_state = np.random.RandomState()
-    
-    (_, _, _, test_signals) = static_filter_analysis(
-        wavelet_index,
-        wavelet_index_ho,
-        dwt_depth,
-        dwt_depth_ho,
-    )
-    
-    _, evaluated_test_signals = evaluate_test_signal_outputs(
-        wavelet_index,
-        wavelet_index_ho,
-        dwt_depth,
-        dwt_depth_ho,
-        picture_bit_width,
-        quantisation_matrix,
-        max_quantisation_index,
-        {},
-        test_signals,
-    )
-    
-    # No-op optimisation to work out which arrays are retained
-    optimised_test_signals = optimise_synthesis_test_signals(
-        wavelet_index,
-        wavelet_index_ho,
-        dwt_depth,
-        dwt_depth_ho,
-        quantisation_matrix,
-        picture_bit_width,
-        test_signals,
-        max_quantisation_index,
-        random_state,
-        number_of_searches=1,
-        terminate_early=0,
-        added_corruption_rate=0,
-        removed_corruption_rate=0,
-        base_iterations=0,
-        added_iterations_per_improvement=0,
-    )
-    
-    # Make a copy of the synthesis test signals with only those produced by the
-    # optimiser retained
-    subset_evaluated_test_signals = OrderedDict(
-        (key, evaluated_test_signals[key])
-        for key in optimised_test_signals
-    )
-    # Sanity check
-    assert evaluated_test_signals != subset_evaluated_test_signals
-    
-    # Re-add the remaining entries
-    desubsetted_evaluated_test_signals = add_omitted_synthesis_values(
-        wavelet_index,
-        wavelet_index_ho,
-        dwt_depth,
-        dwt_depth_ho,
-        subset_evaluated_test_signals,
-    )
-    assert evaluated_test_signals == desubsetted_evaluated_test_signals
-
-
 def test_evaluate_test_signal_outputs():
     wavelet_index = WaveletFilters.haar_with_shift
     wavelet_index_ho = WaveletFilters.le_gall_5_3
@@ -420,6 +367,10 @@ def test_evaluate_test_signal_outputs():
         concrete_analysis_signal_bounds,
         concrete_synthesis_signal_bounds,
     ) = evaluate_filter_bounds(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
         analysis_signal_bounds,
         synthesis_signal_bounds,
         picture_bit_width,
@@ -482,12 +433,14 @@ def test_evaluate_test_signal_outputs():
         assert np.isclose(maximum, upper_bound, 0.01)
         assert maximum <= upper_bound
     
-    # Synthesis values should be equal to the optimiser's values
+    # Synthesis values should be equal to the optimiser's values (where
+    # present)
     for (
         (level, array_name, x, y),
         ((minimum, min_qi), (maximum, max_qi)),
     ) in synthesis_test_signal_outputs.items():
-        ts = optimised_synthesis_test_signals[(level, array_name, x, y)]
-        
-        assert ts.decoded_value == maximum
-        assert ts.quantisation_index == max_qi
+        if (level, array_name, x, y) in optimised_synthesis_test_signals:
+            ts = optimised_synthesis_test_signals[(level, array_name, x, y)]
+            
+            assert ts.decoded_value == maximum
+            assert ts.quantisation_index == max_qi

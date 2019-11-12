@@ -24,6 +24,47 @@ efficiently compute single filter outputs or intermediate values.
 
 .. autofunction:: make_variable_coeff_arrays
 
+When performing expensive computations on every array and phase of a VC-2
+filter (as returned by :py:func:`analysis_transform` or
+:py:func:`synthesis_transform`), it is often prudent to skip arrays which are
+just interleavings, subsamplings or renamings to avoid needless repetitions.
+Such arrays may be identified by checking their
+:py:attr:`~vc2_bit_widths.infinite_arrays.InfiniteArray.nop` property. For
+example::
+
+    >>> coeff_arrays, intermediate_values = analysis_transform(
+    ...     h_filter_params,
+    ...     v_filter_params,
+    ...     dwt_depth,
+    ...     dwt_depth_ho,
+    ...     SymbolArray(2),
+    ... )
+    
+    >>> # Perform expensive computations only on arrays and phases which
+    >>> # are not just interleavings/subsamplings/renamings of others.
+    >>> results = {
+    ...     (level, array_name, x, y): some_expensive_function(array[x, y])
+    ...     for (level, array_name), array in intermediate_arrays.items()
+    ...     for x in range(array.period[0])
+    ...     for y in range(array.period[1])
+    ...     if not array.nop
+    ... }
+
+The omitted arrays and phases can later have their results populated by
+duplicating the relevant arrays, e.g.::
+
+    >>> full_results = add_missing_analysis_values(
+    ...     h_filter_params,
+    ...     v_filter_params,
+    ...     dwt_depth,
+    ...     dwt_depth_ho,
+    ...     results,
+    ... )
+
+.. autofunction:: add_missing_analysis_values
+
+.. autofunction:: add_missing_synthesis_values
+
 """
 
 __all__ = [
@@ -32,6 +73,8 @@ __all__ = [
     "make_coeff_arrays",
     "make_symbol_coeff_arrays",
     "make_variable_coeff_arrays",
+    "add_missing_analysis_values",
+    "add_missing_synthesis_values",
 ]
 
 import math
@@ -379,3 +422,229 @@ def synthesis_transform(h_filter_params, v_filter_params, dwt_depth, dwt_depth_h
     
     return output, intermediate_values
 
+
+def add_missing_analysis_values(
+    h_filter_params,
+    v_filter_params,
+    dwt_depth,
+    dwt_depth_ho,
+    analysis_values,
+):
+    """
+    Fill in results for omitted (duplicate) filter arrays and phases.
+    
+    Parameters
+    ==========
+    h_filter_params, v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+    dwt_depth, dwt_depth_ho: int
+        The filter parameters.
+    analysis_values : {(level, array_name, x, y): value, ...}
+        A dictionary of values associated with individual intermediate analysis
+        filter phases with entries omitted where arrays are just
+        interleavings/subsamplings/renamings.
+    
+    Returns
+    =======
+    full_analysis_values : {(level, array_name, x, y): value, ...}
+        A new dictionary of values with missing filters and phases filled in.
+    """
+    # NB: Used only to enumerate the complete set of arrays/test signals and
+    # get array periods
+    _, intermediate_arrays = analysis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        SymbolArray(2),
+    )
+    
+    out = OrderedDict()
+    
+    for (level, array_name), array in intermediate_arrays.items():
+        for x in range(array.period[0]):
+            for y in range(array.period[1]):
+                # Below we work out which source array to use to populate the
+                # current array/phase
+                src_level = level
+                src_array_name = array_name
+                src_x = x
+                src_y = y
+                if (level, array_name, x, y) not in analysis_values:
+                    if array_name == "Input":
+                        src_level = level + 1
+                        src_array_name = (
+                            "LL"
+                            if (src_level, "LL") in intermediate_arrays else
+                            "L"
+                        )
+                    elif array_name == "DC":
+                        src_array_name = "Input"
+                    elif array_name in ("L", "H"):
+                        src_array_name = [
+                            array_name
+                            for level, array_name in intermediate_arrays
+                            if level == src_level and array_name.startswith("DC'")
+                        ][-1]
+                        if array_name == "L":
+                            src_x = x * 2
+                        elif array_name == "H":
+                            src_x = (x * 2) + 1
+                    elif array_name in ("LL", "LH"):
+                        src_array_name = [
+                            array_name
+                            for level, array_name in intermediate_arrays
+                            if level == src_level and array_name.startswith("L'")
+                        ][-1]
+                        if array_name == "LL":
+                            src_y = y * 2
+                        elif array_name == "LH":
+                            src_y = (y * 2) + 1
+                    elif array_name in ("HL", "HH"):
+                        src_array_name = [
+                            array_name
+                            for level, array_name in intermediate_arrays
+                            if level == src_level and array_name.startswith("H'")
+                        ][-1]
+                        if array_name == "HL":
+                            src_y = y * 2
+                        elif array_name == "HH":
+                            src_y = (y * 2) + 1
+                    else:
+                        # Should never reach this point so long as only
+                        # nops are omitted
+                        assert False
+                
+                out[(level, array_name, x, y)] = analysis_values.get((
+                    src_level,
+                    src_array_name,
+                    src_x,
+                    src_y,
+                ), out.get((
+                    src_level,
+                    src_array_name,
+                    src_x,
+                    src_y,
+                )))
+    
+    return out
+
+
+def add_missing_synthesis_values(
+    h_filter_params,
+    v_filter_params,
+    dwt_depth,
+    dwt_depth_ho,
+    synthesis_values,
+    fill_in_equivalent_phases=True,
+):
+    r"""
+    Fill in results for omitted (duplicate) filter arrays and phases.
+    
+    Parameters
+    ==========
+    h_filter_params, v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+    dwt_depth, dwt_depth_ho: int
+        The filter parameters.
+    synthesis_values : {(level, array_name, x, y): value, ...}
+        A dictionary of values associated with individual intermediate
+        synthesis filter phases with entries omitted where arrays are just
+        interleavings/subsamplings/renamings.
+    fill_in_equivalent_phases : bool
+        When two :py:class:`InfiniteArray`\ s with different periods are
+        interleaved, the interleaved signal's period will include repetitions
+        of some phases of one of the input arrays. For example:
+        
+             a = ... a0 a1 a0 a1 ...    (Period = 2)
+             b = ... b0 b0 b0 b0 ...    (Period = 1)
+            
+            ab = ... a0 b0 a1 b0 ...    (Period = 4)
+        
+        In this example, the interleaved array has a period of 4 with two
+        phases coming from a and two from b. Since b has a period of one,
+        however, one of the phases of ab contains a repeat of one of the phases
+        of 'b'.
+        
+        Since in a de-duplicated set of filters and phases, duplicate phases
+        appearing in interleaved arrays are not present, some other value must
+        be used when filling in these phases. If the
+        'fill_in_equivalent_phases' argument is True (the default), the value
+        with the equivalent phase will be copied in. If False, None will be
+        used instead.
+        
+        Where the dictionary being filled in contains results generic to the
+        phase being used (and not the specific filter coordinates), the default
+        value of 'True' will give the desired results.
+    
+    Returns
+    =======
+    full_synthesis_values : {(level, array_name, x, y): value, ...}
+        A new dictionary of values with missing filters and phases filled in.
+    """
+    # NB: Used only to enumerate the complete set of arrays/test signals and
+    # get array periods
+    _, intermediate_arrays = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
+    )
+    
+    out = OrderedDict()
+    
+    for (level, array_name), array in intermediate_arrays.items():
+        for x in range(array.period[0]):
+            for y in range(array.period[1]):
+                # Below we work out which source array to use to populate the
+                # current array/phase
+                src_level = level
+                src_array_name = array_name
+                src_x = x
+                src_y = y
+                if (level, array_name, x, y) not in synthesis_values:
+                    if array_name.startswith("L'"):
+                        if y % 2 == 0:
+                            src_array_name = "LL"
+                        else:
+                            src_array_name = "LH"
+                        src_y = y // 2
+                    elif array_name.startswith("H'"):
+                        if y % 2 == 0:
+                            src_array_name = "HL"
+                        else:
+                            src_array_name = "HH"
+                        src_y = y // 2
+                    elif array_name.startswith("DC'"):
+                        if x % 2 == 0:
+                            src_array_name = "L"
+                        else:
+                            src_array_name = "H"
+                        src_x = x // 2
+                    elif array_name == "Output":
+                        src_array_name = "DC"
+                    elif array_name == "LL" or array_name == "L":
+                        src_level = level - 1
+                        src_array_name = "Output"
+                    else:
+                        # Should never reach this point so long as only
+                        # nops are omitted
+                        assert False
+                
+                if fill_in_equivalent_phases:
+                    px, py = intermediate_arrays[(src_level, src_array_name)].period
+                    src_x %= px
+                    src_y %= py
+                
+                out[(level, array_name, x, y)] = synthesis_values.get((
+                    src_level,
+                    src_array_name,
+                    src_x,
+                    src_y,
+                ), out.get((
+                    src_level,
+                    src_array_name,
+                    src_x,
+                    src_y,
+                )))
+    
+    return out

@@ -188,6 +188,10 @@ def main(args=None):
         concrete_analysis_signal_bounds,
         concrete_synthesis_signal_bounds,
     ) = evaluate_filter_bounds(
+        static_filter_analysis["wavelet_index"],
+        static_filter_analysis["wavelet_index_ho"],
+        static_filter_analysis["dwt_depth"],
+        static_filter_analysis["dwt_depth_ho"],
         analysis_signal_bounds,
         synthesis_signal_bounds,
         args.picture_bit_width,

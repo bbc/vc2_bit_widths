@@ -45,8 +45,8 @@ def test_sanity(tmpdir):
     assert set(synthesis_signal_bounds) == set(synthesis_test_signals)
     
     # Check first level is a 2D transform
-    assert (1, "LL", 0, 0) in analysis_signal_bounds
-    assert (1, "LL", 0, 0) in synthesis_signal_bounds
+    assert (1, "L'", 0, 0) in analysis_signal_bounds
+    assert (1, "L'", 0, 0) in synthesis_signal_bounds
     
     # Check second level doesn't exist (i.e. we did a 1-level transform)
     assert (2, "Input", 0, 0) not in analysis_signal_bounds
@@ -62,10 +62,10 @@ def test_sanity(tmpdir):
     assert (1, "L''", 0, 0) in analysis_signal_bounds  # Vertical Stage 2
     assert (1, "L'''", 0, 0) not in analysis_signal_bounds  # No vertical Stage 3!
     
-    assert (1, "DC'", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 1
-    assert (1, "DC''", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 2
-    assert (1, "DC'''", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 3
-    assert (1, "DC''''", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 4
-    assert (1, "L'", 0, 0) in synthesis_signal_bounds  # Vertical Stage 1
-    assert (1, "L''", 0, 0) in synthesis_signal_bounds  # Vertical Stage 2
-    assert (1, "L'''", 0, 0) not in synthesis_signal_bounds  # No vertical Stage 3!
+    assert (1, "DC", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 1
+    assert (1, "DC'", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 2
+    assert (1, "DC''", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 3
+    assert (1, "DC'''", 0, 0) in synthesis_signal_bounds  # Horizontal Stage 4
+    assert (1, "L", 0, 0) in synthesis_signal_bounds  # Vertical Stage 1
+    assert (1, "L'", 0, 0) in synthesis_signal_bounds  # Vertical Stage 2
+    assert (1, "L''", 0, 0) not in synthesis_signal_bounds  # No vertical Stage 3!

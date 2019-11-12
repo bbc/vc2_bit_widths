@@ -35,7 +35,6 @@ from vc2_bit_widths.helpers import (
     evaluate_filter_bounds,
     quantisation_index_bound,
     evaluate_test_signal_outputs,
-    add_omitted_synthesis_values,
 )
 
 from vc2_bit_widths.json_serialisations import (
@@ -236,6 +235,10 @@ def main(args=None):
     # analysis_bounds_dicts = [{(level, array_name, x, y): (lower_bound, upper_bound), ...}, ...]
     # synthesis_bounds_dicts = same as above
     concrete_analysis_bounds, concrete_synthesis_bounds = evaluate_filter_bounds(
+        static_filter_analysis["wavelet_index"],
+        static_filter_analysis["wavelet_index_ho"],
+        static_filter_analysis["dwt_depth"],
+        static_filter_analysis["dwt_depth_ho"],
         analysis_signal_bounds,
         synthesis_signal_bounds,
         args.picture_bit_width,
@@ -258,15 +261,6 @@ def main(args=None):
         max_quantisation_index,
         analysis_test_signals,
         synthesis_test_signals,
-    )
-    
-    # Re-add interleaved values (if absent)
-    synthesis_outputs = add_omitted_synthesis_values(
-        static_filter_analysis["wavelet_index"],
-        static_filter_analysis["wavelet_index_ho"],
-        static_filter_analysis["dwt_depth"],
-        static_filter_analysis["dwt_depth_ho"],
-        synthesis_outputs,
     )
     
     # Strip quantisation index from synthesis output info and put bounds in the

@@ -24,11 +24,6 @@ specialised for a particular codec configuration and bit depth:
 
 .. autofunction:: optimise_synthesis_test_signals
 
-Missing entries in the output of the above (due to removal of duplicate filter
-values, e.g. from interleaved arrays) may be reinstated using:
-
-.. autofunction:: add_omitted_synthesis_values
-
 """
 
 from collections import OrderedDict
@@ -49,6 +44,8 @@ from vc2_bit_widths.vc2_filters import (
     make_variable_coeff_arrays,
     analysis_transform,
     synthesis_transform,
+    add_missing_analysis_values,
+    add_missing_synthesis_values,
 )
 
 from vc2_bit_widths.signal_bounds import (
@@ -111,7 +108,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         (str) and filter phase (x, y) for which each set of bounds corresponds.
         The naming conventions used are those defined by
         :py:func:`vc2_bit_widths.vc2_filters.analysis_transform` and
-        :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform`.
+        :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform`. Arrays which
+        are simple interleavings or renamings are omitted.
         
         The lower and upper bounds are given as
         :py:class:`vc2_bit_widths.linexp.LinExp`\ s.
@@ -138,7 +136,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         (str) and filter phase (x, y) for which each set of bounds corresponds.
         The naming conventions used are those defined by
         :py:func:`vc2_bit_widths.vc2_filters.analysis_transform` and
-        :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform`.
+        :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform`. Arrays which
+        are simple interleavings or renamings are omitted.
     """
     v_filter_params = LIFTING_FILTERS[wavelet_index]
     h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
@@ -157,6 +156,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     num_arrays = sum(
         array.period[0] * array.period[1]
         for array in intermediate_analysis_arrays.values()
+        if not array.nop
     )
     array_num = 0
     
@@ -164,6 +164,10 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     analysis_signal_bounds = OrderedDict()
     analysis_test_signals = OrderedDict()
     for (level, array_name), target_array in intermediate_analysis_arrays.items():
+        # Skip arrays which are just views of other arrays
+        if target_array.nop:
+            continue
+        
         for x in range(target_array.period[0]):
             for y in range(target_array.period[1]):
                 array_num += 1
@@ -214,6 +218,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     num_arrays = sum(
         array.period[0] * array.period[1]
         for array in intermediate_synthesis_values.values()
+        if not array.nop
     )
     array_num = 0
     
@@ -221,6 +226,10 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     synthesis_signal_bounds = OrderedDict()
     synthesis_test_signals = OrderedDict()
     for (level, array_name), target_array in intermediate_synthesis_values.items():
+        # Skip arrays which are just views of other arrays
+        if target_array.nop:
+            continue
+        
         for x in range(target_array.period[0]):
             for y in range(target_array.period[1]):
                 array_num += 1
@@ -256,13 +265,26 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     )
 
 
-def evaluate_filter_bounds(analysis_signal_bounds, synthesis_signal_bounds, picture_bit_width):
+def evaluate_filter_bounds(
+    wavelet_index,
+    wavelet_index_ho,
+    dwt_depth,
+    dwt_depth_ho,
+    analysis_signal_bounds,
+    synthesis_signal_bounds,
+    picture_bit_width,
+):
     r"""
     Evaluate all analysis and synthesis filter signal bounds expressions for a
     given picture bit width, giving concrete signal ranges.
     
     Parameters
     ==========
+    wavelet_index : :py:class:`vc2_data_tables.WaveletFilters` or int
+    wavelet_index_ho : :py:class:`vc2_data_tables.WaveletFilters` or int
+    dwt_depth : int
+    dwt_depth_ho : int
+        The filter parameters.
     analysis_signal_bounds : {(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), ...}
     synthesis_signal_bounds : {(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), ...}
         The outputs of :py:func:`static_filter_analysis`.
@@ -275,7 +297,12 @@ def evaluate_filter_bounds(analysis_signal_bounds, synthesis_signal_bounds, pict
     concrete_synthesis_signal_bounds : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
         The concrete signal bounds for all analysis and signal filters given a
         ``picture_bit_width`` input picture and worst-case quantisation.
+        Includes results for *all* arrays and phases, even those which are
+        duplicates.
     """
+    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
     # Evaluate analysis bounds
     concrete_analysis_signal_bounds = OrderedDict(
         (key, evaluate_analysis_filter_bounds(
@@ -284,6 +311,15 @@ def evaluate_filter_bounds(analysis_signal_bounds, synthesis_signal_bounds, pict
             picture_bit_width,
         ))
         for key, (lower_exp, upper_exp) in analysis_signal_bounds.items()
+    )
+    
+    # Re-add interleaved/renamed entries
+    concrete_analysis_signal_bounds = add_missing_analysis_values(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        concrete_analysis_signal_bounds,
     )
     
     # Inflate analysis output bounds to account for worst-case quantisation of
@@ -312,6 +348,15 @@ def evaluate_filter_bounds(analysis_signal_bounds, synthesis_signal_bounds, pict
             coeff_bounds,
         ))
         for key, (lower_exp, upper_exp) in synthesis_signal_bounds.items()
+    )
+    
+    # Re-add interleaved/renamed entries
+    concrete_synthesis_signal_bounds = add_missing_synthesis_values(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        concrete_synthesis_signal_bounds,
     )
     
     return concrete_analysis_signal_bounds, concrete_synthesis_signal_bounds
@@ -573,11 +618,13 @@ def evaluate_test_signal_outputs(
     analysis_test_signal_outputs : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
         The signal levels achieved for each of the provided analysis test
         signals for minimising signal values and maximising values
-        respectively.
+        respectively. Includes results for *all* arrays and phases, even those
+        which are duplicates.
     synthesis_test_signal_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
         The signal levels achieved, and quantisation indices used to achieve
         them, for each of the provided synthesis test signals. Given for
-        minimising signal values and maximising values respectively.
+        minimising signal values and maximising values respectively. Includes
+        results for *all* arrays and phases, even those which are duplicates.
     """
     h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
     v_filter_params = LIFTING_FILTERS[wavelet_index]
@@ -617,6 +664,15 @@ def evaluate_test_signal_outputs(
         make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
     )
     
+    # Re-add results for interleaved/renamed entries
+    analysis_test_signal_outputs = add_missing_analysis_values(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        analysis_test_signal_outputs,
+    )
+    
     synthesis_test_signal_outputs = OrderedDict()
     for i, ((level, array_name, x, y), test_signal) in enumerate(
         synthesis_test_signals.items()
@@ -643,111 +699,16 @@ def evaluate_test_signal_outputs(
             max_quantisation_index=max_quantisation_index,
         )
     
-    return (
-        analysis_test_signal_outputs,
-        synthesis_test_signal_outputs,
-    )
-
-
-def add_omitted_synthesis_values(
-    wavelet_index,
-    wavelet_index_ho,
-    dwt_depth,
-    dwt_depth_ho,
-    synthesis_values,
-):
-    """
-    Re-create entries from a test signal dictionary which have been omitted on
-    the basis of just being interleavings of other arrays.
-    
-    When :py:func;`optimise_synthesis_test_signals` is used, it only outputs
-    test signals for filter phases which are not simple interleavings of other
-    arrays. When producing human-readable tables of bit width information,
-    however, these omitted filters and phases are still required for display.
-    
-    Parameters
-    ==========
-    wavelet_index : :py:class:`vc2_data_tables.WaveletFilters` or int
-    wavelet_index_ho : :py:class:`vc2_data_tables.WaveletFilters` or int
-    dwt_depth : int
-    dwt_depth_ho : int
-        The filter parameters.
-    synthesis_values : {(level, array_name, x, y): values, ...}
-        A dictionary of values (one per filter and phase), e.g. from
-        :py:func:`evaluate_test_signal_outputs`, with values omitted for
-        interleaved values.
-    
-    Returns
-    =======
-    full_synthesis_values : {(level, array_name, x, y): values, ...}
-        The complete set of values with omitted (interleaved) values present.
-    """
-    # NB: Used only to enumerate the complete set of arrays/test signals and
-    # get array periods
-    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
-    v_filter_params = LIFTING_FILTERS[wavelet_index]
-    _, intermediate_arrays = synthesis_transform(
+    # Re-add results for interleaved/renamed entries
+    synthesis_test_signal_outputs = add_missing_synthesis_values(
         h_filter_params,
         v_filter_params,
         dwt_depth,
         dwt_depth_ho,
-        make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
+        synthesis_test_signal_outputs,
     )
     
-    out = OrderedDict()
-    
-    for (level, array_name), array in intermediate_arrays.items():
-        for x in range(array.period[0]):
-            for y in range(array.period[1]):
-                # Below we work out which source array to use to populate the
-                # current array/phase
-                src_level = level
-                src_array_name = array_name
-                src_x = x
-                src_y = y
-                if (level, array_name, x, y) not in synthesis_values:
-                    if array_name.startswith("L'"):
-                        if y % 2 == 0:
-                            src_array_name = "LL"
-                        else:
-                            src_array_name = "LH"
-                        src_y = y // 2
-                    elif array_name.startswith("H'"):
-                        if y % 2 == 0:
-                            src_array_name = "HL"
-                        else:
-                            src_array_name = "HH"
-                        src_y = y // 2
-                    elif array_name.startswith("DC'"):
-                        if x % 2 == 0:
-                            src_array_name = "L"
-                        else:
-                            src_array_name = "H"
-                        src_x = x // 2
-                    elif array_name == "Output":
-                        src_array_name = "DC"
-                    elif array_name == "LL" or array_name == "L":
-                        src_level = level - 1
-                        src_array_name = "Output"
-                    else:
-                        # Should never reach this point so long as only
-                        # interleavings and nop-bit-shifts are omitted
-                        assert False
-                
-                px, py = intermediate_arrays[(src_level, src_array_name)].period
-                src_x %= px
-                src_y %= py
-                
-                out[(level, array_name, x, y)] = synthesis_values.get((
-                    src_level,
-                    src_array_name,
-                    src_x,
-                    src_y,
-                ), out.get((
-                    src_level,
-                    src_array_name,
-                    src_x,
-                    src_y,
-                )))
-    
-    return out
+    return (
+        analysis_test_signal_outputs,
+        synthesis_test_signal_outputs,
+    )

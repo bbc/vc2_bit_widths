@@ -31,6 +31,8 @@ from vc2_bit_widths.vc2_filters import (
     make_coeff_arrays,
     make_symbol_coeff_arrays,
     make_variable_coeff_arrays,
+    add_missing_analysis_values,
+    add_missing_synthesis_values,
 )
 
 class TestAnalysisAndSynthesisTransforms(object):
@@ -371,3 +373,151 @@ def test_make_variable_coeff_arrays():
     
     # Check default argument works too since it is a somewhat exciting type...
     assert make_variable_coeff_arrays(2, 0)[1]["HL"][2, 3] == Argument("coeffs")[1]["HL"][2, 3]
+
+
+@pytest.mark.parametrize("wavelet_index,wavelet_index_ho,dwt_depth,dwt_depth_ho", [
+    # No-shift (HO and 2D)
+    (tables.WaveletFilters.haar_no_shift, tables.WaveletFilters.haar_no_shift, 0, 2),
+    (tables.WaveletFilters.haar_no_shift, tables.WaveletFilters.haar_no_shift, 2, 0),
+    # A multi-level filter, testing 2D and 1D transforms
+    (tables.WaveletFilters.haar_with_shift, tables.WaveletFilters.le_gall_5_3, 1, 1),
+    # A filter which has a different number of lifting stages to usual
+    (tables.WaveletFilters.daubechies_9_7, tables.WaveletFilters.daubechies_9_7, 1, 1),
+    # Decent depth, complex filter (with multiple high-pass band phases)
+    (tables.WaveletFilters.le_gall_5_3, tables.WaveletFilters.le_gall_5_3, 2, 1),
+])
+def test_add_missing_analysis_values(
+    wavelet_index,
+    wavelet_index_ho,
+    dwt_depth,
+    dwt_depth_ho,
+):
+    h_filter_params = tables.LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = tables.LIFTING_FILTERS[wavelet_index]
+    
+    _, intermediate_values = analysis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        SymbolArray(2),
+    )
+    
+    all_expressions = {
+        (level, array_name, x, y): array[x, y]
+        for (level, array_name), array in intermediate_values.items()
+        for x in range(array.period[0])
+        for y in range(array.period[1])
+    }
+    
+    non_nop_expressions = {
+        (level, array_name, x, y): array[x, y]
+        for (level, array_name), array in intermediate_values.items()
+        for x in range(array.period[0])
+        for y in range(array.period[1])
+        if not array.nop
+    }
+    
+    # Sanity check
+    assert all_expressions != non_nop_expressions
+    
+    refilled_expressions = add_missing_analysis_values(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        non_nop_expressions,
+    )
+    
+    assert set(refilled_expressions) == set(all_expressions)
+    assert refilled_expressions == all_expressions
+
+
+@pytest.mark.parametrize("wavelet_index,wavelet_index_ho,dwt_depth,dwt_depth_ho", [
+    # No-shift (HO and 2D)
+    (tables.WaveletFilters.haar_no_shift, tables.WaveletFilters.haar_no_shift, 0, 2),
+    (tables.WaveletFilters.haar_no_shift, tables.WaveletFilters.haar_no_shift, 2, 0),
+    # A multi-level filter, testing 2D and 1D transforms
+    (tables.WaveletFilters.haar_with_shift, tables.WaveletFilters.le_gall_5_3, 1, 1),
+    # A filter which has a different number of lifting stages to usual
+    (tables.WaveletFilters.daubechies_9_7, tables.WaveletFilters.daubechies_9_7, 1, 1),
+    # Decent depth, complex filter (with multiple high-pass band phases)
+    (tables.WaveletFilters.le_gall_5_3, tables.WaveletFilters.le_gall_5_3, 2, 1),
+])
+def test_add_missing_synthesis_values(
+    wavelet_index,
+    wavelet_index_ho,
+    dwt_depth,
+    dwt_depth_ho,
+):
+    h_filter_params = tables.LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = tables.LIFTING_FILTERS[wavelet_index]
+    
+    _, intermediate_values = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho),
+    )
+    
+    all_expressions = {
+        (level, array_name, x, y): array[x, y]
+        for (level, array_name), array in intermediate_values.items()
+        for x in range(array.period[0])
+        for y in range(array.period[1])
+    }
+    
+    non_nop_expressions = {
+        (level, array_name, x, y): array[x, y]
+        for (level, array_name), array in intermediate_values.items()
+        for x in range(array.period[0])
+        for y in range(array.period[1])
+        if not array.nop
+    }
+    
+    # Sanity check
+    assert all_expressions != non_nop_expressions
+    
+    refilled_expressions_not_filled = add_missing_synthesis_values(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        non_nop_expressions,
+        fill_in_equivalent_phases=False,
+    )
+    
+    refilled_expressions_filled = add_missing_synthesis_values(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        non_nop_expressions,
+        fill_in_equivalent_phases=True,
+    )
+    
+    assert set(refilled_expressions_not_filled) == set(all_expressions)
+    assert set(refilled_expressions_filled) == set(all_expressions)
+    
+    for key in all_expressions:
+        if refilled_expressions_not_filled[key] is not None:
+            # Where a phase hasn't been repeated, should have exactly the same
+            # value.
+            assert(
+                all_expressions[key] ==
+                refilled_expressions_not_filled[key]
+            )
+            assert(
+                all_expressions[key] ==
+                refilled_expressions_filled[key]
+            )
+        else:
+            # Where a phase has been filled in, without going to a lot of
+            # effort, all we can do is check that the substituted phase is
+            # 'similar' (i.e. likely to be the same expression just with
+            # different coordinates)
+            assert (
+                sorted(coeff for sym, coeff in all_expressions[key]) ==
+                sorted(coeff for sym, coeff in refilled_expressions_filled[key])
+            )
