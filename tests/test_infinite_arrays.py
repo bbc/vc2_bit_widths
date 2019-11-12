@@ -540,7 +540,6 @@ class TestSymbolicPeriodicCachingArray(object):
         a = RepeatingSymbolArray((1, 2, 3))
         pca = SymbolicPeriodicCachingArray(a, a)
         assert pca.period == (1, 2, 3)
-        assert period_empirically_correct(pca)
     
     def test_nop(self):
         a = SymbolArray(1)
@@ -557,36 +556,6 @@ class TestSymbolicPeriodicCachingArray(object):
         assert spca.relative_step_size_to(a) == (2, 3)
         assert spca.relative_step_size_to(spca) == (1, 1)
         assert spca.relative_step_size_to(SymbolArray(2, "nope")) is None
-    
-    def test_extract(self):
-        a = SymbolArray(2, "a")
-        b = SymbolArray(2, "b")
-        
-        ab = InterleavedArray(a, b, 0)
-        
-        spca = SymbolicPeriodicCachingArray(ab, a, b)
-        
-        value = (
-            a[1, 2]*2 +
-            b[3, 4]*3 +
-            LinExp.new_affine_error_symbol()*4 +
-            5
-        )
-        
-        assert spca._extract(value) in (
-            [(a, (1, 2)), (b, (3, 4))],
-            [(b, (3, 4)), (a, (1, 2))],
-        )
-    
-    def test_replace(self):
-        a = SymbolArray(2, "a")
-        spca = SymbolicPeriodicCachingArray(a, a)
-        
-        value = a[0, 0]*2 + 3
-        
-        assert spca._replace(value, {a[0, 0]: a[10, 20]}) == (
-            a[10, 20]*2 + 3
-        )
     
     def test_period_one_simple(self):
         # Check that given a simple period-one array, the appropriate values
