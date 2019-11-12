@@ -160,6 +160,16 @@ the :py:meth:`InfiniteArray.relative_step_size_to` method. For example::
     >>> il.relative_step_size_to(v1)
     (Fraction(1, 2), Fraction(1, 1))
 
+Periodic Caching
+----------------
+
+When a large chain of :py:class:`InfiniteArray`\ s have been chained together,
+computing the value of an element can become expensive. The
+:py:class:`SymbolicPeriodicCachingArray` array implements a smart caching
+behaviour for arrays whose contents follow a regular pattern.
+
+.. autoclass:: SymbolicPeriodicCachingArray
+
 """
 
 from fractions import Fraction
@@ -171,7 +181,7 @@ except ImportError:
 
 from vc2_data_tables import LiftingFilterTypes
 
-from vc2_bit_widths.linexp import LinExp
+from vc2_bit_widths.linexp import LinExp, AAError
 
 from vc2_bit_widths.pyexp import PyExp
 
@@ -185,6 +195,8 @@ __all__ = [
     "LeftShiftedArray",
     "SubsampledArray",
     "InterleavedArray",
+    "PeriodicCachingArray",
+    "SymbolicPeriodicCachingArray",
 ]
 
 
@@ -875,3 +887,211 @@ class InterleavedArray(InfiniteArray):
             s/2 if d == self._interleave_dimension else s
             for d, s in enumerate(relative_step_size)
         )
+
+
+class PeriodicCachingArray(InfiniteArray):
+    
+    def __init__(self, array, extract, replace):
+        r"""
+        A view of a :py:class:`InfiniteArray` which caches (at most) a single
+        example of each phase and uses these to fill compute all other values.
+        
+        This approach can avoid expensive computation of particularly deeply
+        tested filter values.
+        
+        Parameters
+        ==========
+        array : :py:class:`InfiniteArray`
+            The array whose values are to be cached. By design, all built-in
+            :py:class:`InfiniteArray` subclasses are periodic and so any array
+            may be cached by this class.
+        extract : value -> [(array, key) ...]
+            A function which breaks a value from 'array' into its component
+            parts. For example, suppose we have an array defined in terms of a
+            :py:class:`SymbolArray`, the extract function might be passed a
+            value like::
+            
+                >>> s = SymbolArray(2, "s")
+                >>> array = <something derived from s>
+                >>> value = array[5, 10]
+                LinExp({("s", 5, 10): 1, ("s": 7, 3): 3, None: 5})
+            
+            The extract function then might return::
+            
+                >>> extract(value)
+                [(s, (5, 10)), (s, (7, 3))]
+        
+        replace : (value, {before: after, ...}) -> value
+            A function which takes a value from 'array' and a dictionary of
+            replacements and performs those replacements.
+            
+            For example, continuing the example above the replace function
+            might be called as below an be expected to produce::
+            
+                >>> replace(value, {
+                ...     s[5, 10]: s[105, 110],
+                ...     s[7, 3]: s[107, 103],
+                ... })
+                LinExp({("s", 105, 110): 1, ("s": 107, 103): 3, None: 5})
+        """
+        self._array = array
+        self._extract = extract
+        self._replace = replace
+        
+        # {(component_array, key): period_number_scale, ...}
+        self._scale_factors = {}
+        
+        super(PeriodicCachingArray, self).__init__(self._array.ndim, cache=True)
+    
+    def _get_scale_factors(self, component_array):
+        if component_array not in self._scale_factors:
+            self._scale_factors[component_array] = tuple(
+                int(step * period)
+                for step, period in zip(
+                    self.relative_step_size_to(component_array),
+                    self.period,
+                )
+            )
+        return self._scale_factors[component_array]
+    
+    def get(self, keys):
+        # What phase does the requested value lie on
+        phase_offset = tuple(
+            k % p
+            for k, p in zip(keys, self._array.period)
+        )
+        # How many periods along each axis is the requested value
+        period_number = tuple(
+            k // p
+            for k, p in zip(keys, self._array.period)
+        )
+        
+        base_value = self._array[phase_offset]
+        
+        replacements = {}
+        for component_array, component_key in self._extract(base_value):
+            new_key = tuple(
+                (p*s) + o
+                for p, s, o in zip(
+                    period_number,
+                    self._get_scale_factors(component_array),
+                    component_key,
+                )
+            )
+            replacements[component_array[component_key]] = component_array[new_key]
+        
+        value = self._replace(base_value, replacements)
+        
+        return value
+    
+    @property
+    def period(self):
+        return self._array.period
+    
+    @property
+    def nop(self):
+        return self._array.nop
+    
+    def relative_step_size_to(self, other):
+        if other is self:
+            return (Fraction(1), ) * self.ndim
+        else:
+            return self._array.relative_step_size_to(other)
+
+
+class SymbolicPeriodicCachingArray(PeriodicCachingArray):
+    
+    def __init__(self, array, *symbol_arrays):
+        r"""
+        A caching view of a :py:class:`InfiniteArray` of
+        :py:class:`~vc2_bit_widths.linexp.LinExp` values.
+        
+        This view will request at most one value from each filter phase of
+        the input array and compute all other values by altering the indices in
+        the previously computed values.
+        
+        For example, normally, when accessing values within a
+        :py:class:`InfiniteArray`, values are computed from scratch on-demand::
+        
+            >>> s = SymbolArray(2, "s")
+            >>> stage = <some filter stage>
+            >>> la = LiftedArray(s, stage, 0)
+            >>> la[0, 0]  # la[0, 0] worked out from scratch
+            LinExp(...)
+            >>> la[0, 1]  # la[0, 1] worked out from scratch
+            LinExp(...)
+            >>> la[0, 2]  # la[0, 2] worked out from scratch
+            LinExp(...)
+            >>> la[0, 3]  # la[0, 3] worked out from scratch
+            LinExp(...)
+        
+        By contrast, when values are accessed in a
+        :py:class:`SymbolicPeriodicCachingArray`, only the first access to each
+        filter phase is computed from scratch. All other values are found by
+        changing the symbol indices in the cached array value::
+            
+            >>> cached_la = SymbolicPeriodicCachingArray(la, s)
+            >>> cached_la[0, 0]  # la[0, 0] worked out from scratch
+            LinExp(...)
+            >>> cached_la[0, 1]  # la[0, 1] worked out from scratch
+            LinExp(...)
+            >>> cached_la[0, 2]  # Cached value of la[0, 0] reused and mutated
+            LinExp(...)
+            >>> cached_la[0, 3]  # Cached value of la[0, 1] reused and mutated
+            LinExp(...)
+        
+        Parameters
+        ==========
+        array : :py:class:`InfiniteArray`
+            The array whose values are to be cached. These array values must
+            consist only of symbols from :py:class:`SymbolArray`\ s passed as
+            arguments, :py:class:`~vc2_bit_widths.linexp.AAError` terms and
+            constants.
+            
+            .. warning::
+                
+                Error terms may be repeated as returned from this array where
+                they would usually be unique. If this is a problem, you should
+                not use this caching view.
+                
+                For example::
+                
+                    >>> s = SymbolArray(2, "s")
+                    >>> sa = RightShiftedArray(s, 1)
+                    
+                    >>> # Unique AAError terms (without caching)
+                    >>> sa[0, 0]
+                    LinExp({('s', 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
+                    >>> sa[0, 1]
+                    LinExp({('s', 0, 1): Fraction(1, 2), AAError(id=2): Fraction(1, 2)})
+                    
+                    >>> # Non-unique AAError terms after caching
+                    >>> ca = SymbolicPeriodicCachingArray(sa, s)
+                    >>> ca[0, 0]
+                    LinExp({('s', 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
+                    >>> ca[0, 1]
+                    LinExp({('s', 0, 1): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
+        
+        symbol_arrays : :py:class:`SymbolArray`
+            The symbol arrays which the 'array' argument is constructed from.
+        """
+        self._prefix_to_symbol_array = {
+            array.prefix: array
+            for array in symbol_arrays
+        }
+        
+        super(SymbolicPeriodicCachingArray, self).__init__(
+            array,
+            self._extract,
+            self._replace,
+        )
+    
+    def _extract(self, linexp):
+        return [
+            (self._prefix_to_symbol_array[sym[0]], sym[1:])
+            for sym in linexp.symbols()
+            if sym is not None and not isinstance(sym, AAError)
+        ]
+    
+    def _replace(self, value, replacements):
+        return value.subs(replacements)

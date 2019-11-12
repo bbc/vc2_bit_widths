@@ -12,6 +12,7 @@ from vc2_conformance.picture_decoding import SYNTHESIS_LIFTING_FUNCTION_TYPES
 
 from vc2_bit_widths.linexp import (
     LinExp,
+    strip_affine_errors,
     affine_lower_bound,
     affine_upper_bound,
 )
@@ -28,7 +29,10 @@ from vc2_bit_widths.infinite_arrays import (
     LiftedArray,
     RightShiftedArray,
     LeftShiftedArray,
+    SymbolicPeriodicCachingArray,
 )
+
+from vc2_bit_widths.vc2_filters import analysis_transform
 
 
 @pytest.mark.parametrize("a,b,exp", [
@@ -527,3 +531,194 @@ class TestLeftShiftedArray(object):
         assert l.relative_step_size_to(a) == (2, 3)
         assert l.relative_step_size_to(l) == (1, 1)
         assert l.relative_step_size_to(SymbolArray(2, "nope")) is None
+
+
+class TestSymbolicPeriodicCachingArray(object):
+    # Also serves to test PeriodicCachingArray
+
+    def test_period(self):
+        a = RepeatingSymbolArray((1, 2, 3))
+        pca = SymbolicPeriodicCachingArray(a, a)
+        assert pca.period == (1, 2, 3)
+        assert period_empirically_correct(pca)
+    
+    def test_nop(self):
+        a = SymbolArray(1)
+        assert SymbolicPeriodicCachingArray(a, a).nop is False
+        
+        sa = LeftShiftedArray(a, 0)
+        assert SymbolicPeriodicCachingArray(sa, a).nop is True
+    
+    def test_relative_step_size_to(self):
+        a = SymbolArray(2)
+        s = SubsampledArray(a, (2, 3), (0, 0))
+        spca = SymbolicPeriodicCachingArray(s, a)
+        
+        assert spca.relative_step_size_to(a) == (2, 3)
+        assert spca.relative_step_size_to(spca) == (1, 1)
+        assert spca.relative_step_size_to(SymbolArray(2, "nope")) is None
+    
+    def test_extract(self):
+        a = SymbolArray(2, "a")
+        b = SymbolArray(2, "b")
+        
+        ab = InterleavedArray(a, b, 0)
+        
+        spca = SymbolicPeriodicCachingArray(ab, a, b)
+        
+        value = (
+            a[1, 2]*2 +
+            b[3, 4]*3 +
+            LinExp.new_affine_error_symbol()*4 +
+            5
+        )
+        
+        assert spca._extract(value) in (
+            [(a, (1, 2)), (b, (3, 4))],
+            [(b, (3, 4)), (a, (1, 2))],
+        )
+    
+    def test_replace(self):
+        a = SymbolArray(2, "a")
+        spca = SymbolicPeriodicCachingArray(a, a)
+        
+        value = a[0, 0]*2 + 3
+        
+        assert spca._replace(value, {a[0, 0]: a[10, 20]}) == (
+            a[10, 20]*2 + 3
+        )
+    
+    def test_period_one_simple(self):
+        # Check that given a simple period-one array, the appropriate values
+        # should have been computed.
+        a = SymbolArray(2)
+        sa = LeftShiftedArray(a, 1)
+        spca = SymbolicPeriodicCachingArray(sa, a)
+        
+        model_answers = {
+            (x, y): sa[x, y]
+            for x in range(3)
+            for y in range(3)
+        }
+        sa._cache.clear()
+        
+        # Should produce equivalent results to wrapped array
+        for (x, y), exp_answer in model_answers.items():
+            assert spca[x, y] == exp_answer
+        
+        # Shouldn't have requested anything but the 0th phase of the wrapped
+        # array
+        assert list(sa._cache) == [(0, 0)]
+    
+    def test_period_one_complex(self):
+        #       A  A  A       B  B  B
+        #   a = A  A  A   b = B  B  B
+        #       A  A  A       B  B  B
+        a = SymbolArray(2, "A")
+        b = SymbolArray(2, "B")
+        
+        #        A  B  A
+        #   ab = A  B  A
+        #        A  B  A
+        ab = InterleavedArray(a, b, 0)
+        
+        #         A*2  B*2  A*2
+        #   ab2 = A*2  B*2  A*2
+        #         A*2  B*2  A*2
+        ab2 = LeftShiftedArray(ab, 1)
+        
+        #        B*2  B*2  B*2
+        #   b2 = B*2  B*2  B*2
+        #        B*2  B*2  B*2
+        b2 = SubsampledArray(ab2, (2, 1), (1, 0))
+        
+        spca = SymbolicPeriodicCachingArray(b2, a, b)
+        
+        model_answers = {
+            (x, y): b2[x, y]
+            for x in range(3)
+            for y in range(3)
+        }
+        ab2._cache.clear()
+        
+        # Should produce equivalent results to wrapped array
+        for (x, y), exp_answer in model_answers.items():
+            assert spca[x, y] == exp_answer
+        
+        # Shouldn't have requested anything but the 0th phase of the wrapped
+        # array
+        assert list(ab2._cache) == [(1, 0)]
+    
+    def test_period_n(self):
+        #       A  A  A       B  B  B       C  C  C       D  D  D
+        #   a = A  A  A   b = B  B  B   c = C  C  C   d = D  D  D
+        #       A  A  A       B  B  B       C  C  C       D  D  D
+        a = SymbolArray(2, "A")
+        b = SymbolArray(2, "B")
+        c = SymbolArray(2, "C")
+        d = SymbolArray(2, "D")
+        
+        #        A  B  A  B
+        #   ab = A  B  A  B
+        #        A  B  A  B
+        ab = InterleavedArray(a, b, 0)
+        
+        #         A  C  B  C  A  C
+        #   abc = A  C  B  C  A  C
+        #         A  C  B  C  A  C
+        abc = InterleavedArray(ab, c, 0)
+        
+        #          A  B  C  A  B  C
+        #   abcd = D  D  D  D  D  D
+        #          A  B  C  A  B  C
+        abcd = InterleavedArray(abc, d, 1)
+        
+        #           A*2  B*2  C*2  A*2  B*2  C*2
+        #   abcd2 = D*2  D*2  D*2  D*2  D*2  D*2
+        #           A*2  B*2  C*2  A*2  B*2  C*2
+        abcd2 = LeftShiftedArray(abcd, 1)
+        
+        spca = SymbolicPeriodicCachingArray(abcd2, a, b, c, d)
+        
+        model_answers = {
+            (x, y): abcd2[x, y]
+            for x in range(10)
+            for y in range(10)
+        }
+        abcd2._cache.clear()
+        
+        # Should produce equivalent results to wrapped array
+        for (x, y), exp_answer in model_answers.items():
+            assert spca[x, y] == exp_answer
+        
+        # Shouldn't have requested anything but the 0th phase of the wrapped
+        # array
+        assert set(abcd2._cache) == set([
+            (x, y)
+            for x in range(4)
+            for y in range(2)
+        ])
+    
+    def test_integration(self):
+        h_filter_params = tables.LIFTING_FILTERS[tables.WaveletFilters.le_gall_5_3]
+        v_filter_params = tables.LIFTING_FILTERS[tables.WaveletFilters.haar_with_shift]
+        
+        # Run against a real-world, more complex set of expressions
+        symbol_array = SymbolArray(2)
+        coeff_arrays, intermediate_arrays = analysis_transform(
+            h_filter_params=h_filter_params,
+            v_filter_params=v_filter_params,
+            dwt_depth=1,
+            dwt_depth_ho=2,
+            array=symbol_array,
+        )
+        
+        for array in intermediate_arrays.values():
+            cached_array = SymbolicPeriodicCachingArray(array, symbol_array)
+            
+            for x in range(array.period[0]*2):
+                for y in range(array.period[1]*2):
+                    assert (
+                        strip_affine_errors(cached_array[x, y]) ==
+                        strip_affine_errors(array[x, y])
+                    )

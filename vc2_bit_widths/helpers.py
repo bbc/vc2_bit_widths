@@ -39,7 +39,10 @@ from math import ceil
 
 from vc2_data_tables import LIFTING_FILTERS
 
-from vc2_bit_widths.infinite_arrays import SymbolArray
+from vc2_bit_widths.infinite_arrays import (
+    SymbolArray,
+    SymbolicPeriodicCachingArray,
+)
 
 from vc2_bit_widths.vc2_filters import (
     make_symbol_coeff_arrays,
@@ -196,6 +199,17 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         coeff_arrays,
     )
     
+    # Create a view of the analysis coefficient arrays which avoids recomputing
+    # already-known analysis filter phases
+    cached_analysis_coeff_arrays = {
+        level: {
+            orient: SymbolicPeriodicCachingArray(array, picture_array)
+            for orient, array in orients.items()
+        }
+        for level, orients in analysis_coeff_arrays.items()
+    }
+    
+    
     # Count the total number of arrays for use in logging messages
     num_arrays = sum(
         array.period[0] * array.period[1]
@@ -228,7 +242,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
                 # Compute test signal
                 synthesis_test_signals[(level, array_name, x, y)] = make_synthesis_maximising_signal(
                     picture_array,
-                    analysis_coeff_arrays,
+                    cached_analysis_coeff_arrays,
                     target_array,
                     synthesis_output_array,
                     x, y,
