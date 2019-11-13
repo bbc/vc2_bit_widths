@@ -37,6 +37,7 @@ from vc2_bit_widths.helpers import (
     quantisation_index_bound,
     optimise_synthesis_test_signals,
     evaluate_test_signal_outputs,
+    make_saturated_picture,
     generate_test_pictures,
 )
 
@@ -461,6 +462,22 @@ def test_evaluate_test_signal_outputs():
             
             assert ts.decoded_value == maximum
             assert ts.quantisation_index == max_qi
+
+
+def test_make_saturated_picture():
+    polarities = np.array([
+        [+1, 0, -1],
+        [-1, 0, +1],
+    ])
+    
+    minv = -(1<<128)
+    maxv = (1<<128)-1
+    out = make_saturated_picture(polarities, minv, maxv)
+    
+    assert np.array_equal(out, [
+        [maxv, 0, minv],
+        [minv, 0, maxv],
+    ])
 
 
 def test_generate_test_pictures():
