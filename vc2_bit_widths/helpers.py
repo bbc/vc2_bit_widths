@@ -745,8 +745,7 @@ A test picture which is to be used to assess an analysis filter.
 Parameters
 ==========
 picture : :py:class:`numpy.array`, ...
-    The test picture. Values are given as +1, 0 and -1 which must be enlarged
-    to the full signal range before use.
+    The test picture.
 test_points : [:py:class:`TestPoint`, ...]
     A list of locations within the analysis filter being tested by this
     picture.
@@ -775,6 +774,9 @@ def make_saturated_picture(polarities, input_min, input_max):
     (Internal utility.) Convert an array of -1, 0, +1 polarity values into an
     array of saturated values.
     """
+    # NB: dtype=object used to allow unlimited precision Python integers
+    # (though I can only hope that this is never actually required -- 128-bit
+    # per pixel video, anybody?)
     out = np.zeros(polarities.shape, dtype=object)
     out[polarities==+1] = input_max
     out[polarities==-1] = input_min
