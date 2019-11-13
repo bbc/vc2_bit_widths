@@ -41,8 +41,10 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
 
 # NB: Can't have any class names starting with 'Test' in a Pytest test file!
 from vc2_bit_widths.signal_generation import TestSignalSpecification as TSS
+from vc2_bit_widths.signal_generation import OptimisedTestSignalSpecification as OTSS
 
 from vc2_bit_widths.signal_generation import (
+    invert_test_signal_specification,
     get_maximising_inputs,
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
@@ -53,6 +55,61 @@ from vc2_bit_widths.signal_generation import (
     evaluate_analysis_test_signal_output,
     evaluate_synthesis_test_signal_output,
 )
+
+
+class TestInvertTestSignalSpecification(object):
+    
+    def test_test_signal(self):
+        ts = TSS(
+            target=(1, 2),
+            picture={
+                (3, 4): +1,
+                (5, 6): -1,
+            },
+            picture_translation_multiple=(7, 8),
+            target_translation_multiple=(9, 10),
+        )
+        
+        its = invert_test_signal_specification(ts)
+        
+        assert its == TSS(
+            target=(1, 2),
+            picture={
+                (3, 4): -1,
+                (5, 6): +1,
+            },
+            picture_translation_multiple=(7, 8),
+            target_translation_multiple=(9, 10),
+        )
+    
+    def test_optimised_test_signal(self):
+        ts = OTSS(
+            target=(1, 2),
+            picture={
+                (3, 4): +1,
+                (5, 6): -1,
+            },
+            picture_translation_multiple=(7, 8),
+            target_translation_multiple=(9, 10),
+            quantisation_index=11,
+            decoded_value=12,
+            num_search_iterations=13,
+        )
+        
+        its = invert_test_signal_specification(ts)
+        
+        assert its == OTSS(
+            target=(1, 2),
+            picture={
+                (3, 4): -1,
+                (5, 6): +1,
+            },
+            picture_translation_multiple=(7, 8),
+            target_translation_multiple=(9, 10),
+            quantisation_index=11,
+            decoded_value=12,
+            num_search_iterations=13,
+        )
 
 
 @pytest.mark.parametrize("expression,exp", [

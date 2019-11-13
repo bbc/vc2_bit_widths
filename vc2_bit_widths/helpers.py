@@ -26,7 +26,7 @@ specialised for a particular codec configuration and bit depth:
 
 """
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict, namedtuple
 
 import logging
 
@@ -59,6 +59,7 @@ from vc2_bit_widths.signal_bounds import (
 from vc2_bit_widths.signal_generation import (
     TestSignalSpecification,
     OptimisedTestSignalSpecification,
+    invert_test_signal_specification,
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
     optimise_synthesis_maximising_signal,
@@ -70,6 +71,8 @@ from vc2_bit_widths.quantisation import (
     maximum_dequantised_magnitude,
     maximum_useful_quantisation_index,
 )
+
+from vc2_bit_widths.picture_packing import pack_test_patterns
 
 
 logger = logging.getLogger(__name__)
@@ -711,4 +714,172 @@ def evaluate_test_signal_outputs(
     return (
         analysis_test_signal_outputs,
         synthesis_test_signal_outputs,
+    )
+
+TestPoint = namedtuple("TestPoint", "level,array_name,x,y,maximise,tx,ty")
+"""
+Definition of the location of a point in an encoder/decoder tested by a test
+picture.
+
+Parameters
+==========
+level : int
+array_name : str
+x : int
+y : int
+    The encoder/decoder intermediate value array and phase tested by this test
+    point.
+maximise : bool
+    If True, at this point the signal level is being maximised, if False it
+    will be minimised.
+tx : int
+ty : int
+    The coordinates (in the intermediate value array (level, array_name)) which
+    are being maximised or minimised.
+"""
+
+AnalysisPicture = namedtuple("AnalysisPicture", "picture,test_points")
+"""
+A test picture which is to be used to assess an analysis filter.
+
+Parameters
+==========
+picture : :py:class:`numpy.array`, ...
+    The test picture. Values are given as +1, 0 and -1 which must be enlarged
+    to the full signal range before use.
+test_points : [:py:class:`TestPoint`, ...]
+    A list of locations within the analysis filter being tested by this
+    picture.
+"""
+
+SynthesisPicture = namedtuple("SynthesisPicture", "picture,quantisation_index,test_points")
+"""
+A test picture which is to be used to assess an synthesis filter.
+
+Parameters
+==========
+picture : :py:class:`numpy.array`, ...
+    The test picture. Values are given as +1, 0 and -1 which must be enlarged
+    to the full signal range before use.
+quantisation_index : int
+    The quantisation index to use for all picture slices when encoding the test
+    picture.
+test_points : [:py:class:`TestPoint`, ...]
+    A list of locations within the synthesis filter being tested by this
+    picture.
+"""
+
+
+def generate_test_pictures(
+    picture_width,
+    picture_height,
+    analysis_test_signals,
+    synthesis_test_signals,
+    synthesis_test_signal_outputs,
+):
+    """
+    Pack a set of analysis and synthesis test pictures into a (smaller) number
+    of test pictures.
+    
+    Parameters
+    ==========
+    picture_width : int
+    picture_height : int
+        The dimensions of the pictures to generate.
+    analysis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
+    synthesis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
+        The individual analysis and synthesis test signals to be combined. A
+        value maximising and value minimising variant of each signal will be
+        included in the output. As computed by
+        :py:func:`static_filter_analysis`.
+    synthesis_test_signal_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
+        Information about the worst-case quantisation indicies for each
+        synthesis test signal. As computed by
+        :py:func:`evaluate_test_signal_outputs`.
+    
+    Returns
+    =======
+    analysis_pictures : [:py:class:`AnalysisPicture`, ...]
+    synthesis_pictures : [:py:class:`SynthesisPicture`, ...]
+    """
+    # For better packing, the test signals will be packed in size order,
+    # largest first.
+    analysis_test_signals = OrderedDict(sorted(
+        analysis_test_signals.items(),
+        key=lambda kv: len(kv[1].picture),
+        reverse=True,
+    ))
+    synthesis_test_signals = OrderedDict(sorted(
+        synthesis_test_signals.items(),
+        key=lambda kv: len(kv[1].picture),
+        reverse=True,
+    ))
+    
+    # Pack analysis signals
+    analysis_test_signals_bipolar = OrderedDict(
+        (
+            (level, array_name, x, y, maximise),
+            spec if maximise else invert_test_signal_specification(spec),
+        )
+        for (level, array_name, x, y), spec in analysis_test_signals.items()
+        for maximise in [True, False]
+    )
+    pictures, locations = pack_test_patterns(
+        picture_width,
+        picture_height,
+        analysis_test_signals_bipolar,
+    )
+    analysis_pictures = [
+        AnalysisPicture(picture, [])
+        for picture in pictures
+    ]
+    for (level, array_name, x, y, maximise), (picture_index, tx, ty) in locations.items():
+        analysis_pictures[picture_index].test_points.append(TestPoint(
+            level, array_name, x, y,
+            maximise,
+            tx, ty,
+        ))
+    
+    # Group synthesis test signals by required quantisation index
+    #
+    # {quantisation_index: {(level, array_name, x, y, maximise): spec, ...}, ...}
+    synthesis_test_signals_grouped = defaultdict(OrderedDict)
+    for (level, array_name, x, y), spec in synthesis_test_signals.items():
+        (_, minimising_qi), (_, maximising_qi) = synthesis_test_signal_outputs[
+            (level, array_name, x, y)
+        ]
+        
+        synthesis_test_signals_grouped[maximising_qi][
+            (level, array_name, x, y, True)
+        ] = spec
+        synthesis_test_signals_grouped[minimising_qi][
+            (level, array_name, x, y, False)
+        ] = invert_test_signal_specification(spec)
+    
+    # Pack the synthesis the test pictures, grouped by QI
+    synthesis_pictures = []
+    for qi in sorted(synthesis_test_signals_grouped):
+        pictures, locations = pack_test_patterns(
+            picture_width,
+            picture_height,
+            synthesis_test_signals_grouped[qi],
+        )
+        
+        this_synthesis_pictures = [
+            SynthesisPicture(picture, qi, [])
+            for picture in pictures
+        ]
+        
+        for (level, array_name, x, y, maximise), (picture_index, tx, ty) in locations.items():
+            this_synthesis_pictures[picture_index].test_points.append(TestPoint(
+                level, array_name, x, y,
+                maximise,
+                tx, ty,
+            ))
+        
+        synthesis_pictures += this_synthesis_pictures
+    
+    return (
+        analysis_pictures,
+        synthesis_pictures,
     )

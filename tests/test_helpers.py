@@ -13,12 +13,31 @@ from vc2_conformance.picture_decoding import idwt
 
 from vc2_bit_widths.quantisation import forward_quant, inverse_quant
 
+from vc2_bit_widths.signal_generation import (
+    evaluate_analysis_test_signal_output,
+    evaluate_synthesis_test_signal_output,
+)
+
+from vc2_bit_widths.fast_partial_analysis_transform import (
+    fast_partial_analysis_transform,
+)
+
+from vc2_bit_widths.vc2_filters import (
+    make_variable_coeff_arrays,
+    synthesis_transform,
+)
+
+from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
+    FastPartialAnalyseQuantiseSynthesise,
+)
+
 from vc2_bit_widths.helpers import (
     static_filter_analysis,
     evaluate_filter_bounds,
     quantisation_index_bound,
     optimise_synthesis_test_signals,
     evaluate_test_signal_outputs,
+    generate_test_pictures,
 )
 
 
@@ -348,8 +367,6 @@ def test_evaluate_test_signal_outputs():
     }
     
     picture_bit_width = 10
-    input_min = -512
-    input_max = 511
     
     (
         analysis_signal_bounds,
@@ -444,3 +461,184 @@ def test_evaluate_test_signal_outputs():
             
             assert ts.decoded_value == maximum
             assert ts.quantisation_index == max_qi
+
+
+def test_generate_test_pictures():
+    wavelet_index = WaveletFilters.haar_with_shift
+    wavelet_index_ho = WaveletFilters.le_gall_5_3
+    dwt_depth = 1
+    dwt_depth_ho = 0
+    
+    h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
+    quantisation_matrix = {
+        0: {"LL": 0},
+        1: {"LH": 1, "HL": 2, "HH": 3},
+    }
+    
+    picture_width = 16
+    picture_height = 8
+    picture_bit_width = 10
+    input_min = -512
+    input_max = 511
+    
+    (
+        analysis_signal_bounds,
+        synthesis_signal_bounds,
+        analysis_test_signals,
+        synthesis_test_signals,
+    ) = static_filter_analysis(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+    )
+    
+    (
+        concrete_analysis_signal_bounds,
+        concrete_synthesis_signal_bounds,
+    ) = evaluate_filter_bounds(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        analysis_signal_bounds,
+        synthesis_signal_bounds,
+        picture_bit_width,
+    )
+    
+    max_quantisation_index = quantisation_index_bound(
+        concrete_analysis_signal_bounds,
+        quantisation_matrix,
+    )
+    
+    (
+        analysis_test_signal_outputs,
+        synthesis_test_signal_outputs,
+    ) = evaluate_test_signal_outputs(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        picture_bit_width,
+        quantisation_matrix,
+        max_quantisation_index,
+        analysis_test_signals,
+        synthesis_test_signals,
+    )
+    
+    (
+        analysis_pictures,
+        synthesis_pictures,
+    ) = generate_test_pictures(
+        picture_width,
+        picture_height,
+        analysis_test_signals,
+        synthesis_test_signals,
+        synthesis_test_signal_outputs,
+    )
+    
+    # Check all test patterns and maximise/minimise options were included
+    assert set(
+        (tp.level, tp.array_name, tp.x, tp.y, tp.maximise)
+        for p in analysis_pictures
+        for tp in p.test_points
+    ) == set(
+        (level, array_name, x, y, maximise)
+        for (level, array_name, x, y) in analysis_test_signals
+        for maximise in [True, False]
+    )
+    assert set(
+        (tp.level, tp.array_name, tp.x, tp.y, tp.maximise)
+        for p in synthesis_pictures
+        for tp in p.test_points
+    ) == set(
+        (level, array_name, x, y, maximise)
+        for (level, array_name, x, y) in synthesis_test_signals
+        for maximise in [True, False]
+    )
+    
+    # Test analysis pictures do what they claim
+    for analysis_picture in analysis_pictures:
+        picture = analysis_picture.picture.astype(int, copy=True)
+        picture[picture==+1] = input_max
+        picture[picture==-1] = input_min
+        
+        for test_point in analysis_picture.test_points:
+            # Perform analysis on the whole test picture, capturing the target
+            # value along the way
+            target_value = fast_partial_analysis_transform(
+                h_filter_params,
+                v_filter_params,
+                dwt_depth,
+                dwt_depth_ho,
+                picture.copy(),  # NB: Argument is mutated
+                (
+                    test_point.level,
+                    test_point.array_name,
+                    test_point.tx,
+                    test_point.ty,
+                ),
+            )
+            
+            # Compare with expected output level for that test pattern
+            expected_outputs = analysis_test_signal_outputs[(
+                test_point.level,
+                test_point.array_name,
+                test_point.x,
+                test_point.y,
+            )]
+            if test_point.maximise:
+                expected_value = expected_outputs[1]
+            else:
+                expected_value = expected_outputs[0]
+            
+            assert target_value == expected_value
+    
+    # PyExps required for synthesis implementation
+    _, synthesis_pyexps = synthesis_transform(
+        h_filter_params,
+        v_filter_params,
+        dwt_depth,
+        dwt_depth_ho,
+        make_variable_coeff_arrays(dwt_depth, dwt_depth_ho),
+    )
+    
+    # Test synthesis pictures do what they claim
+    for synthesis_picture in synthesis_pictures:
+        picture = synthesis_picture.picture.astype(int, copy=True)
+        picture[picture==+1] = input_max
+        picture[picture==-1] = input_min
+        
+        for test_point in synthesis_picture.test_points:
+            # Perform analysis, quantisation and synthesis on the whole test
+            # picture, capturing just the target synthesis value
+            codec = FastPartialAnalyseQuantiseSynthesise(
+                h_filter_params,
+                v_filter_params,
+                dwt_depth,
+                dwt_depth_ho,
+                quantisation_matrix,
+                [synthesis_picture.quantisation_index],
+                synthesis_pyexps[(
+                    test_point.level,
+                    test_point.array_name,
+                )][test_point.tx, test_point.ty],
+            )
+            # NB: Argument is mutated
+            target_value = codec.analyse_quantise_synthesise(picture.copy())[0]
+            
+            # Compare with expected output level for that test pattern
+            expected_outputs = synthesis_test_signal_outputs[(
+                test_point.level,
+                test_point.array_name,
+                test_point.x,
+                test_point.y,
+            )]
+            if test_point.maximise:
+                expected_value = expected_outputs[1][0]
+            else:
+                expected_value = expected_outputs[0][0]
+            
+            assert target_value == expected_value

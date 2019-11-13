@@ -78,10 +78,18 @@ picture : {(x, y): polarity, ...}
     
     To produce a test signal which minimises, rather than maximises the target
     value, the meaning of the polarity should be inverted.
+    
+    All pixels be located such that for the left-most pixel, 0 <= x < mx and for the
+    top-most pixel, 0 <= y < my (see picture_translation_multiple).
 picture_translation_multiple : (mx, my)
 target_translation_multiple : (tmx, tmy)
     The multiples by which picture pixel coordinates and target array
-    coordinates may be translated when relocating the test signal.
+    coordinates may be translated when relocating the test signal. Both the
+    picture and target must be translated by the same multiple of these two
+    factors.
+    
+    For example, if the picture is translated by (2*mx, 3*my), the target must
+    be translated by (2*tmx, 3*tmy).
 """
 
 
@@ -113,6 +121,23 @@ num_search_iterations : int
     For informational purposes. The number of search iterations performed to
     find this value.
 """
+
+
+def invert_test_signal_specification(test_signal):
+    """
+    Given a :py:class:`TestSignalSpecification` or
+    :py:class:`OptimisedTestSignalSpecification`, return a copy with the signal
+    polarity inverted.
+    """
+    tuple_type = type(test_signal)
+    
+    values = test_signal._asdict()
+    values["picture"] = {
+        (x, y): polarity * -1
+        for (x, y), polarity in values["picture"].items()
+    }
+    
+    return tuple_type(**values)
 
 
 def get_maximising_inputs(expression):
