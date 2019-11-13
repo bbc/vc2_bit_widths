@@ -439,6 +439,8 @@ def pack_test_patterns(width, height, test_patterns):
         tx += (dx // mx) * tmx
         ty += (dy // my) * tmy
         
-        locations[key] = (picture_index, tx, ty)
+        # NB: Convert numbers to native python ints to ensure JSON
+        # serialisability
+        locations[key] = (picture_index, int(tx), int(ty))
     
     return (pictures, locations)
