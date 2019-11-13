@@ -480,8 +480,6 @@ def test_generate_test_pictures():
     picture_width = 16
     picture_height = 8
     picture_bit_width = 10
-    input_min = -512
-    input_max = 511
     
     (
         analysis_signal_bounds,
@@ -534,6 +532,7 @@ def test_generate_test_pictures():
     ) = generate_test_pictures(
         picture_width,
         picture_height,
+        picture_bit_width,
         analysis_test_signals,
         synthesis_test_signals,
         synthesis_test_signal_outputs,
@@ -561,10 +560,6 @@ def test_generate_test_pictures():
     
     # Test analysis pictures do what they claim
     for analysis_picture in analysis_pictures:
-        picture = analysis_picture.picture.astype(int, copy=True)
-        picture[picture==+1] = input_max
-        picture[picture==-1] = input_min
-        
         for test_point in analysis_picture.test_points:
             # Perform analysis on the whole test picture, capturing the target
             # value along the way
@@ -573,7 +568,7 @@ def test_generate_test_pictures():
                 v_filter_params,
                 dwt_depth,
                 dwt_depth_ho,
-                picture.copy(),  # NB: Argument is mutated
+                analysis_picture.picture.copy(),  # NB: Argument is mutated
                 (
                     test_point.level,
                     test_point.array_name,
@@ -607,10 +602,6 @@ def test_generate_test_pictures():
     
     # Test synthesis pictures do what they claim
     for synthesis_picture in synthesis_pictures:
-        picture = synthesis_picture.picture.astype(int, copy=True)
-        picture[picture==+1] = input_max
-        picture[picture==-1] = input_min
-        
         for test_point in synthesis_picture.test_points:
             # Perform analysis, quantisation and synthesis on the whole test
             # picture, capturing just the target synthesis value
@@ -627,7 +618,9 @@ def test_generate_test_pictures():
                 )][test_point.tx, test_point.ty],
             )
             # NB: Argument is mutated
-            target_value = codec.analyse_quantise_synthesise(picture.copy())[0]
+            target_value = codec.analyse_quantise_synthesise(
+                synthesis_picture.picture.copy(),
+            )[0]
             
             # Compare with expected output level for that test pattern
             expected_outputs = synthesis_test_signal_outputs[(

@@ -30,7 +30,7 @@ from collections import OrderedDict, defaultdict, namedtuple
 
 import logging
 
-from math import ceil
+import numpy as np
 
 from vc2_data_tables import LIFTING_FILTERS
 
@@ -501,10 +501,10 @@ def optimise_synthesis_test_signals(
     for signal_no, (level, array_name, x, y, ts) in enumerate(test_signals_to_optimise):
         synthesis_pyexp = synthesis_pyexps[(level, array_name)][ts.target]
         
-        added_corruptions_per_iteration = int(ceil(
+        added_corruptions_per_iteration = int(np.ceil(
             len(ts.picture) * added_corruption_rate
         ))
-        removed_corruptions_per_iteration = int(ceil(
+        removed_corruptions_per_iteration = int(np.ceil(
             len(ts.picture) * removed_corruption_rate
         ))
         
@@ -770,9 +770,21 @@ test_points : [:py:class:`TestPoint`, ...]
 """
 
 
+def make_saturated_picture(polarities, input_min, input_max):
+    """
+    (Internal utility.) Convert an array of -1, 0, +1 polarity values into an
+    array of saturated values.
+    """
+    out = np.zeros(polarities.shape, dtype=object)
+    out[polarities==+1] = input_max
+    out[polarities==-1] = input_min
+    return out
+
+
 def generate_test_pictures(
     picture_width,
     picture_height,
+    picture_bit_width,
     analysis_test_signals,
     synthesis_test_signals,
     synthesis_test_signal_outputs,
@@ -786,6 +798,8 @@ def generate_test_pictures(
     picture_width : int
     picture_height : int
         The dimensions of the pictures to generate.
+    picture_bit_width : int
+        The number of bits in the input pictures.
     analysis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
     synthesis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
         The individual analysis and synthesis test signals to be combined. A
@@ -802,6 +816,8 @@ def generate_test_pictures(
     analysis_pictures : [:py:class:`AnalysisPicture`, ...]
     synthesis_pictures : [:py:class:`SynthesisPicture`, ...]
     """
+    input_min, input_max = signed_integer_range(picture_bit_width)
+    
     # For better packing, the test signals will be packed in size order,
     # largest first.
     analysis_test_signals = OrderedDict(sorted(
@@ -830,7 +846,10 @@ def generate_test_pictures(
         analysis_test_signals_bipolar,
     )
     analysis_pictures = [
-        AnalysisPicture(picture, [])
+        AnalysisPicture(
+            make_saturated_picture(picture, input_min, input_max),
+            [],
+        )
         for picture in pictures
     ]
     for (level, array_name, x, y, maximise), (picture_index, tx, ty) in locations.items():
@@ -866,7 +885,11 @@ def generate_test_pictures(
         )
         
         this_synthesis_pictures = [
-            SynthesisPicture(picture, qi, [])
+            SynthesisPicture(
+                make_saturated_picture(picture, input_min, input_max),
+                qi,
+                [],
+            )
             for picture in pictures
         ]
         
