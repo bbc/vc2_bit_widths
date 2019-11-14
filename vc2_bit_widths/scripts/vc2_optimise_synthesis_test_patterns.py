@@ -1,6 +1,123 @@
-"""
-Use a stochastic search to produce adversarial test patterns
-============================================================
+r"""
+.. _vc2-optimise-synthesis-test-patterns:
+
+``vc2-optimise-synthesis-test-patterns``
+========================================
+
+Use a stochastic search to enchance the synthesis test patterns
+produced by vc2-static-filter-analysis so that they produce even more
+extreme values.
+
+.. note::
+
+    The enhanced test patterns produced by this tool are valid only for the
+    wavelet transform, depth, picture bit width and quantisation matrix
+    specified. See :ref:`caveats` for further limitations and assumptions made
+    by this software.
+
+Example usage
+-------------
+
+::
+
+    $ vc2-static-filter-analysis \
+        --wavelet-index le_gall_5_3 \
+        --dwt-depth 2 \
+        --output static_analysis.json
+    
+    $ vc2-maximum-quantisation-index \
+        static_analysis.json \
+        --picture-bit-width 10 \
+        --custom-quantisation-matrix \
+            0 LL 1 \
+            1 HL 2   1 LH 0   1 HH 4 \
+            2 HL 1   2 LH 3   2 HH 3 \
+        --number-of-searches 10 \
+        --added-corruption-rate 0.2 \
+        --removed-corruption-rate 0.05 \
+        --base-iterations 1000 \
+        --added-iterations-per-improvement 500 \
+        --output optimised_patterns.json
+
+Arguments
+---------
+
+The complete set of arguments can be listed using ``--help``
+
+.. program-output:: vc2-optimise-synthesis-test-patterns --help
+
+
+.. _vc2-optimise-synthesis-test-patterns-parameter-tuning:
+
+Choosing parameters
+-------------------
+
+The runtime and output quality of the optimisation algorithm is highly
+dependent on the paramters supplied. The best performing parameters for one
+wavelet transform may not be the best for others.
+
+Choosing good parameters requires manual exploration and experimentation and is
+unfortunately out of the scope of this manual.
+
+See :py:func:`~vc2_bit_widths.helpers.optimise_synthesis_test_patterns` for
+additional details.
+
+
+JSON file format
+----------------
+
+The output is a JSON file with the following structure::
+
+    {
+        "wavelet_index": <int>,
+        "wavelet_index_ho": <int>,
+        "dwt_depth": <int>,
+        "dwt_depth_ho": <int>,
+        "picture_bit_width": <int>,
+        "quantisation_matrix": <quantisation-matrix>,
+        "optimised_synthesis_test_patterns": [<test-pattern-specification>, ...],
+    }
+
+Quantisation matrix
+```````````````````
+
+The ``"quantisation_matrix"`` field encodes the quantisation matrix used in the
+same fashion as the VC-2 pseudocode and its format should be self-explanatory.
+For example, the quantisation matrix passed to the example above is encoded
+as::
+
+    {
+        0: {"LL": 1},
+        1: {"HL": 2, "LH": 0, "HH": 4},
+        2: {"HL": 1, "LH": 3, "HH": 3},
+    }
+
+
+Test patterns
+`````````````
+
+The ``<test-pattern-specification>`` values follow the same format used by
+``vc2-static-filter-analysis`` (see
+:ref:`vc2-static-filter-analysis-json-test-patterns`) with some additional
+fields::
+
+    <test-pattern-specification> = {
+        ...,
+        "quantisation_index": <int>,
+        "decoded_value": <int>,
+        "num_search_iterations": <int>,
+    }
+
+These fields give the quantisation index found to produce the most extreme
+value for the test pattern, the value it managed to produce and the number of
+search iterations taken to reach that test pattern. This information is
+provided for informational purposes only.
+
+Missing values
+``````````````
+
+Only intermediate arrays are included which contain novel values. Arrays which
+are just renamings, interleavings and subsamplings of other arrays are omitted.
 
 """
 
@@ -42,7 +159,9 @@ from vc2_bit_widths.helpers import (
 
 def parse_args(args=None):
     parser = ArgumentParser(description="""
-        Use a stochastic search to produce adversarial test patterns.
+        Use a stochastic search to enchance the synthesis test patterns
+        produced by vc2-static-filter-analysis so that they produce even more
+        extreme values.
     """)
     
     parser.add_argument(

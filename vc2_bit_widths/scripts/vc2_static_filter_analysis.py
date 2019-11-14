@@ -1,6 +1,178 @@
-"""
-Static VC-2 Filter Analysis
-===========================
+r"""
+.. _vc2-static-filter-analysis:
+
+``vc2-static-filter-analysis``
+==============================
+
+This command statically analyses a VC-2 filter configuration to determine
+mathematical expressions for worst-case signal ranges and generate test
+patterns.
+
+Example usage
+-------------
+
+A simple 2-level LeGall (5, 3) transform::
+
+    $ vc2-static-filter-analysis \
+        --wavelet-index le_gall_5_3 \
+        --dwt-depth 2 \
+        --output static_analysis.json
+
+A more complex asymmetric transform::
+
+    $ vc2-static-filter-analysis \
+        --wavelet-index haar_with_shift \
+        --wavelet-index-ho le_gall_5_3 \
+        --dwt-depth 1 \
+        --dwt-depth-ho 2 \
+        --output static_analysis.json
+
+Arguments
+---------
+
+The complete set of arguments can be listed using ``--help``
+
+.. program-output:: vc2-static-filter-analysis --help
+
+
+
+.. _vc2-static-filter-analysis-json-schema:
+
+JSON file format
+----------------
+
+The output of ``vc2-static-filter-analysis`` is a JSON file which has the
+following structure::
+
+    {
+        "wavelet_index": <int>,
+        "wavelet_index_ho": <int>,
+        "dwt_depth": <int>,
+        "dwt_depth_ho": <int>,
+        "analysis_signal_bounds": [<signal-bounds>, ...],
+        "synthesis_signal_bounds": [<signal-bounds>, ...],
+        "analysis_test_patterns": [<test-pattern-specification>, ...],
+        "synthesis_test_patterns": [<test-pattern-specification>, ...],
+    }
+
+
+Signal bounds
+`````````````
+
+The ``"analysis_signal_bounds"`` and ``"synthesis_signal_bounds"`` lists define
+algebraic expressions for the upper- and lower-bounds for each analysis and
+synthesis filter phase (see :ref:`terminology`) as follows::
+
+    <signal-bounds> = {
+        "level": <int>,
+        "array_name": <string>,
+        "phase": [<int>, <int>],
+        "lower_bound": <algebraic-expression>,
+        "upper_bound": <algebraic-expression>,
+    }
+    
+    <algebraic-expression> = [
+        {
+            "symbol": <string-or-null>,
+            "numer": <string>,
+            "denom": <string>,
+        },
+        ...
+    ]
+
+Each ``<algebraic-expression>`` defines an algebraic linear expression. As an
+example, the following expression:
+
+.. math::
+
+    \frac{2}{3}a + 5b - 2
+
+Would be represented in JSON form as::
+
+    [
+        {"symbol": "a", "numer": "2", "denom": "3"},
+        {"symbol": "b", "numer": "5", "denom": "1"},
+        {"symbol": null, "numer": "-2", "denom": "1"},
+    ]
+
+In the expressions defining the analysis filter signal levels, the following
+symbols are used:
+
+    * ``signal_min`` -- The minimum picture signal value (e.g. -512 for 10 bit signals).
+    * ``signal_max`` -- The minimum picture signal value (e.g. 511 for 10 bit signals).
+
+In the expressions defining the synthesis filter signal levels, symbols with
+the form ``coeff_<level>_<orient>_min`` and ``coeff_<level>_<orient>_min`` are
+used. For example ``coeff_1_LL_min`` would mean the minimum value a level-1
+'LL' subband value could have.
+
+See also :py:class:`~vc2_bit_widths.linexp.LinExp` for a Python API for working
+with these expressions.
+
+.. _vc2-static-filter-analysis-json-test-patterns:
+
+Test patterns
+`````````````
+
+The ``"analysis_test_patterns`` and  ``"synthesis_test_patterns`` lists define
+test patterns for each analysis and synthesis filter phase like so::
+
+    <test-pattern-specification> = {
+        "level": <int>,
+        "array_name": <string>,
+        "phase": [<int>, <int>],
+        "target": [<int>, <int>],
+        "target_transition_multiple": [<int>, <int>],
+        "pattern": <test-pattern>,
+        "pattern_transition_multiple": [<int>, <int>],
+    }
+    
+    <test-pattern> = {
+        "dx": <int>,
+        "dy": <int>,
+        "width": <int>,
+        "height": <int>,
+        "positive": <string>,
+        "mask": <string>,
+    }
+
+Test patterns are defined in terms of a collection of pixel polarity values
+which indicate which pixels should be set to their maximum level and which
+should be set to their minimum. All other pixel values may be set arbitrarily.
+For the encoding used by the ``<test-pattern>`` object to encode the pixel
+polarities themselves, see
+:py:class:`~vc2_bit_widths.json_serialisations.serialise_test_pattern`.
+
+Test patterns must be carefully aligned within a test picture when used. See
+:py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification` for the
+meaning of the relevant fields of ``<test-pattern-specification>``.  .
+
+
+
+Missing values
+``````````````
+
+Only intermediate arrays are included which contain novel values. Arrays which
+are just renamings, interleavings and subsamplings of other arrays are omitted.
+
+
+Runtime and memory consumption
+------------------------------
+
+For typical 'real world' filter configurations, this command should complete
+within a few seconds and use a trivial amount of memory.
+
+For larger wavelets (e.g. the fidelity filter) and deeper transforms (e.g.
+three or more levels), the runtime and memory requirements can grow
+significantly. For example, a 4-level LeGall (5, 3) transform will take on the
+order of an hour to analyse. As an especially extreme case, a 4-level Fidelity
+wavelet will require around 16 GB of RAM and several weeks to complete.
+
+The ``--verbose`` option provides useful progress information as the static
+analysis process proceeds. As a guide, the vast majority of the runtime will be
+spent on the synthesis filters due to their far greater number. RAM usage grows
+rapidly during the processing of the analysis filters and then grow far more
+slowly during synthesis filter analysis.
 
 """
 
@@ -28,10 +200,9 @@ from vc2_bit_widths.scripts.argument_parsers import wavelet_index_or_name
 
 def parse_args(args=None):
     parser = ArgumentParser(description="""
-        Statically analyse a VC-2 filter configuration to determine its signal
-        range bounds and worst-case test patterns in the general case. This
-        tool outputs a JSON dump of the computed information which can later be
-        further processed and displayed by other tools.
+        This command statically analyses a VC-2 filter configuration to
+        determine mathematical expressions for worst-case signal ranges and
+        generate test patterns. Writes the output to a JSON file.
     """)
     
     parser.add_argument(

@@ -109,9 +109,9 @@ the 'target' value.
 Since all instances of a particular filter phase are alike, using a different
 example is still equivalent if it has the same phase.
 
-There are various reasons why a test signal might not pick the top-left most
+There are various reasons why a test picture might not pick the top-left most
 example of a particular filter. For example, consider the problem of generating
-a test signal which tests both phases of the DC'' array in the Haar example
+a test picture which tests both phases of the DC'' array in the Haar example
 above. To test phase 0 of the DC'' array we pick the zeroth element as our
 target and use inputs 'a' and 'b' to test filter. If we wish to simultaneously
 test phase 1 of this array, we can't use element 1 as the target because this

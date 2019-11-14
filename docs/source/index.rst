@@ -14,7 +14,8 @@ should be used.
 
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-   
-   introduction/index
+    :maxdepth: 2
+    :caption: Contents:
+    
+    introduction/index
+    cli/index

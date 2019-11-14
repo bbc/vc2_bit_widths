@@ -1,6 +1,57 @@
-"""
-Compute the largest quantisation index required for a VC-2 codec
-================================================================
+r"""
+.. _vc2-maximum-quantisation-index:
+
+``vc2-maximum-quantisation-index``
+==================================
+
+Compute the maximum quantisation index which is useful for a particular
+VC-2 codec configuration.
+
+Using the same approach as the ``vc2-bit-widths-table`` command, this command
+works out the most extreme values which a VC-2 quantiser might encounter (given
+certain assumptions about the behaviour of the encoder design, see
+:ref:`caveats`). Using this information, it is possible to find the smallest
+quantisation index sufficient to quantise all transform coefficients to zero.
+
+Though the VC-2 standard does not rule out larger quantisation indices being
+used, there is no reason for a sensible encoder implementation to use such a
+any larger quantisation index.
+
+
+.. note::
+
+    The values printed by this tool are valid only for the wavelet transform,
+    depth, picture bit width and quantisation matrix specified. See
+    :ref:`caveats` for further limitations and assumptions made by this
+    software.
+
+
+Example usage
+-------------
+
+::
+
+    $ vc2-static-filter-analysis \
+        --wavelet-index le_gall_5_3 \
+        --dwt-depth 2 \
+        --output static_analysis.json
+    
+    $ vc2-maximum-quantisation-index \
+        static_analysis.json \
+        --picture-bit-width 10 \
+        --custom-quantisation-matrix \
+            0 LL 1 \
+            1 HL 2   1 LH 0   1 HH 4 \
+            2 HL 1   2 LH 3   2 HH 3
+    59
+
+
+Arguments
+---------
+
+The complete set of arguments can be listed using ``--help``
+
+.. program-output:: vc2-maximum-quantisation-index --help
 
 """
 

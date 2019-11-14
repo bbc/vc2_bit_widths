@@ -1,3 +1,5 @@
+.. _caveats:
+
 Caveats
 =======
 
@@ -36,6 +38,9 @@ those predicted by this software. In practice, it is relatively unlikely to be
 the case. Nevertheless, you should be aware that this software relies on this
 assumption.
 
+
+
+.. _caveats-non-linearity:
 
 Non-linearity
 -------------

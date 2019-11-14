@@ -1,6 +1,101 @@
-"""
-Produce tables of theoretical signal bounds
-===========================================
+r"""
+.. _vc2-bit-widths-table:
+
+``vc2-bit-widths-table``
+========================
+
+Compute the signal ranges and bit widths required for each part of a
+VC-2 analysis and synthesis filter and present the results in a CSV
+table.
+
+.. note::
+
+    The values printed by this tool are valid only for the wavelet transform,
+    depth, picture bit width and quantisation matrix specified. See
+    :ref:`caveats` for further limitations and assumptions made by this
+    software.
+
+Example usage
+-------------
+
+::
+
+    $ vc2-static-filter-analysis \
+        --wavelet-index le_gall_5_3 \
+        --dwt-depth 2 \
+        --output static_analysis.json
+    
+    $ vc2-bit-widths-table \
+        static_analysis.json \
+        --picture-bit-width 10 \
+        --custom-quantisation-matrix \
+            0 LL 1 \
+            1 HL 2   1 LH 0   1 HH 4 \
+            2 HL 1   2 LH 3   2 HH 3 \
+        --output bit_widths.csv
+    
+    $ column -t -s, bit_widths.csv | head
+    type       level  array_name  lower_bound  test_pattern_min  test_pattern_max  upper_bound  bits
+    analysis   2      Input       -512         -512              511               511          10
+    analysis   2      DC          -1024        -1024             1022              1022         11
+    analysis   2      DC'         -2047        -2046             2046              2047         12
+    analysis   2      DC''        -2047        -2046             2046              2047         12
+    analysis   2      L           -1537        -1535             1534              1535         12
+    analysis   2      H           -2047        -2046             2046              2047         12
+    analysis   2      L'          -3071        -3069             3069              3071         13
+    analysis   2      H'          -4094        -4092             4092              4094         13
+    analysis   2      L''         -3071        -3069             3069              3071         13
+
+The command can also be used to display the signal ranges of optimised test
+patterns produced by ``vc2-optimise-synthesis-test-patterns``::
+
+    $ vc2-bit-widths-table \
+        static_analysis.json \
+        optimised_patterns.json \
+        --output bit_widths.csv
+
+
+Arguments
+---------
+
+The complete set of arguments can be listed using ``--help``
+
+.. program-output:: vc2-bit-widths-table --help
+
+
+CSV Format
+----------
+
+The generated CSV have one row per analysis and synthesis filter phase. The
+columns are defined as follows:
+
+type, level, array_name, x, y
+    Specifies the filter phase represented by the row (see :ref:`terminology`).
+    The 'x' and 'y' columns are omitted, and the aggregate worst-case shown for
+    all phases unless ``--show-all-filter-phases`` is used. 
+
+lower_bound, upper_bound
+    The theoretical worst-case lower- and upper-bounds for the signal. These
+    values may be over-estimates but are guaranteed not to be under estimates
+    of the true worst-case.
+
+test_pattern_min, test_pattern_max
+    The minimum and maximum values produced by the test patterns when they're
+    passed through a real encoder and decoder. These values may not represent
+    true worst-case signal levels, though they may often be close.
+    
+    .. warning::
+        It is possible that both minimum and maximum test pattern values could
+        have the same sign. This occurs when quantisation errors are
+        sufficiently strong as to make worst-case encodings/decodings of the
+        test pattern have the same sign. The true signal range would still
+        include zero.
+
+bits
+    The final column summarises the number of bits required for a signed two's
+    complement representation of the values in the ranges indicated. If the
+    test pattern and theory disagree, a range of bits is indicated. The true
+    bit width required lies somewhere in the given range.
 
 """
 
@@ -46,8 +141,9 @@ from vc2_bit_widths.json_serialisations import (
 
 def parse_args(arg_strings=None):
     parser = ArgumentParser(description="""
-        Present computed bit width information in tabular form for input
-        signals with a particular picture signal range.
+        Compute the signal ranges and bit widths required for each part of a
+        VC-2 analysis and synthesis filter and present the results in a CSV
+        table.
     """)
     
     parser.add_argument(

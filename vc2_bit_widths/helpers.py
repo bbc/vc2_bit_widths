@@ -125,8 +125,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         :py:func:`vc2_bit_widths.signal_bounds.evaluate_analysis_filter_bounds`.)
         
         For the synthesis filter bounds, the expressions are defined in terms
-        of variables of the form ``LinExp("signal_LEVEL_ORIENT_min")`` and
-        ``LinExp("signal_LEVEL_ORIENT_max")``.  These should be substituted for
+        of variables of the form ``LinExp("coeff_LEVEL_ORIENT_min")`` and
+        ``LinExp("coeff_LEVEL_ORIENT_max")``.  These should be substituted for
         the lower and upper bounds computed for the relevant analysis filter
         (See
         :py:func:`vc2_bit_widths.signal_bounds.evaluate_synthesis_filter_bounds`.)

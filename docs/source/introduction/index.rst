@@ -1,6 +1,6 @@
 .. _introduction:
 
-Introduction and tutorial
+Introduction and overview
 =========================
 
 The VC-2 standard defines the video decoding process using infinite precision
@@ -21,9 +21,9 @@ before the command line and Python library interfaces of
 
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-   
-   caveats
-   terminology
-   command_line_tools
+    :maxdepth: 2
+    :caption: Contents:
+    
+    caveats
+    terminology
+    overview
