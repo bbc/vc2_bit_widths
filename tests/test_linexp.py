@@ -9,7 +9,7 @@ from vc2_bit_widths.linexp import (
     affine_error_with_range,
 )
 
-from fractions import Fraction
+from vc2_bit_widths.fractions import Fraction
 
 from collections import OrderedDict
 

@@ -2,7 +2,7 @@ import pytest
 
 import random
 
-from fractions import Fraction
+from vc2_bit_widths.fractions import Fraction
 
 from itertools import combinations_with_replacement, product
 

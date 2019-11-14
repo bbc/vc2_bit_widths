@@ -21,7 +21,7 @@ from functools import reduce
 
 from collections import namedtuple
 
-from fractions import Fraction
+from vc2_bit_widths.fractions import Fraction
 
 import numpy as np
 

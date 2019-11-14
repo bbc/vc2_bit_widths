@@ -226,7 +226,7 @@ from numbers import Number, Integral
 
 from functools import total_ordering
 
-from fractions import Fraction
+from vc2_bit_widths.fractions import Fraction
 
 from collections import defaultdict, namedtuple
 

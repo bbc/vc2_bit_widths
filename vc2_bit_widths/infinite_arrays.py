@@ -172,12 +172,7 @@ behaviour for arrays whose contents are derived from :py:class:`SymbolArray`\ s.
 
 """
 
-from fractions import Fraction
-
-try:
-    from math import gcd  # Python >= 3.5
-except ImportError:
-    from fractions import gcd  # Python < 3.5
+from vc2_bit_widths.fractions import Fraction, gcd
 
 from vc2_data_tables import LiftingFilterTypes
 
