@@ -17,4 +17,4 @@ should be used.
    :maxdepth: 2
    :caption: Contents:
    
-   introduction
+   introduction/index

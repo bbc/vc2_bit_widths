@@ -1,124 +1,5 @@
-.. _introduction:
-
-Introduction and tutorial
-=========================
-
-The VC-2 standard defines the video decoding process using infinite precision
-integer arithmetic. For practical implementations, however, fixed-width
-integers must be used to achieve useful performance. If a codec is built with
-too few bits of precision, potentially significant artefacts may be produced in
-the event of integer wrap-around or saturation. If too many bits are used,
-however, the implementation will consume more resources than necessary.
-
-Perhaps surprisingly, the question 'how many bits do I need?' is not a simple
-one to answer. This software attempts to provide reliable answers to this
-question, along with synthetic test patterns to verify implementations.
-
-Before introducing this software it is important to understand its limitations
-and the terminology it uses. These will be introduced in the next few sections
-before the command line and Python library interfaces of
-:py:mod:`vc2_bit_widths` is introduced.
-
-
-
-Caveats
--------
-
-While this software aims to produce robust bit width figures, it can only go as
-far as the VC-2 specification and current mathematical techniques allow.
-
-
-Assumed Encoder Behaviour
-`````````````````````````
-
-The VC-2 standard only defines the behaviour of a decoder. Unfortunately,
-due to the clipper at the output, it is not possible to work backwards from the
-output bit width to calculate the input or intermediate signal ranges (as
-illustrated below).
-
-.. image:: /_static/decoder_alone_not_enough.svg
-    :alt: A VC-2 decoder with bit widths defined by the standard annotated.
-
-Further, since the standard does not define valid ranges for values in a
-bitstream, it is not possible to work forwards through the decoder and
-determine the necessary bit widths. As such it is necessary to make assumptions
-about the (unspecified) behaviour of a VC-2 encoder.
-
-This software makes the assumption that all VC-2 encoders consist of a matching
-forward discrete wavelet transform followed by a dead zone quantiser as
-informatively suggested by the standard. Once this assumption has been made it
-becomes possible to determine the bit widths of every part of a VC-2
-encoder and decoder.
-
-.. image:: /_static/working_out_bit_widths.svg
-    :alt: A VC-2 encoder and decoder with inferred bit widths shown.
-
-In principle, VC-2 encoder implementations are free to diverge from this
-assumed behaviour and so may produce bitstreams with different signal ranges to
-those predicted by this software. In practice, it is relatively unlikely to be
-the case. Nevertheless, you should be aware that this software relies on this
-assumption.
-
-
-Non-linearity
-`````````````
-
-Though VC-2 is based on the (linear) wavelet transform, its use of integer
-arithmetic and quantisation make it a non-linear filter. This non-linearity
-makes it difficult to assess how signals will be transformed in worst-case
-scenarios. As a consequence, this software is unable to calculate true
-worst-case signal levels. Instead, it provides bounds guaranteed to contain
-(but possibly over-estimate) worst case signals. Likewise, test pictures
-produced by this tool are not guaranteed to reach true worst-case signal
-levels, although they may be close.
-
-.. _terminology:
-
-Terminology
------------
-
-This software uses the following naming convention to refer to the different
-values within an encoder and decoder.
-
-Levels and subbands are numbered similarly to the VC-2 specification:
-
-.. image:: /_static/level_numbering.svg
-    :alt: Two examples showing 2D and asymmetric transforms.
-
-The only departure from the VC-2 convention is that the DC-band is numbered '1'
-and not '0' as in the VC-2 specification.
-
-For a given transform level, the filtering process is broken down into a series
-of steps which transform an array of input values into several (subsampled)
-arrays during analysis (encoding) and the reverse during synthesis (decoding).
-
-Analysis (Encoding)
-```````````````````
-
-.. image:: /_static/encoder_names.svg
-    :alt: Names for the various synthesis intermediate values.
-
-The figure above illustrates the steps involved in a single level of a 2D or
-horizontal-only analysis transform level.
-
-In the illustration two lifting stages are shown for each filter. For filters
-with more than two lifting stages, the outputs of these stages follow the same
-pattern. For example, for a Daubechies (9, 7), which has four lifting stages,
-the additional stages' outputs arrays would be named ``DC'''``, ``DC''''``,
-``L'''``, ``L''''``, ``H'''`` and ``H''''``.
-
-Synthesis (Decoding)
-````````````````````
-
-.. image:: /_static/decoder_names.svg
-    :alt: Names for the various analysis intermediate values.
-
-The same naming convention is used in reverse for the steps involved in a 2D or
-horizontal-only synthesis filtering stage.
-
-
 Using the command-line tools
-----------------------------
+============================
 
 A series of command-line tools are provided for computing signal bounds and
 test patterns for arbitrary VC-2 codec configurations.
@@ -151,7 +32,7 @@ calculating signal ranges and descriptions of test patterns (see
 
 
 Tabulating bit width requirements
-`````````````````````````````````
+---------------------------------
 
 We can now turn this JSON file into a human-readable table of signal ranges for
 particular picture bit depths using the :ref:`vc2-bit-widths-table` command::
@@ -222,7 +103,7 @@ than specified in the table.
 
 
 Optimising test signals
-```````````````````````
+-----------------------
 
 The test signals created by the :ref:`vc2-static-filter-analysis` command
 are designed to be likely to produce extreme signal values in codecs using the
