@@ -95,7 +95,7 @@ def test_bit_widths(tmpdir, capsys):
     # Check all columns are present as expected
     assert csv_rows[0] == (
         ["type", "level", "array_name"] +
-        ["lower_bound", "test_signal_min", "test_signal_max", "upper_bound", "bits"]
+        ["lower_bound", "test_pattern_min", "test_pattern_max", "upper_bound", "bits"]
     )
     
     # Check correct bit widths were read from arguments

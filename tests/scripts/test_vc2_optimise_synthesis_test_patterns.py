@@ -6,17 +6,17 @@ import shlex
 
 from vc2_data_tables import WaveletFilters
 
-from vc2_bit_widths.signal_generation import (
-    OptimisedTestSignalSpecification,
+from vc2_bit_widths.pattern_generation import (
+    OptimisedTestPatternSpecification,
 )
 
 from vc2_bit_widths.json_serialisations import (
-    deserialise_test_signals,
+    deserialise_test_patterns,
     deserialise_quantisation_matrix,
 )
 
 from vc2_bit_widths.scripts.vc2_static_filter_analysis import main as sfa
-from vc2_bit_widths.scripts.vc2_optimise_synthesis_test_signals import main as osfts
+from vc2_bit_widths.scripts.vc2_optimise_synthesis_test_patterns import main as osfts
 
 
 def test_sanity(tmpdir, capsys):
@@ -30,14 +30,14 @@ def test_sanity(tmpdir, capsys):
     assert sfa(shlex.split("-w le_gall_5_3 -D 1 -o {}".format(static_file))) == 0
     
     # Run with no iterations of random search
-    # vc2-optimise-synthesis-filter-test-signals
+    # vc2-optimise-synthesis-filter-test-patterns
     assert osfts(shlex.split("{} -b 10 -i 0 -o {}".format(
         static_file,
         unoptimised_file,
     ))) == 0
     
     # Run with 100 iterations of random search
-    # vc2-optimise-synthesis-filter-test-signals
+    # vc2-optimise-synthesis-filter-test-patterns
     assert osfts(shlex.split("{} -b 10 -N 1 -a 0.05 -r 0.0 -i 100 -I 0 -o {}".format(
         static_file,
         optimised_file,
@@ -71,18 +71,18 @@ def test_sanity(tmpdir, capsys):
     
     # Check optimised version does achieve some benefit over non-optimised
     # version
-    optimised_test_signals = deserialise_test_signals(
-        OptimisedTestSignalSpecification,
-        optimised["optimised_synthesis_test_signals"],
+    optimised_test_patterns = deserialise_test_patterns(
+        OptimisedTestPatternSpecification,
+        optimised["optimised_synthesis_test_patterns"],
     )
-    unoptimised_test_signals = deserialise_test_signals(
-        OptimisedTestSignalSpecification,
-        unoptimised["optimised_synthesis_test_signals"],
+    unoptimised_test_patterns = deserialise_test_patterns(
+        OptimisedTestPatternSpecification,
+        unoptimised["optimised_synthesis_test_patterns"],
     )
     
-    assert set(optimised_test_signals) == set(unoptimised_test_signals)
+    assert set(optimised_test_patterns) == set(unoptimised_test_patterns)
     assert any(
-        abs(optimised_test_signals[key].decoded_value) >
-        abs(unoptimised_test_signals[key].decoded_value)
-        for key in optimised_test_signals
+        abs(optimised_test_patterns[key].decoded_value) >
+        abs(unoptimised_test_patterns[key].decoded_value)
+        for key in optimised_test_patterns
     )

@@ -1,14 +1,14 @@
 """
-Test Signal Generation
-======================
+Test Pattern Generation
+=======================
 
-The routines in this module are designed to produce test pictures and signals
-for VC-2 encoders and decoders which produce near-maximum magnitude values in
-the target.
+The routines in this module are designed to produce test patterns for VC-2
+encoders and decoders which produce near-maximum magnitude values in the
+target.
 
 Due to non-linearities in VC-2's filters (i.e. rounding and quantisation), the
-test signals generated are not true worst-case signals but rather a 'best
-effort' to get close to the worst case. Encoder test signals will tend to be
+test patterns generated are not true worst-case signals but rather a 'best
+effort' to get close to the worst case. Encoder test patterns will tend to be
 very close to worst-case signals while decoder signals are likely to be modest
 under-estimates. Nevertheless, these signals are likely to have value ranges
 well above real picture signals.
@@ -42,33 +42,33 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
 logger = logging.getLogger(__name__)
 
 
-TestSignalSpecification = namedtuple(
-    "TestSignalSpecification",
-    "target,picture,picture_translation_multiple,target_translation_multiple",
+TestPatternSpecification = namedtuple(
+    "TestPatternSpecification",
+    "target,pattern,pattern_translation_multiple,target_translation_multiple",
 )
 """
-A definition of a test signal for a VC-2 filter. This test signal is intended
+A definition of a test pattern for a VC-2 filter. This test pattern is intended
 to maximise the value of a particular intermediate or output value of a VC-2
 filter.
 
-Test signals for both for analysis and synthesis filters are defined in terms
+Test patterns for both for analysis and synthesis filters are defined in terms
 of a picture. For analysis filters, the picture should be fed to an encoder and
 the resulting transform coefficients analysed. For synthesis filters, the
 picture should be fed to an encoder where it may be quantised before being fed
 to a decoder.
 
-The pictures defined for a test signal tend to be quite small and may be
+The pictures defined for a test pattern tend to be quite small and may be
 relocated within a larger picture if required. Translations are only permitted
-by multiples of ``picture_translation_multiple`` and have the effect of moving
+by multiples of ``pattern_translation_multiple`` and have the effect of moving
 the coordinate of the maximised target value by an equivalent multiple of
 ``target_translation_multiple``.
 
 Parameters
 ==========
 target : (tx, ty)
-    The target coordinate which is maximised by this test signal.
-picture : {(x, y): polarity, ...}
-    The input picture to be fed into a VC-2 encoder. Only those pixels defined
+    The target coordinate which is maximised by this test pattern.
+pattern : {(x, y): polarity, ...}
+    The input pattern to be fed into a VC-2 encoder. Only those pixels defined
     in this dictionary need be set -- all other pixels may be set to arbitrary
     values and have no effect.
     
@@ -76,65 +76,65 @@ picture : {(x, y): polarity, ...}
     pixel should be set to its maximum signal value. When -1, the pixel should
     be set to its minimum value.
     
-    To produce a test signal which minimises, rather than maximises the target
+    To produce a test pattern which minimises, rather than maximises the target
     value, the meaning of the polarity should be inverted.
     
     All pixels be located such that for the left-most pixel, 0 <= x < mx and for the
-    top-most pixel, 0 <= y < my (see picture_translation_multiple).
-picture_translation_multiple : (mx, my)
+    top-most pixel, 0 <= y < my (see pattern_translation_multiple).
+pattern_translation_multiple : (mx, my)
 target_translation_multiple : (tmx, tmy)
-    The multiples by which picture pixel coordinates and target array
-    coordinates may be translated when relocating the test signal. Both the
-    picture and target must be translated by the same multiple of these two
+    The multiples by which pattern pixel coordinates and target array
+    coordinates may be translated when relocating the test pattern. Both the
+    pattern and target must be translated by the same multiple of these two
     factors.
     
-    For example, if the picture is translated by (2*mx, 3*my), the target must
+    For example, if the pattern is translated by (2*mx, 3*my), the target must
     be translated by (2*tmx, 3*tmy).
 """
 
 
-OptimisedTestSignalSpecification = namedtuple(
-    "OptimisedTestSignalSpecification",
+OptimisedTestPatternSpecification = namedtuple(
+    "OptimisedTestPatternSpecification",
     (
-        "target,picture,picture_translation_multiple,target_translation_multiple,"
+        "target,pattern,pattern_translation_multiple,target_translation_multiple,"
         "quantisation_index,decoded_value,num_search_iterations"
     ),
 )
 """
-A test signal specification which has been optimised to produce more extreme
+A test pattern specification which has been optimised to produce more extreme
 signal values for a particular codec configuration.
 
 Parameters
 ==========
 target : (tx, ty)
-picture : {(x, y): polarity, ...}
-picture_translation_multiple : (mx, my)
+pattern : {(x, y): polarity, ...}
+pattern_translation_multiple : (mx, my)
 target_translation_multiple : (tmx, tmy)
-    Same as :py:class:`TestSignalSpecification`
+    Same as :py:class:`TestPatternSpecification`
 quantisation_index : int
     The quantisation index which, when used for all coded picture slices,
-    produces the largest values when this picture is decoded.
+    produces the largest values when this pattern is decoded.
 decoded_value : int
     For informational purposes. The value which will be produced in the target
-    decoder array for this input picture.
+    decoder array for this input pattern.
 num_search_iterations : int
     For informational purposes. The number of search iterations performed to
     find this value.
 """
 
 
-def invert_test_signal_specification(test_signal):
+def invert_test_pattern_specification(test_pattern):
     """
-    Given a :py:class:`TestSignalSpecification` or
-    :py:class:`OptimisedTestSignalSpecification`, return a copy with the signal
+    Given a :py:class:`TestPatternSpecification` or
+    :py:class:`OptimisedTestPatternSpecification`, return a copy with the signal
     polarity inverted.
     """
-    tuple_type = type(test_signal)
+    tuple_type = type(test_pattern)
     
-    values = test_signal._asdict()
-    values["picture"] = {
+    values = test_pattern._asdict()
+    values["pattern"] = {
         (x, y): polarity * -1
-        for (x, y), polarity in values["picture"].items()
+        for (x, y), polarity in values["pattern"].items()
     }
     
     return tuple_type(**values)
@@ -165,19 +165,19 @@ def get_maximising_inputs(expression):
 
 def make_analysis_maximising_signal(input_array, target_array, tx, ty):
     """
-    Create a test picture which maximises a value within an intermediate/final
+    Create a test pattern which maximises a value within an intermediate/final
     output of an analysis filter.
     
     .. note::
         
-        In lossless coding modes, test signals which maximise a given value in
+        In lossless coding modes, test patterns which maximise a given value in
         the encoder also maximise the corresponding value in the decoder.
         Consequently this function may also be used to (indirectly) produce
-        lossless decoder test signals.
+        lossless decoder test patterns.
     
     .. warning::
         
-        The returned test signal is designed to maximise a real-valued
+        The returned test pattern is designed to maximise a real-valued
         implementation of the target filter. Though it is likely that this
         signal also maximises integer-based implementations (such as those used
         by VC-2) it is not guaranteed.
@@ -195,20 +195,20 @@ def make_analysis_maximising_signal(input_array, target_array, tx, ty):
     
     Returns
     =======
-    test_signal : :py:class:`TestSignalSpecification`
+    test_pattern : :py:class:`TestPatternSpecification`
     """
-    test_signal = {
+    test_pattern = {
         (x, y): polarity
         for (prefix, x, y), polarity in get_maximising_inputs(
             target_array[tx, ty]
         ).items()
     }
     
-    xs, ys = zip(*test_signal)
+    xs, ys = zip(*test_pattern)
     min_x = min(xs)
     min_y = min(ys)
     
-    # Find the multiple by which test signal coordinates must be translated to
+    # Find the multiple by which test pattern coordinates must be translated to
     # achieve equivalent filter behaviour
     tmx, tmy = target_array.period
     mx, my = target_array.relative_step_size_to(input_array)
@@ -219,18 +219,18 @@ def make_analysis_maximising_signal(input_array, target_array, tx, ty):
     translate_steps_x = min_x // mx
     translate_steps_y = min_y // my
     
-    test_signal = {
+    test_pattern = {
         (x - (translate_steps_x * mx), y - (translate_steps_y * my)): polarity
-        for (x, y), polarity in test_signal.items()
+        for (x, y), polarity in test_pattern.items()
     }
     
     tx -= translate_steps_x * tmx
     ty -= translate_steps_y * tmy
     
-    return TestSignalSpecification(
+    return TestPatternSpecification(
         target=(tx, ty),
-        picture=test_signal,
-        picture_translation_multiple=(mx, my),
+        pattern=test_pattern,
+        pattern_translation_multiple=(mx, my),
         target_translation_multiple=(tmx, tmy),
     )
 
@@ -243,7 +243,7 @@ def make_synthesis_maximising_signal(
     tx, ty,
 ):
     """
-    Create a test picture which, after lossy encoding, is likely to maximise an
+    Create a test pattern which, after lossy encoding, is likely to maximise an
     intermediate/final value of the synthesis filter.
     
     .. warning::
@@ -275,7 +275,7 @@ def make_synthesis_maximising_signal(
     
     Returns
     =======
-    test_signal : :py:class:`TestSignalSpecification`
+    test_pattern : :py:class:`TestPatternSpecification`
     """
     # Enumerate the transform coefficients which maximise the target value
     # {(level, orient, x, y): coeff, ...}
@@ -310,7 +310,7 @@ def make_synthesis_maximising_signal(
     # A simple greedy approach is used to maximising all of the coefficient
     # magnitudes simultaneously: priority is given to transform coefficients
     # with the greatest weight.
-    test_signal = {}
+    test_pattern = {}
     for (level, orient, cx, cy), transform_coeff in sorted(
         target_transform_coeffs.items(),
         # NB: Key includes (level, orient, x, y) to break ties and ensure
@@ -320,17 +320,17 @@ def make_synthesis_maximising_signal(
         for (prefix, px, py), pixel_coeff in get_maximising_inputs(
             analysis_transform_coeff_arrays[level][orient][cx, cy]
         ).items():
-            test_signal[px, py] = pixel_coeff * (1 if transform_coeff > 0 else -1)
+            test_pattern[px, py] = pixel_coeff * (1 if transform_coeff > 0 else -1)
     
     # The greatest priority, however, must be given to the pixels which
     # directly control the target value!
-    test_signal.update(directly_contributing_input_pixels)
+    test_pattern.update(directly_contributing_input_pixels)
     
-    # The test signal may contain negative pixel coordinates. To be useful, it
+    # The test pattern may contain negative pixel coordinates. To be useful, it
     # must be translated to a position implementing the same filter but which
     # is free from negative pixel coordinates.
     #
-    # Find the multiples by which test signal and target array coordinates must
+    # Find the multiples by which test pattern and target array coordinates must
     # be translated to still maximise equivalent transform coefficients.
     tmx, tmy = synthesis_target_array.period
     mx, my = synthesis_output_array.relative_step_size_to(synthesis_target_array)
@@ -340,32 +340,32 @@ def make_synthesis_maximising_signal(
     mx = int(mx)
     my = int(my)
     
-    # Translate the test signal accordingly
-    xs, ys = zip(*test_signal)
+    # Translate the test pattern accordingly
+    xs, ys = zip(*test_pattern)
     min_x = min(xs)
     min_y = min(ys)
     
     translate_steps_x = min_x // mx
     translate_steps_y = min_y // my
     
-    test_signal = {
+    test_pattern = {
         (x - (translate_steps_x * mx), y - (translate_steps_y * my)): polarity
-        for (x, y), polarity in test_signal.items()
+        for (x, y), polarity in test_pattern.items()
     }
     
     tx -= translate_steps_x * tmx
     ty -= translate_steps_y * tmy
     
-    return TestSignalSpecification(
+    return TestPatternSpecification(
         target=(tx, ty),
-        picture=test_signal,
-        picture_translation_multiple=(mx, my),
+        pattern=test_pattern,
+        pattern_translation_multiple=(mx, my),
         target_translation_multiple=(tmx, tmy),
     )
 
 
 def find_quantisation_index_with_greatest_output_magnitude(
-    picture,
+    pattern,
     codec,
 ):
     """
@@ -374,11 +374,11 @@ def find_quantisation_index_with_greatest_output_magnitude(
     
     Parameters
     ==========
-    picture : :py:class:`numpy.array`
+    pattern : :py:class:`numpy.array`
         The pixels to be encoded and decoded. This array will be modified
         during the call.
     codec : :py:class:`~vc2_bit_widths.fast_partial_analyse_quantise_synthesise.FastPartialAnalyseQuantiseSynthesise`
-        An encoder/quantiser/decoder object to evaluate the picture with.
+        An encoder/quantiser/decoder object to evaluate the pattern with.
     
     Returns
     =======
@@ -389,7 +389,7 @@ def find_quantisation_index_with_greatest_output_magnitude(
         The quantisation index which produced the decoded value with the
         greatest magnitude.
     """
-    decoded_values = codec.analyse_quantise_synthesise(picture)
+    decoded_values = codec.analyse_quantise_synthesise(pattern)
     i = np.argmax(np.abs(decoded_values))
     return (decoded_values[i], codec.quantisation_indices[i])
 
@@ -418,7 +418,7 @@ def choose_random_indices_of(array, num_indices, random_state):
 
 
 def greedy_stochastic_search(
-    starting_picture,
+    starting_pattern,
     search_slice,
     input_min,
     input_max,
@@ -431,11 +431,11 @@ def greedy_stochastic_search(
 ):
     """
     Use a greedy stochastic search to find perturbations to the supplied test
-    picture which produce larger decoded values after quantisation.
+    pattern which produce larger decoded values after quantisation.
     
     At a high-level the greedy search proceeds as follows:
     
-    1. Make some random changes to the input picture.
+    1. Make some random changes to the input pattern.
     2. See if these changes made the decoded output larger. If they did, keep
        the changes, if they didn't, discard them.
     3. Go to step 1.
@@ -445,23 +445,23 @@ def greedy_stochastic_search(
     ``base_iterations`` and decremented after every iteration. If the iteration
     produced an larger output value, the counter is incremented by
     ``added_iterations_per_improvement``. Once the counter reaches zero, the
-    search terminates and the best picture found is returned.
+    search terminates and the best pattern found is returned.
     
     Parameters
     ==========
-    starting_picture : :py:class:`numpy.array`
-        The picture to use as the starting-point for the search.
+    starting_pattern : :py:class:`numpy.array`
+        The pattern to use as the starting-point for the search.
     search_slice
         A :py:mod:`numpy` compatible array slice specification which defines
-        the region of ``starting_picture`` which should be mutated during the
+        the region of ``starting_pattern`` which should be mutated during the
         search.
     input_min : number
     input_max : number
         The value ranges for random values which may be inserted into the
-        picture.
+        pattern.
     codec : :py:class:`~vc2_bit_widths.fast_partial_analyse_quantise_synthesise.FastPartialAnalyseQuantiseSynthesise`
         An encoder/quantiser/decoder object which will be used to test each
-        picture.
+        pattern.
     random_state : :py:class:`numpy.random.RandomState`
         The random number generator to use for the search.
     added_corruptions_per_iteration : int
@@ -474,12 +474,12 @@ def greedy_stochastic_search(
         The initial number of search iterations to perform.
     added_iterations_per_improvement : int
         The number of additional search iterations to perform whenever an
-        improved picture is found.
+        improved pattern is found.
     
     Returns
     =======
-    picture : :py:class:`numpy.array`
-        The perturbed picture which produced the decoded value with the
+    pattern : :py:class:`numpy.array`
+        The perturbed pattern which produced the decoded value with the
         greatest magnitude after quantisation.
     greatest_decoded_value : float
         The value produced by decoding the input at the worst-case quantisation
@@ -492,27 +492,27 @@ def greedy_stochastic_search(
         used as an aid to tuning search parameters.
     """
     # Use the input with no corruption as the baseline for the search
-    best_picture = starting_picture.copy()
-    cur_picture = best_picture.copy()
+    best_pattern = starting_pattern.copy()
+    cur_pattern = best_pattern.copy()
     best_decoded_value, best_qi = find_quantisation_index_with_greatest_output_magnitude(
-        cur_picture,
+        cur_pattern,
         codec,
     )
     
     # Array to use as the working array for the partial encode/decode (since
     # this corrupts the array passed in)
-    working_array = np.empty_like(cur_picture)
+    working_array = np.empty_like(cur_pattern)
     
     decoded_values = []
     iterations_remaining = base_iterations
     while iterations_remaining > 0:
         iterations_remaining -= 1
         
-        cur_picture[:] = best_picture
+        cur_pattern[:] = best_pattern
         
-        # Slice out the picture 
-        starting_slice = starting_picture[search_slice]
-        cur_slice = cur_picture[search_slice]
+        # Slice out the pattern 
+        starting_slice = starting_pattern[search_slice]
+        cur_slice = cur_pattern[search_slice]
         
         # Restore a random set of indices in the vector to their original value
         if removed_corruptions_per_iteration:
@@ -535,7 +535,7 @@ def greedy_stochastic_search(
         )
         
         # Find the largest decoded value for the newly modified input vector
-        working_array[:] = cur_picture
+        working_array[:] = cur_pattern
         cur_decoded_value, cur_qi = find_quantisation_index_with_greatest_output_magnitude(
             working_array,
             codec,
@@ -556,80 +556,80 @@ def greedy_stochastic_search(
                 cur_decoded_value > best_decoded_value
             )
         ):
-            best_picture[:] = cur_picture
+            best_pattern[:] = cur_pattern
             best_decoded_value = cur_decoded_value
             best_qi = cur_qi
             
             iterations_remaining += added_iterations_per_improvement
     
-    return best_picture, best_decoded_value, best_qi, decoded_values
+    return best_pattern, best_decoded_value, best_qi, decoded_values
 
 
-def convert_test_signal_to_picture_and_slice(
-    test_signal,
+def convert_test_pattern_to_array_and_slice(
+    test_pattern,
     input_min,
     input_max,
     dwt_depth,
     dwt_depth_ho,
 ):
     """
-    Convert a description of a test signal (in terms of polarities) into a test
-    picture in a :py:class:`numpy.array`, padded ready for processing with a
-    filter with the specified transform depths.
+    Convert a description of a test pattern (in terms of polarities) into a
+    :py:class:`numpy.array`, padded ready for processing with a filter with the
+    specified transform depths.
     
     Parameters
     ==========
-    test_signal : {(x, y): polarity, ...}
+    test_pattern : {(x, y): polarity, ...}
     input_min : int
     input_max : int
-        The full signal range to expand the test signal to.
+        The full signal range to expand the test pattern to.
     dwt_depth : int
     dwt_depth_ho : int
         The transform depth used by the filters.
     
     Returns
     =======
-    test_picture : :py:class:`numpy.array`
+    pattern : :py:class:`numpy.array`
     search_slice : (:py:class:`slice`, :py:class:`slice`)
-        A 2D slice out of ``test_picture`` which contains the active pixels in
-        ``test_signal`` (i.e. excluding any padding).
+        A 2D slice out of ``test_pattern`` which contains the active pixels in
+        ``test_pattern`` (i.e. excluding any padding).
     """
-    xs, ys = zip(*test_signal)
+    xs, ys = zip(*test_pattern)
     x0 = min(xs)
     y0 = min(ys)
     x1 = max(xs)
     y1 = max(ys)
     search_slice = (slice(y0, y1+1), slice(x0, x1+1))
     
-    # Round picture width/height up to be compatible with the lifting filter
+    # Round width/height up to be compatible with the lifting filter
     x_multiple = 2**(dwt_depth + dwt_depth_ho)
     y_multiple = 2**(dwt_depth)
     width = (((x1 + 1) + x_multiple - 1) // x_multiple) * x_multiple
     height = (((y1 + 1) + y_multiple - 1) // y_multiple) * y_multiple
     
-    test_picture = np.array([
+    pattern = np.array([
         [
             0
-            if test_signal.get((x, y), 0) == 0 else
+            if test_pattern.get((x, y), 0) == 0 else
             input_min
-            if test_signal.get((x, y), 0) < 0 else
+            if test_pattern.get((x, y), 0) < 0 else
             input_max
             for x in range(width)
         ]
         for y in range(height)
     ], dtype=int)
     
-    return test_picture, search_slice
+    return pattern, search_slice
 
 
-def optimise_synthesis_maximising_signal(
+def optimise_synthesis_maximising_test_pattern(
     h_filter_params,
     v_filter_params,
     dwt_depth,
     dwt_depth_ho,
     quantisation_matrix,
     synthesis_pyexp,
-    test_signal,
+    test_pattern,
     input_min,
     input_max,
     max_quantisation_index,
@@ -642,7 +642,7 @@ def optimise_synthesis_maximising_signal(
     added_iterations_per_improvement,
 ):
     """
-    Optimise a test signal generated by
+    Optimise a test pattern generated by
     :py:func:`make_synthesis_maximising_signal` using repeated greedy
     stochastic search, attempting to produce larger signal values for specific
     codec configurations.
@@ -667,18 +667,18 @@ def optimise_synthesis_maximising_signal(
         The VC-2 quantisation matrix to use.
     synthesis_pyexp : :py:class:`~vc2_bit_widths.PyExp`
         A :py:class:`~vc2_bit_widths.PyExp` expression which defines the
-        synthesis process for the decoder value the test signal is
+        synthesis process for the decoder value the test pattern is
         maximising/minimising. Such an expression is usually obtained from the
         use of :py:func;`~vc2_bit_widths.vc2_filters.synthesis_transform` and
         :py:func;`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
-    test_signal : :py:class:`TestSignalSpecification`
-        The test signal to optimise. This test signal must be translated such
+    test_pattern : :py:class:`TestPatternSpecification`
+        The test pattern to optimise. This test pattern must be translated such
         that no analysis or synthesis step depends on VC-2's edge extension
-        behaviour. This will be the case for test signals produced by
+        behaviour. This will be the case for test patterns produced by
         :py:class:`make_synthesis_maximising_signal`.
     input_min : int
     input_max : int
-        The minimum and maximum value which may be used in the test signal.
+        The minimum and maximum value which may be used in the test pattern.
     max_quantisation_index : int
         The maximum quantisation index to use. This should be set high enough
         that at the highest quantisation level all transform coefficients are
@@ -701,11 +701,11 @@ def optimise_synthesis_maximising_signal(
     
     Returns
     =======
-    optimised_test_signal : :py:class:`OptimisedTestSignalSpecification`
-        The optimised test signal found during the search.
+    optimised_test_pattern : :py:class:`OptimisedTestPatternSpecification`
+        The optimised test pattern found during the search.
     """
-    test_picture, search_slice = convert_test_signal_to_picture_and_slice(
-        test_signal.picture,
+    pattern_array, search_slice = convert_test_pattern_to_array_and_slice(
+        test_pattern.pattern,
         input_min,
         input_max,
         dwt_depth,
@@ -727,7 +727,7 @@ def optimise_synthesis_maximising_signal(
     # Compute initial score prior to search for display in the debug log
     if logger.getEffectiveLevel() <= logging.INFO:
         _, base_decoded_value, base_qi, _ = greedy_stochastic_search(
-            test_picture,
+            pattern_array,
             search_slice,
             input_min,
             input_max,
@@ -741,15 +741,15 @@ def optimise_synthesis_maximising_signal(
         logger.info("Unmodified value = %d (qi=%d)", base_decoded_value, base_qi)
     
     # Run the greedy search several times, keeping the best result.
-    best_picture = None
+    best_pattern = None
     best_decoded_value = None
     best_qi = None
     total_iterations = 0
     improvement_found = False
     assert number_of_searches >= 1
     for search_no in range(number_of_searches):
-        new_picture, new_decoded_value, new_qi, decoded_values = greedy_stochastic_search(
-            test_picture,
+        new_pattern, new_decoded_value, new_qi, decoded_values = greedy_stochastic_search(
+            pattern_array,
             search_slice,
             input_min,
             input_max,
@@ -784,13 +784,13 @@ def optimise_synthesis_maximising_signal(
                 new_decoded_value > best_decoded_value
             )
         ):
-            best_picture = new_picture
+            best_pattern = new_pattern
             best_decoded_value = new_decoded_value
             best_qi = new_qi
         
-        # Terminate early if no improvements to the picture are made (detected
-        # by the returning of a new picture by the search)
-        if not improvement_found and not np.array_equal(test_picture, new_picture):
+        # Terminate early if no improvements to the pattern are made (detected
+        # by the returning of a new pattern by the search)
+        if not improvement_found and not np.array_equal(pattern_array, new_pattern):
             improvement_found = True
         if (
             terminate_early is not None and
@@ -810,41 +810,41 @@ def optimise_synthesis_maximising_signal(
         total_iterations,
     )
     
-    # Convert test picture description back from vector form
-    optimised_picture = {
-        (x, y): 1 if best_picture[y, x] == input_max else -1
-        for (x, y) in test_signal.picture
-        if best_picture[y, x] in (input_min, input_max)
+    # Convert test pattern description back from vector form
+    optimised_pattern = {
+        (x, y): 1 if best_pattern[y, x] == input_max else -1
+        for (x, y) in test_pattern.pattern
+        if best_pattern[y, x] in (input_min, input_max)
     }
     
     # Convert out of Numpy int type (which cannot be serialised into JSON
     # later)
     best_decoded_value = int(best_decoded_value)
     
-    return OptimisedTestSignalSpecification(
-        target=test_signal.target,
-        picture=optimised_picture,
-        picture_translation_multiple=test_signal.picture_translation_multiple,
-        target_translation_multiple=test_signal.target_translation_multiple,
+    return OptimisedTestPatternSpecification(
+        target=test_pattern.target,
+        pattern=optimised_pattern,
+        pattern_translation_multiple=test_pattern.pattern_translation_multiple,
+        target_translation_multiple=test_pattern.target_translation_multiple,
         quantisation_index=best_qi,
         decoded_value=best_decoded_value,
         num_search_iterations=total_iterations,
     )
 
 
-def evaluate_analysis_test_signal_output(
+def evaluate_analysis_test_pattern_output(
     h_filter_params,
     v_filter_params,
     dwt_depth,
     dwt_depth_ho,
     level,
     array_name,
-    test_signal,
+    test_pattern,
     input_min,
     input_max,
 ):
     """
-    Given an analysis test signal (e.g. created using
+    Given an analysis test pattern (e.g. created using
     :py:func:`make_analysis_maximising_signal`), return the actual intermediate
     encoder value when the signal is processed.
     
@@ -860,21 +860,21 @@ def evaluate_analysis_test_signal_output(
         The transform depth used by the filters.
     level : int
     array_name : str
-        The intermediate value in the encoder the test signal targets.
-    test_signal : :py:class:`TestSignalSpecification`
-        The test signal to evaluate.
+        The intermediate value in the encoder the test pattern targets.
+    test_pattern : :py:class:`TestPatternSpecification`
+        The test pattern to evaluate.
     input_min : int
     input_max : int
-        The minimum and maximum value which may be used in the test signal.
+        The minimum and maximum value which may be used in the test pattern.
     
     Returns
     =======
     encoded_minimum : int
     encoded_maximum : int
-        The target encoder value when the test signal encoded with minimising
+        The target encoder value when the test pattern encoded with minimising
         and maximising signal levels respectively.
     """
-    tx, ty = test_signal.target
+    tx, ty = test_pattern.target
     
     # NB: Casting to native int from numpy for JSON serialisability etc.
     return tuple(
@@ -883,8 +883,8 @@ def evaluate_analysis_test_signal_output(
             v_filter_params,
             dwt_depth,
             dwt_depth_ho,
-            convert_test_signal_to_picture_and_slice(
-                test_signal.picture,
+            convert_test_pattern_to_array_and_slice(
+                test_pattern.pattern,
                 cur_min,
                 cur_max,
                 dwt_depth,
@@ -901,22 +901,22 @@ def evaluate_analysis_test_signal_output(
     )
 
 
-def evaluate_synthesis_test_signal_output(
+def evaluate_synthesis_test_pattern_output(
     h_filter_params,
     v_filter_params,
     dwt_depth,
     dwt_depth_ho,
     quantisation_matrix,
     synthesis_pyexp,
-    test_signal,
+    test_pattern,
     input_min,
     input_max,
     max_quantisation_index,
 ):
     """
-    Given a synthesis test signal (e.g. created using
+    Given a synthesis test pattern (e.g. created using
     :py:func:`make_synthesis_maximising_signal` or
-    :py:func:`optimise_synthesis_maximising_signal`), return the actual decoder
+    :py:func:`optimise_synthesis_maximising_test_pattern`), return the actual decoder
     value, and worst-case quantisation index when the signal is processed.
     
     Parameters
@@ -933,15 +933,15 @@ def evaluate_synthesis_test_signal_output(
         The VC-2 quantisation matrix to use.
     synthesis_pyexp : :py:class:`~vc2_bit_widths.PyExp`
         A :py:class:`~vc2_bit_widths.PyExp` expression which defines the
-        synthesis process for the decoder value the test signal is
+        synthesis process for the decoder value the test pattern is
         maximising/minimising. Such an expression is usually obtained from the
         use of :py:func;`~vc2_bit_widths.vc2_filters.synthesis_transform` and
         :py:func;`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
-    test_signal : :py:class:`TestSignalSpecification`
-        The test signal to evaluate.
+    test_pattern : :py:class:`TestPatternSpecification`
+        The test pattern to evaluate.
     input_min : int
     input_max : int
-        The minimum and maximum value which may be used in the test signal.
+        The minimum and maximum value which may be used in the test pattern.
     max_quantisation_index : int
         The maximum quantisation index to use. This should be set high enough
         that at the highest quantisation level all transform coefficients are
@@ -952,7 +952,7 @@ def evaluate_synthesis_test_signal_output(
     decoded_minimum : (value, quantisation_index)
     decoded_maximum : (value, quantisation_index)
         The target decoded value (and worst-case quantisation index) when the
-        test signal is encoded using minimising and maximising values
+        test pattern is encoded using minimising and maximising values
         respectively.
     """
     quantisation_indices = list(range(max_quantisation_index + 1))
@@ -975,15 +975,15 @@ def evaluate_synthesis_test_signal_output(
         # Maximise encoder output
         (input_min, input_max),
     ]:
-        test_picture, _ = convert_test_signal_to_picture_and_slice(
-            test_signal.picture,
+        pattern_array, _ = convert_test_pattern_to_array_and_slice(
+            test_pattern.pattern,
             cur_min,
             cur_max,
             dwt_depth,
             dwt_depth_ho,
         )
         
-        decoded_values = codec.analyse_quantise_synthesise(test_picture)
+        decoded_values = codec.analyse_quantise_synthesise(pattern_array)
         
         i = np.argmax(np.abs(decoded_values))
         

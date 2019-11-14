@@ -6,11 +6,11 @@ import shlex
 
 from vc2_data_tables import WaveletFilters
 
-from vc2_bit_widths.signal_generation import TestSignalSpecification as TSS
+from vc2_bit_widths.pattern_generation import TestPatternSpecification as TPS
 
 from vc2_bit_widths.json_serialisations import (
     deserialise_signal_bounds,
-    deserialise_test_signals,
+    deserialise_test_patterns,
 )
 
 from vc2_bit_widths.scripts.vc2_static_filter_analysis import main
@@ -37,12 +37,12 @@ def test_sanity(tmpdir):
     analysis_signal_bounds = deserialise_signal_bounds(d["analysis_signal_bounds"])
     synthesis_signal_bounds = deserialise_signal_bounds(d["synthesis_signal_bounds"])
     
-    analysis_test_signals = deserialise_test_signals(TSS, d["analysis_test_signals"])
-    synthesis_test_signals = deserialise_test_signals(TSS, d["synthesis_test_signals"])
+    analysis_test_patterns = deserialise_test_patterns(TPS, d["analysis_test_patterns"])
+    synthesis_test_patterns = deserialise_test_patterns(TPS, d["synthesis_test_patterns"])
     
     # Check self consistent
-    assert set(analysis_signal_bounds) == set(analysis_test_signals)
-    assert set(synthesis_signal_bounds) == set(synthesis_test_signals)
+    assert set(analysis_signal_bounds) == set(analysis_test_patterns)
+    assert set(synthesis_signal_bounds) == set(synthesis_test_patterns)
     
     # Check first level is a 2D transform
     assert (1, "L'", 0, 0) in analysis_signal_bounds

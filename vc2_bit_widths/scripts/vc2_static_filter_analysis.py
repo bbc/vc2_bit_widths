@@ -14,13 +14,13 @@ from argparse import ArgumentParser, FileType
 
 from vc2_data_tables import WaveletFilters
 
-from vc2_bit_widths.signal_generation import TestSignalSpecification
+from vc2_bit_widths.pattern_generation import TestPatternSpecification
 
 from vc2_bit_widths.helpers import static_filter_analysis
 
 from vc2_bit_widths.json_serialisations import (
     serialise_signal_bounds,
-    serialise_test_signals,
+    serialise_test_patterns,
 )
 
 from vc2_bit_widths.scripts.argument_parsers import wavelet_index_or_name
@@ -103,8 +103,8 @@ def main(args=None):
     (
         analysis_signal_bounds,
         synthesis_signal_bounds,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     )= static_filter_analysis(
         wavelet_index=args.wavelet_index,
         wavelet_index_ho=args.wavelet_index_ho,
@@ -122,10 +122,10 @@ def main(args=None):
             serialise_signal_bounds(analysis_signal_bounds),
         "synthesis_signal_bounds":
             serialise_signal_bounds(synthesis_signal_bounds),
-        "analysis_test_signals":
-            serialise_test_signals(TestSignalSpecification, analysis_test_signals),
-        "synthesis_test_signals":
-            serialise_test_signals(TestSignalSpecification, synthesis_test_signals),
+        "analysis_test_patterns":
+            serialise_test_patterns(TestPatternSpecification, analysis_test_patterns),
+        "synthesis_test_patterns":
+            serialise_test_patterns(TestPatternSpecification, synthesis_test_patterns),
     }
     
     json.dump(out, args.output)

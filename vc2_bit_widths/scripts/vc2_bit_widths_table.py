@@ -26,20 +26,20 @@ from vc2_bit_widths.signal_bounds import (
     twos_compliment_bits,
 )
 
-from vc2_bit_widths.signal_generation import (
-    TestSignalSpecification,
-    OptimisedTestSignalSpecification,
+from vc2_bit_widths.pattern_generation import (
+    TestPatternSpecification,
+    OptimisedTestPatternSpecification,
 )
 
 from vc2_bit_widths.helpers import (
     evaluate_filter_bounds,
     quantisation_index_bound,
-    evaluate_test_signal_outputs,
+    evaluate_test_pattern_outputs,
 )
 
 from vc2_bit_widths.json_serialisations import (
     deserialise_signal_bounds,
-    deserialise_test_signals,
+    deserialise_test_patterns,
     deserialise_quantisation_matrix,
 )
 
@@ -60,11 +60,11 @@ def parse_args(arg_strings=None):
     )
     
     parser.add_argument(
-        "optimised_synthesis_test_signals",
+        "optimised_synthesis_test_patterns",
         type=FileType("r"), nargs="?",
         help="""
-            A set of optimised synthesis test signals produced by
-            vc2-optimise-synthesis-test-signals.
+            A set of optimised synthesis test patterns produced by
+            vc2-optimise-synthesis-test-patterns.
         """,
     )
     
@@ -115,21 +115,21 @@ def parse_args(arg_strings=None):
     
     args = parser.parse_args(arg_strings)
     
-    if args.optimised_synthesis_test_signals is not None:
+    if args.optimised_synthesis_test_patterns is not None:
         if (
             args.picture_bit_width is not None or
             args.custom_quantisation_matrix is not None
         ):
             parser.error(
                 "--picture-bit-width/-b and --custom-quantisation-matrix/-q "
-                "must not be used when optimised synthesis test signals "
+                "must not be used when optimised synthesis test patterns "
                 "are provided"
             )
     else:
         if args.picture_bit_width is None:
             parser.error(
                 "A --picture-bit-width/-b argument or a set of "
-                "optimised synthesis test signals are required."
+                "optimised synthesis test patterns are required."
             )
     
     return args
@@ -192,19 +192,19 @@ def main(args=None):
         static_filter_analysis["synthesis_signal_bounds"]
     )
     
-    # Load precomputed test signals
-    analysis_test_signals = deserialise_test_signals(
-        TestSignalSpecification,
-        static_filter_analysis["analysis_test_signals"]
+    # Load precomputed test patterns
+    analysis_test_patterns = deserialise_test_patterns(
+        TestPatternSpecification,
+        static_filter_analysis["analysis_test_patterns"]
     )
-    synthesis_test_signals = deserialise_test_signals(
-        TestSignalSpecification,
-        static_filter_analysis["synthesis_test_signals"]
+    synthesis_test_patterns = deserialise_test_patterns(
+        TestPatternSpecification,
+        static_filter_analysis["synthesis_test_patterns"]
     )
     
     # Load optimised synthesis signal
-    if args.optimised_synthesis_test_signals is not None:
-        optimised_json = json.load(args.optimised_synthesis_test_signals)
+    if args.optimised_synthesis_test_patterns is not None:
+        optimised_json = json.load(args.optimised_synthesis_test_patterns)
         
         assert static_filter_analysis["wavelet_index"] == optimised_json["wavelet_index"]
         assert static_filter_analysis["wavelet_index_ho"] == optimised_json["wavelet_index_ho"]
@@ -217,9 +217,9 @@ def main(args=None):
             optimised_json["quantisation_matrix"]
         )
         
-        synthesis_test_signals = deserialise_test_signals(
-            OptimisedTestSignalSpecification,
-            optimised_json["optimised_synthesis_test_signals"]
+        synthesis_test_patterns = deserialise_test_patterns(
+            OptimisedTestPatternSpecification,
+            optimised_json["optimised_synthesis_test_patterns"]
         )
     else:
         quantisation_matrix = parse_quantisation_matrix_argument(
@@ -250,8 +250,8 @@ def main(args=None):
         quantisation_matrix,
     )
     
-    # Find test signal output values for each bit width
-    analysis_outputs, synthesis_outputs = evaluate_test_signal_outputs(
+    # Find test pattern output values for each bit width
+    analysis_outputs, synthesis_outputs = evaluate_test_pattern_outputs(
         static_filter_analysis["wavelet_index"],
         static_filter_analysis["wavelet_index_ho"],
         static_filter_analysis["dwt_depth"],
@@ -259,12 +259,12 @@ def main(args=None):
         args.picture_bit_width,
         quantisation_matrix,
         max_quantisation_index,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     )
     
     # Strip quantisation index from synthesis output info and put bounds in the
-    # correct order (since the minimised/maximised test signals may actually
+    # correct order (since the minimised/maximised test patterns may actually
     # produce outputs with the wrong sign in cases of extreme quantisation)
     synthesis_outputs = OrderedDict(
         (key, (min(lower, upper), max(lower, upper)))
@@ -321,7 +321,7 @@ def main(args=None):
     csv_writer.writerow(
         ("type", ) +
         columns +
-        ("lower_bound", "test_signal_min", "test_signal_max", "upper_bound", "bits")
+        ("lower_bound", "test_pattern_min", "test_pattern_max", "upper_bound", "bits")
     )
     
     # Data

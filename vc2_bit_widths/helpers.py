@@ -19,10 +19,10 @@ can also be determined:
 
 .. autofunction:: quantisation_index_bound
 
-The test signals generated for the synthesis filter can be optimised and
+The test patterns generated for the synthesis filter can be optimised and
 specialised for a particular codec configuration and bit depth:
 
-.. autofunction:: optimise_synthesis_test_signals
+.. autofunction:: optimise_synthesis_test_patterns
 
 """
 
@@ -56,15 +56,15 @@ from vc2_bit_widths.signal_bounds import (
     signed_integer_range,
 )
 
-from vc2_bit_widths.signal_generation import (
-    TestSignalSpecification,
-    OptimisedTestSignalSpecification,
-    invert_test_signal_specification,
+from vc2_bit_widths.pattern_generation import (
+    TestPatternSpecification,
+    OptimisedTestPatternSpecification,
+    invert_test_pattern_specification,
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
-    optimise_synthesis_maximising_signal,
-    evaluate_analysis_test_signal_output,
-    evaluate_synthesis_test_signal_output,
+    optimise_synthesis_maximising_test_pattern,
+    evaluate_analysis_test_pattern_output,
+    evaluate_synthesis_test_pattern_output,
 )
 
 from vc2_bit_widths.quantisation import (
@@ -82,15 +82,15 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     r"""
     Performs a complete static analysis of a VC-2 filter configuration,
     computing upper- and lower-bounds for filter values and worst case and
-    heuristic test signals for analysis and synthesis filters respectively.
+    heuristic test patterns for analysis and synthesis filters respectively.
     
     Internally this function is a thin wrapper around the following principal
     functions:
     
     * :py:func:`vc2_bit_widths.signal_bounds.analysis_filter_bounds`
     * :py:func:`vc2_bit_widths.signal_bounds.synthesis_filter_bounds`
-    * :py:func:`vc2_bit_widths.signal_generation.make_analysis_maximising_signal`
-    * :py:func:`vc2_bit_widths.signal_generation.make_synthesis_maximising_signal`
+    * :py:func:`vc2_bit_widths.pattern_generation.make_analysis_maximising_signal`
+    * :py:func:`vc2_bit_widths.pattern_generation.make_synthesis_maximising_signal`
     
     Parameters
     ==========
@@ -130,9 +130,9 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         the lower and upper bounds computed for the relevant analysis filter
         (See
         :py:func:`vc2_bit_widths.signal_bounds.evaluate_synthesis_filter_bounds`.)
-    analysis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
-    synthesis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
-        Test signals which attempt to maximise (or minimise) for each
+    analysis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+        test patterns which attempt to maximise (or minimise) for each
         intermediate and final analysis and synthesis filter output.
         
         The keys of the returned dictionaries give the level (int), array name
@@ -163,9 +163,9 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     )
     array_num = 0
     
-    # Compute bounds/test signal for every intermediate/output analysis value
+    # Compute bounds/test pattern for every intermediate/output analysis value
     analysis_signal_bounds = OrderedDict()
-    analysis_test_signals = OrderedDict()
+    analysis_test_patterns = OrderedDict()
     for (level, array_name), target_array in intermediate_analysis_arrays.items():
         # Skip arrays which are just views of other arrays
         if target_array.nop:
@@ -189,8 +189,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
                     target_array[x, y]
                 )
                 
-                # Generate test signal
-                analysis_test_signals[(level, array_name, x, y)] = make_analysis_maximising_signal(
+                # Generate test pattern
+                analysis_test_patterns[(level, array_name, x, y)] = make_analysis_maximising_signal(
                     picture_array,
                     target_array,
                     x, y,
@@ -225,9 +225,9 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     )
     array_num = 0
     
-    # Compute bounds/test signal for every intermediate/output analysis value
+    # Compute bounds/test pattern for every intermediate/output analysis value
     synthesis_signal_bounds = OrderedDict()
-    synthesis_test_signals = OrderedDict()
+    synthesis_test_patterns = OrderedDict()
     for (level, array_name), target_array in intermediate_synthesis_values.items():
         # Skip arrays which are just views of other arrays
         if target_array.nop:
@@ -251,8 +251,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
                     target_array[x, y]
                 )
                 
-                # Compute test signal
-                synthesis_test_signals[(level, array_name, x, y)] = make_synthesis_maximising_signal(
+                # Compute test pattern
+                synthesis_test_patterns[(level, array_name, x, y)] = make_synthesis_maximising_signal(
                     picture_array,
                     cached_analysis_coeff_arrays,
                     target_array,
@@ -263,8 +263,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     return (
         analysis_signal_bounds,
         synthesis_signal_bounds,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     )
 
 
@@ -406,14 +406,14 @@ def quantisation_index_bound(concrete_analysis_signal_bounds, quantisation_matri
     return max_qi
 
 
-def optimise_synthesis_test_signals(
+def optimise_synthesis_test_patterns(
     wavelet_index,
     wavelet_index_ho,
     dwt_depth,
     dwt_depth_ho,
     quantisation_matrix,
     picture_bit_width,
-    synthesis_test_signals,
+    synthesis_test_patterns,
     max_quantisation_index,
     random_state,
     number_of_searches,
@@ -425,7 +425,7 @@ def optimise_synthesis_test_signals(
 ):
     """
     Perform a greedy search based optimisation of a complete set of synthesis
-    test signals.
+    test patterns.
     
     Parameters
     ==========
@@ -438,8 +438,8 @@ def optimise_synthesis_test_signals(
         The quantisation matrix in use.
     picture_bit_width : int
         The number of bits in the input pictures.
-    synthesis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
-        Test signals which attempt to maximise each intermediate and final
+    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+        test patterns which attempt to maximise each intermediate and final
         synthesis filter output, as produced by
         :py:func:`static_filter_analysis`.
     max_quantisation_index : int
@@ -449,7 +449,7 @@ def optimise_synthesis_test_signals(
         The random number generator to use for the search.
     number_of_searches : int
         Repeat the greedy stochastic search process this many times for each
-        test signal. Since searches will tend to converge on local minima,
+        test pattern. Since searches will tend to converge on local minima,
         increasing this parameter will tend to produce improved results.
     terminate_early : None or int
         If an integer, stop searching if the first ``terminate_early`` searches
@@ -468,8 +468,8 @@ def optimise_synthesis_test_signals(
     
     Returns
     =======
-    optimised_test_signals : {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.OptimisedTestSignalSpecification`, ...}
-        The optimised test signals.
+    optimised_test_patterns : {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.OptimisedTestPatternSpecification`, ...}
+        The optimised test patterns.
         
         Note that arrays are omitted for arrays which are just interleavings of
         other arrays.
@@ -488,30 +488,30 @@ def optimise_synthesis_test_signals(
     
     # Strip out all arrays which are simply interleavings of others (and
     # therefore don't need optimising several times)
-    test_signals_to_optimise = [
+    test_patterns_to_optimise = [
         (level, array_name, x, y, ts)
-        for (level, array_name, x, y), ts in synthesis_test_signals.items()
+        for (level, array_name, x, y), ts in synthesis_test_patterns.items()
         if not synthesis_pyexps[(level, array_name)].nop
     ]
     
     input_min, input_max = signed_integer_range(picture_bit_width)
     
-    optimised_test_signals = OrderedDict()
+    optimised_test_patterns = OrderedDict()
     
-    for signal_no, (level, array_name, x, y, ts) in enumerate(test_signals_to_optimise):
+    for signal_no, (level, array_name, x, y, ts) in enumerate(test_patterns_to_optimise):
         synthesis_pyexp = synthesis_pyexps[(level, array_name)][ts.target]
         
         added_corruptions_per_iteration = int(np.ceil(
-            len(ts.picture) * added_corruption_rate
+            len(ts.pattern) * added_corruption_rate
         ))
         removed_corruptions_per_iteration = int(np.ceil(
-            len(ts.picture) * removed_corruption_rate
+            len(ts.pattern) * removed_corruption_rate
         ))
         
         logger.info(
             "Optimising test pattern %d of %d (level %d, %s[%d, %d])",
             signal_no + 1,
-            len(test_signals_to_optimise),
+            len(test_patterns_to_optimise),
             level,
             array_name,
             x,
@@ -527,24 +527,24 @@ def optimise_synthesis_test_signals(
             logger.info(log_message)
             
             # Run the search starting from the maximising and minimising signal
-            flipped_ts = TestSignalSpecification(
+            flipped_ts = TestPatternSpecification(
                 target=ts.target,
-                picture={
+                pattern={
                     (x, y): polarity * flip_polarity
-                    for (x, y), polarity in ts.picture.items()
+                    for (x, y), polarity in ts.pattern.items()
                 },
-                picture_translation_multiple=ts.picture_translation_multiple,
+                pattern_translation_multiple=ts.pattern_translation_multiple,
                 target_translation_multiple=ts.target_translation_multiple,
             )
             
-            new_ts = optimise_synthesis_maximising_signal(
+            new_ts = optimise_synthesis_maximising_test_pattern(
                 h_filter_params=h_filter_params,
                 v_filter_params=v_filter_params,
                 dwt_depth=dwt_depth,
                 dwt_depth_ho=dwt_depth_ho,
                 quantisation_matrix=quantisation_matrix,
                 synthesis_pyexp=synthesis_pyexp,
-                test_signal=flipped_ts,
+                test_pattern=flipped_ts,
                 input_min=input_min,
                 input_max=input_max,
                 max_quantisation_index=max_quantisation_index,
@@ -577,12 +577,12 @@ def optimise_synthesis_test_signals(
             best_ts.quantisation_index,
         )
         
-        optimised_test_signals[(level, array_name, x, y)] = best_ts
+        optimised_test_patterns[(level, array_name, x, y)] = best_ts
     
-    return optimised_test_signals
+    return optimised_test_patterns
 
 
-def evaluate_test_signal_outputs(
+def evaluate_test_pattern_outputs(
     wavelet_index,
     wavelet_index_ho,
     dwt_depth,
@@ -590,11 +590,11 @@ def evaluate_test_signal_outputs(
     picture_bit_width,
     quantisation_matrix,
     max_quantisation_index,
-    analysis_test_signals,
-    synthesis_test_signals,
+    analysis_test_patterns,
+    synthesis_test_patterns,
 ):
     """
-    Given a set of test signals, compute the signal levels actually produced in
+    Given a set of test patterns, compute the signal levels actually produced in
     a real encoder/decoder.
     
     Parameters
@@ -611,21 +611,21 @@ def evaluate_test_signal_outputs(
     max_quantisation_index : int
         The maximum quantisation index to use (e.g. from
         :py:func:`quantisation_index_bound`).
-    analysis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
-    synthesis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
+    analysis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
         From :py:func:`static_filter_analysis` or
-        :py:func:`optimise_synthesis_test_signals`. The test signals to assess.
+        :py:func:`optimise_synthesis_test_patterns`. The test patterns to assess.
     
     Returns
     =======
-    analysis_test_signal_outputs : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
+    analysis_test_pattern_outputs : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
         The signal levels achieved for each of the provided analysis test
         signals for minimising signal values and maximising values
         respectively. Includes results for *all* arrays and phases, even those
         which are duplicates.
-    synthesis_test_signal_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
+    synthesis_test_pattern_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
         The signal levels achieved, and quantisation indices used to achieve
-        them, for each of the provided synthesis test signals. Given for
+        them, for each of the provided synthesis test patterns. Given for
         minimising signal values and maximising values respectively. Includes
         results for *all* arrays and phases, even those which are duplicates.
     """
@@ -634,27 +634,27 @@ def evaluate_test_signal_outputs(
     
     input_min, input_max = signed_integer_range(picture_bit_width)
     
-    analysis_test_signal_outputs = OrderedDict()
-    for i, ((level, array_name, x, y), test_signal) in enumerate(
-        analysis_test_signals.items()
+    analysis_test_pattern_outputs = OrderedDict()
+    for i, ((level, array_name, x, y), test_pattern) in enumerate(
+        analysis_test_patterns.items()
     ):
         logger.info(
             "Evaluating analysis test pattern %d of %d (Level %d, %s[%d, %d])...",
             i + 1,
-            len(analysis_test_signals),
+            len(analysis_test_patterns),
             level,
             array_name,
             x,
             y,
         )
-        analysis_test_signal_outputs[(level, array_name, x, y)] = evaluate_analysis_test_signal_output(
+        analysis_test_pattern_outputs[(level, array_name, x, y)] = evaluate_analysis_test_pattern_output(
             h_filter_params=h_filter_params,
             v_filter_params=v_filter_params,
             dwt_depth=dwt_depth,
             dwt_depth_ho=dwt_depth_ho,
             level=level,
             array_name=array_name,
-            test_signal=test_signal,
+            test_pattern=test_pattern,
             input_min=input_min,
             input_max=input_max,
         )
@@ -668,52 +668,52 @@ def evaluate_test_signal_outputs(
     )
     
     # Re-add results for interleaved/renamed entries
-    analysis_test_signal_outputs = add_missing_analysis_values(
+    analysis_test_pattern_outputs = add_missing_analysis_values(
         h_filter_params,
         v_filter_params,
         dwt_depth,
         dwt_depth_ho,
-        analysis_test_signal_outputs,
+        analysis_test_pattern_outputs,
     )
     
-    synthesis_test_signal_outputs = OrderedDict()
-    for i, ((level, array_name, x, y), test_signal) in enumerate(
-        synthesis_test_signals.items()
+    synthesis_test_pattern_outputs = OrderedDict()
+    for i, ((level, array_name, x, y), test_pattern) in enumerate(
+        synthesis_test_patterns.items()
     ):
         logger.info(
             "Evaluating synthesis test pattern %d of %d (Level %d, %s[%d, %d])...",
             i + 1,
-            len(synthesis_test_signals),
+            len(synthesis_test_patterns),
             level,
             array_name,
             x,
             y,
         )
-        synthesis_test_signal_outputs[(level, array_name, x, y)] = evaluate_synthesis_test_signal_output(
+        synthesis_test_pattern_outputs[(level, array_name, x, y)] = evaluate_synthesis_test_pattern_output(
             h_filter_params=h_filter_params,
             v_filter_params=v_filter_params,
             dwt_depth=dwt_depth,
             dwt_depth_ho=dwt_depth_ho,
             quantisation_matrix=quantisation_matrix,
-            synthesis_pyexp=synthesis_pyexps[(level, array_name)][test_signal.target],
-            test_signal=test_signal,
+            synthesis_pyexp=synthesis_pyexps[(level, array_name)][test_pattern.target],
+            test_pattern=test_pattern,
             input_min=input_min,
             input_max=input_max,
             max_quantisation_index=max_quantisation_index,
         )
     
     # Re-add results for interleaved/renamed entries
-    synthesis_test_signal_outputs = add_missing_synthesis_values(
+    synthesis_test_pattern_outputs = add_missing_synthesis_values(
         h_filter_params,
         v_filter_params,
         dwt_depth,
         dwt_depth_ho,
-        synthesis_test_signal_outputs,
+        synthesis_test_pattern_outputs,
     )
     
     return (
-        analysis_test_signal_outputs,
-        synthesis_test_signal_outputs,
+        analysis_test_pattern_outputs,
+        synthesis_test_pattern_outputs,
     )
 
 TestPoint = namedtuple("TestPoint", "level,array_name,x,y,maximise,tx,ty")
@@ -787,13 +787,13 @@ def generate_test_pictures(
     picture_width,
     picture_height,
     picture_bit_width,
-    analysis_test_signals,
-    synthesis_test_signals,
-    synthesis_test_signal_outputs,
+    analysis_test_patterns,
+    synthesis_test_patterns,
+    synthesis_test_pattern_outputs,
 ):
     """
-    Pack a set of analysis and synthesis test pictures into a (smaller) number
-    of test pictures.
+    Pack a set of analysis and synthesis test patterns into a set of test
+    pictures.
     
     Parameters
     ==========
@@ -802,16 +802,16 @@ def generate_test_pictures(
         The dimensions of the pictures to generate.
     picture_bit_width : int
         The number of bits in the input pictures.
-    analysis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
-    synthesis_test_signals: {(level, array_name, x, y): :py:class:`vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
-        The individual analysis and synthesis test signals to be combined. A
+    analysis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+        The individual analysis and synthesis test patterns to be combined. A
         value maximising and value minimising variant of each signal will be
         included in the output. As computed by
         :py:func:`static_filter_analysis`.
-    synthesis_test_signal_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
+    synthesis_test_pattern_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
         Information about the worst-case quantisation indicies for each
-        synthesis test signal. As computed by
-        :py:func:`evaluate_test_signal_outputs`.
+        synthesis test pattern. As computed by
+        :py:func:`evaluate_test_pattern_outputs`.
     
     Returns
     =======
@@ -820,32 +820,32 @@ def generate_test_pictures(
     """
     input_min, input_max = signed_integer_range(picture_bit_width)
     
-    # For better packing, the test signals will be packed in size order,
+    # For better packing, the test patterns will be packed in size order,
     # largest first.
-    analysis_test_signals = OrderedDict(sorted(
-        analysis_test_signals.items(),
-        key=lambda kv: len(kv[1].picture),
+    analysis_test_patterns = OrderedDict(sorted(
+        analysis_test_patterns.items(),
+        key=lambda kv: len(kv[1].pattern),
         reverse=True,
     ))
-    synthesis_test_signals = OrderedDict(sorted(
-        synthesis_test_signals.items(),
-        key=lambda kv: len(kv[1].picture),
+    synthesis_test_patterns = OrderedDict(sorted(
+        synthesis_test_patterns.items(),
+        key=lambda kv: len(kv[1].pattern),
         reverse=True,
     ))
     
     # Pack analysis signals
-    analysis_test_signals_bipolar = OrderedDict(
+    analysis_test_patterns_bipolar = OrderedDict(
         (
             (level, array_name, x, y, maximise),
-            spec if maximise else invert_test_signal_specification(spec),
+            spec if maximise else invert_test_pattern_specification(spec),
         )
-        for (level, array_name, x, y), spec in analysis_test_signals.items()
+        for (level, array_name, x, y), spec in analysis_test_patterns.items()
         for maximise in [True, False]
     )
     pictures, locations = pack_test_patterns(
         picture_width,
         picture_height,
-        analysis_test_signals_bipolar,
+        analysis_test_patterns_bipolar,
     )
     analysis_pictures = [
         AnalysisPicture(
@@ -861,29 +861,29 @@ def generate_test_pictures(
             tx, ty,
         ))
     
-    # Group synthesis test signals by required quantisation index
+    # Group synthesis test patterns by required quantisation index
     #
     # {quantisation_index: {(level, array_name, x, y, maximise): spec, ...}, ...}
-    synthesis_test_signals_grouped = defaultdict(OrderedDict)
-    for (level, array_name, x, y), spec in synthesis_test_signals.items():
-        (_, minimising_qi), (_, maximising_qi) = synthesis_test_signal_outputs[
+    synthesis_test_patterns_grouped = defaultdict(OrderedDict)
+    for (level, array_name, x, y), spec in synthesis_test_patterns.items():
+        (_, minimising_qi), (_, maximising_qi) = synthesis_test_pattern_outputs[
             (level, array_name, x, y)
         ]
         
-        synthesis_test_signals_grouped[maximising_qi][
+        synthesis_test_patterns_grouped[maximising_qi][
             (level, array_name, x, y, True)
         ] = spec
-        synthesis_test_signals_grouped[minimising_qi][
+        synthesis_test_patterns_grouped[minimising_qi][
             (level, array_name, x, y, False)
-        ] = invert_test_signal_specification(spec)
+        ] = invert_test_pattern_specification(spec)
     
-    # Pack the synthesis the test pictures, grouped by QI
+    # Pack the synthesis the test patterns, grouped by QI
     synthesis_pictures = []
-    for qi in sorted(synthesis_test_signals_grouped):
+    for qi in sorted(synthesis_test_patterns_grouped):
         pictures, locations = pack_test_patterns(
             picture_width,
             picture_height,
-            synthesis_test_signals_grouped[qi],
+            synthesis_test_patterns_grouped[qi],
         )
         
         this_synthesis_pictures = [

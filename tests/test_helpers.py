@@ -13,9 +13,9 @@ from vc2_conformance.picture_decoding import idwt
 
 from vc2_bit_widths.quantisation import forward_quant, inverse_quant
 
-from vc2_bit_widths.signal_generation import (
-    evaluate_analysis_test_signal_output,
-    evaluate_synthesis_test_signal_output,
+from vc2_bit_widths.pattern_generation import (
+    evaluate_analysis_test_pattern_output,
+    evaluate_synthesis_test_pattern_output,
 )
 
 from vc2_bit_widths.fast_partial_analysis_transform import (
@@ -35,8 +35,8 @@ from vc2_bit_widths.helpers import (
     static_filter_analysis,
     evaluate_filter_bounds,
     quantisation_index_bound,
-    optimise_synthesis_test_signals,
-    evaluate_test_signal_outputs,
+    optimise_synthesis_test_patterns,
+    evaluate_test_pattern_outputs,
     make_saturated_picture,
     generate_test_pictures,
 )
@@ -60,8 +60,8 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
     (
         analysis_signal_bounds,
         synthesis_signal_bounds,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     ) = static_filter_analysis(
         wavelet_index,
         wavelet_index_ho,
@@ -83,13 +83,13 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
     )
     
     # Analysis/synthesis intermediate arrays should be consistent...
-    assert set(analysis_signal_bounds) == set(analysis_test_signals)
-    assert set(synthesis_signal_bounds) == set(synthesis_test_signals)
+    assert set(analysis_signal_bounds) == set(analysis_test_patterns)
+    assert set(synthesis_signal_bounds) == set(synthesis_test_patterns)
     
     assert set(analysis_signal_bounds).issubset(concrete_analysis_signal_bounds)
     assert set(synthesis_signal_bounds).issubset(concrete_synthesis_signal_bounds)
     
-    # As a sanity check, ensure that the analysis test signals provided reach
+    # As a sanity check, ensure that the analysis test patterns provided reach
     # the ranges expected when encoded by the pseudocode encoder
     state = State(
         wavelet_index=wavelet_index,
@@ -97,20 +97,20 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         dwt_depth=dwt_depth,
         dwt_depth_ho=dwt_depth_ho,
     )
-    # NB: The analysis_test_signals lookup omits the LL, etc. arrays as they're
+    # NB: The analysis_test_patterns lookup omits the LL, etc. arrays as they're
     # just a subsampling of the L'' and H'' arrays. Here we provide the
-    # equivalent subsampled array name and coordinate for the test signal.
+    # equivalent subsampled array name and coordinate for the test pattern.
     for level, array_name, orig_array_name, orig_y in [
         (0, "LL", "L''", 0),
         (1, "LH", "L''", 1),
         (1, "HL", "H''", 0),
         (1, "HH", "H''", 1),
     ]:
-        ts = analysis_test_signals[(level or 1, orig_array_name, 0, orig_y)]
+        ts = analysis_test_patterns[(level or 1, orig_array_name, 0, orig_y)]
         
         exp_lower, exp_upper = concrete_analysis_signal_bounds[(level or 1, array_name, 0, 0)]
         
-        xs, ys = zip(*ts.picture)
+        xs, ys = zip(*ts.pattern)
         
         # NB: Pad the width/height to the appropriate picture size for this
         # transform
@@ -120,7 +120,7 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         height = (((max(ys) + 1) + y_multiple - 1) // y_multiple) * y_multiple
         
         picture = np.zeros((height, width), dtype=int)
-        picture[(ys, xs)] = list(ts.picture.values())
+        picture[(ys, xs)] = list(ts.pattern.values())
         
         min_picture = picture.copy()
         min_picture[picture==+1] = input_min
@@ -141,18 +141,18 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         assert np.isclose(actual_lower, exp_lower, rtol=0.1)
         assert np.isclose(actual_upper, exp_upper, rtol=0.1)
     
-    # As a sanity check, ensure that the synthesis test signals provided
+    # As a sanity check, ensure that the synthesis test patterns provided
     # maximise the decoder output (when no quantisation is used) in the
     # pseudocode encoder/decoder
-    for level, array_name, x, y in synthesis_test_signals:
+    for level, array_name, x, y in synthesis_test_patterns:
         # Only check the final decoder output (as the pseudocode doesn't
         # provide access to other arrays)
         if level != dwt_depth + dwt_depth_ho or array_name != "Output":
             continue
         
-        ts = synthesis_test_signals[(level, array_name, x, y)]
+        ts = synthesis_test_patterns[(level, array_name, x, y)]
         
-        xs, ys = zip(*ts.picture)
+        xs, ys = zip(*ts.pattern)
         
         # NB: Pad the width/height to the appropriate picture size for this
         # transform
@@ -162,7 +162,7 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         height = (((max(ys) + 1) + y_multiple - 1) // y_multiple) * y_multiple
         
         picture = np.zeros((height, width), dtype=int)
-        picture[(ys, xs)] = list(ts.picture.values())
+        picture[(ys, xs)] = list(ts.pattern.values())
         
         min_picture = picture.copy()
         min_picture[picture==+1] = input_min
@@ -196,8 +196,8 @@ def test_quantisation_index_bound():
     (
         analysis_signal_bounds,
         synthesis_signal_bounds,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     ) = static_filter_analysis(
         wavelet_index,
         wavelet_index_ho,
@@ -232,7 +232,7 @@ def test_quantisation_index_bound():
     assert forward_quant(max_coeff_magnitude, max_qi - 11) != 0
 
 
-def test_optimise_synthesis_test_signals():
+def test_optimise_synthesis_test_patterns():
     wavelet_index = WaveletFilters.haar_with_shift
     wavelet_index_ho = WaveletFilters.le_gall_5_3
     dwt_depth = 1
@@ -250,8 +250,8 @@ def test_optimise_synthesis_test_signals():
     (
         analysis_signal_bounds,
         synthesis_signal_bounds,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     ) = static_filter_analysis(
         wavelet_index,
         wavelet_index_ho,
@@ -285,14 +285,14 @@ def test_optimise_synthesis_test_signals():
     base_iterations = 10
     added_iterations_per_improvement = 1
     
-    optimised_synthesis_test_signals = optimise_synthesis_test_signals(
+    optimised_synthesis_test_patterns = optimise_synthesis_test_patterns(
         wavelet_index,
         wavelet_index_ho,
         dwt_depth,
         dwt_depth_ho,
         quantisation_matrix,
         picture_bit_width,
-        synthesis_test_signals,
+        synthesis_test_patterns,
         max_quantisation_index,
         random_state,
         number_of_searches,
@@ -303,7 +303,7 @@ def test_optimise_synthesis_test_signals():
         added_iterations_per_improvement,
     )
     
-    # As a sanity check, ensure that the test signals provided do produce the
+    # As a sanity check, ensure that the test patterns provided do produce the
     # values they say they do at the quantisation indices claimed
     state = State(
         wavelet_index=wavelet_index,
@@ -311,15 +311,15 @@ def test_optimise_synthesis_test_signals():
         dwt_depth=dwt_depth,
         dwt_depth_ho=dwt_depth_ho,
     )
-    for level, array_name, x, y in optimised_synthesis_test_signals:
+    for level, array_name, x, y in optimised_synthesis_test_patterns:
         # Only check the final decoder output (as the pseudocode doesn't
         # provide access to other arrays)
         if level != dwt_depth + dwt_depth_ho or array_name != "Output":
             continue
         
-        ts = optimised_synthesis_test_signals[(level, array_name, x, y)]
+        ts = optimised_synthesis_test_patterns[(level, array_name, x, y)]
         
-        xs, ys = zip(*ts.picture)
+        xs, ys = zip(*ts.pattern)
         
         # NB: Pad the width/height to the appropriate picture size for this
         # transform
@@ -329,7 +329,7 @@ def test_optimise_synthesis_test_signals():
         height = (((max(ys) + 1) + y_multiple - 1) // y_multiple) * y_multiple
         
         picture = np.zeros((height, width), dtype=int)
-        picture[(ys, xs)] = list(ts.picture.values())
+        picture[(ys, xs)] = list(ts.pattern.values())
         picture[picture==+1] = input_max
         picture[picture==-1] = input_min
         
@@ -356,7 +356,7 @@ def test_optimise_synthesis_test_signals():
         assert decoded_picture[ty][tx] == ts.decoded_value
 
 
-def test_evaluate_test_signal_outputs():
+def test_evaluate_test_pattern_outputs():
     wavelet_index = WaveletFilters.haar_with_shift
     wavelet_index_ho = WaveletFilters.le_gall_5_3
     dwt_depth = 1
@@ -372,8 +372,8 @@ def test_evaluate_test_signal_outputs():
     (
         analysis_signal_bounds,
         synthesis_signal_bounds,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     ) = static_filter_analysis(
         wavelet_index,
         wavelet_index_ho,
@@ -408,14 +408,14 @@ def test_evaluate_test_signal_outputs():
     removed_corruption_rate = 0.0
     base_iterations = 0
     added_iterations_per_improvement = 0
-    optimised_synthesis_test_signals = optimise_synthesis_test_signals(
+    optimised_synthesis_test_patterns = optimise_synthesis_test_patterns(
         wavelet_index,
         wavelet_index_ho,
         dwt_depth,
         dwt_depth_ho,
         quantisation_matrix,
         picture_bit_width,
-        synthesis_test_signals,
+        synthesis_test_patterns,
         max_quantisation_index,
         random_state,
         number_of_searches,
@@ -427,9 +427,9 @@ def test_evaluate_test_signal_outputs():
     )
     
     (
-        analysis_test_signal_outputs,
-        synthesis_test_signal_outputs,
-    ) = evaluate_test_signal_outputs(
+        analysis_test_pattern_outputs,
+        synthesis_test_pattern_outputs,
+    ) = evaluate_test_pattern_outputs(
         wavelet_index,
         wavelet_index_ho,
         dwt_depth,
@@ -437,12 +437,12 @@ def test_evaluate_test_signal_outputs():
         picture_bit_width,
         quantisation_matrix,
         max_quantisation_index,
-        analysis_test_signals,
-        optimised_synthesis_test_signals,
+        analysis_test_patterns,
+        optimised_synthesis_test_patterns,
     )
     
     # Analysis values should be similar to the bounds
-    for (level, array_name, x, y), (minimum, maximum) in analysis_test_signal_outputs.items():
+    for (level, array_name, x, y), (minimum, maximum) in analysis_test_pattern_outputs.items():
         lower_bound, upper_bound = concrete_analysis_signal_bounds[(level, array_name, x, y)]
         
         assert np.isclose(minimum, lower_bound, 0.01)
@@ -456,9 +456,9 @@ def test_evaluate_test_signal_outputs():
     for (
         (level, array_name, x, y),
         ((minimum, min_qi), (maximum, max_qi)),
-    ) in synthesis_test_signal_outputs.items():
-        if (level, array_name, x, y) in optimised_synthesis_test_signals:
-            ts = optimised_synthesis_test_signals[(level, array_name, x, y)]
+    ) in synthesis_test_pattern_outputs.items():
+        if (level, array_name, x, y) in optimised_synthesis_test_patterns:
+            ts = optimised_synthesis_test_patterns[(level, array_name, x, y)]
             
             assert ts.decoded_value == maximum
             assert ts.quantisation_index == max_qi
@@ -501,8 +501,8 @@ def test_generate_test_pictures():
     (
         analysis_signal_bounds,
         synthesis_signal_bounds,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     ) = static_filter_analysis(
         wavelet_index,
         wavelet_index_ho,
@@ -529,9 +529,9 @@ def test_generate_test_pictures():
     )
     
     (
-        analysis_test_signal_outputs,
-        synthesis_test_signal_outputs,
-    ) = evaluate_test_signal_outputs(
+        analysis_test_pattern_outputs,
+        synthesis_test_pattern_outputs,
+    ) = evaluate_test_pattern_outputs(
         wavelet_index,
         wavelet_index_ho,
         dwt_depth,
@@ -539,8 +539,8 @@ def test_generate_test_pictures():
         picture_bit_width,
         quantisation_matrix,
         max_quantisation_index,
-        analysis_test_signals,
-        synthesis_test_signals,
+        analysis_test_patterns,
+        synthesis_test_patterns,
     )
     
     (
@@ -550,9 +550,9 @@ def test_generate_test_pictures():
         picture_width,
         picture_height,
         picture_bit_width,
-        analysis_test_signals,
-        synthesis_test_signals,
-        synthesis_test_signal_outputs,
+        analysis_test_patterns,
+        synthesis_test_patterns,
+        synthesis_test_pattern_outputs,
     )
     
     # Check all test patterns and maximise/minimise options were included
@@ -562,7 +562,7 @@ def test_generate_test_pictures():
         for tp in p.test_points
     ) == set(
         (level, array_name, x, y, maximise)
-        for (level, array_name, x, y) in analysis_test_signals
+        for (level, array_name, x, y) in analysis_test_patterns
         for maximise in [True, False]
     )
     assert set(
@@ -571,7 +571,7 @@ def test_generate_test_pictures():
         for tp in p.test_points
     ) == set(
         (level, array_name, x, y, maximise)
-        for (level, array_name, x, y) in synthesis_test_signals
+        for (level, array_name, x, y) in synthesis_test_patterns
         for maximise in [True, False]
     )
     
@@ -595,7 +595,7 @@ def test_generate_test_pictures():
             )
             
             # Compare with expected output level for that test pattern
-            expected_outputs = analysis_test_signal_outputs[(
+            expected_outputs = analysis_test_pattern_outputs[(
                 test_point.level,
                 test_point.array_name,
                 test_point.x,
@@ -640,7 +640,7 @@ def test_generate_test_pictures():
             )[0]
             
             # Compare with expected output level for that test pattern
-            expected_outputs = synthesis_test_signal_outputs[(
+            expected_outputs = synthesis_test_pattern_outputs[(
                 test_point.level,
                 test_point.array_name,
                 test_point.x,

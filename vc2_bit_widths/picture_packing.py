@@ -371,7 +371,7 @@ def pack_test_patterns(width, height, test_patterns):
     width, height : int
         The size of the pictures on to which the test patterns should be
         allocated.
-    test_patterns : {key: :py:class:`~vc2_bit_widths.signal_generation.TestSignalSpecification`, ...}
+    test_patterns : {key: :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
         The test patterns to be packed.
     
     Returns
@@ -394,15 +394,15 @@ def pack_test_patterns(width, height, test_patterns):
     
     locations = OrderedDict()
     
-    for key, test_signal in test_patterns.items():
+    for key, test_pattern in test_patterns.items():
         # Find extents of the test pattern
-        xs, ys = map(np.array, zip(*test_signal.picture))
+        xs, ys = map(np.array, zip(*test_pattern.pattern))
         px = np.min(xs)
         py = np.min(ys)
         pw = np.max(xs) - px + 1
         ph = np.max(ys) - py + 1
         
-        mx, my = test_signal.picture_translation_multiple
+        mx, my = test_pattern.pattern_translation_multiple
         
         # Allocate a space for the picture
         for picture_index, (picture, allocator) in enumerate(zip(pictures, allocators)):
@@ -429,12 +429,12 @@ def pack_test_patterns(width, height, test_patterns):
         new_px, new_py = allocation
         dx = new_px - px
         dy = new_py - py
-        picture[(ys + dy, xs + dx)] = list(test_signal.picture.values())
+        picture[(ys + dy, xs + dx)] = list(test_pattern.pattern.values())
         
         # Adjust the target coordinates according to the position of the test
         # pattern
-        tx, ty = test_signal.target
-        tmx, tmy = test_signal.target_translation_multiple
+        tx, ty = test_pattern.target
+        tmx, tmy = test_pattern.target_translation_multiple
         
         tx += (dx // mx) * tmx
         ty += (dy // my) * tmy

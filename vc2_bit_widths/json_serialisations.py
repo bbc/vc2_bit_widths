@@ -3,7 +3,7 @@ Data file formatting utilities
 ==============================
 
 This module contains utilities for serialising and deserialising bit width
-analysis and test signal data as JSON. In particular it concentrates on the
+analysis and test pattern data as JSON. In particular it concentrates on the
 data types returned by the functions in :py:mod:`vc2_bit_widths.helpers`
 module.
 
@@ -16,17 +16,17 @@ Specifically:
 
 .. autofunction:: deserialise_signal_bounds
 
-.. autofunction:: serialise_test_signals
+.. autofunction:: serialise_test_patterns
 
-.. autofunction:: deserialise_test_signals
+.. autofunction:: deserialise_test_patterns
 
 :py:func:`vc2_bit_widths.helpers.evaluate_filter_bounds`'s output can be
 (de)serialised by :py:func:`serialise_signal_bounds` and
 :py:func:`deserialise_signal_bounds` too.
 
-:py:func:`vc2_bit_widths.helpers.optimise_synthesis_test_signals`'s output can
-be (de)serialised by :py:func:`serialise_test_signals` and
-:py:func:`deserialise_test_signals` too.
+:py:func:`vc2_bit_widths.helpers.optimise_synthesis_test_patterns`'s output can
+be (de)serialised by :py:func:`serialise_test_patterns` and
+:py:func:`deserialise_test_patterns` too.
 
 """
 
@@ -214,9 +214,9 @@ def deserialise_namedtuple(namedtuple_type, dictionary):
     ))
 
 
-def serialise_picture(picture):
+def serialise_test_pattern(picture):
     """
-    Convert a test picture (a dictionary {(x, y): polarity, ...}) into a
+    Convert a test pattern (a dictionary {(x, y): polarity, ...}) into a
     compact JSON-serialisable form.
     
     For example::
@@ -226,7 +226,7 @@ def serialise_picture(picture):
         ...     (4, 12): +1, (5, 12): -1, (6, 12): +1, (7, 12): -1,
         ...     (4, 13): -1, (5, 13): +1, (6, 13): -1, (7, 13): +1,
         ... }
-        >>> serialise_picture(before)
+        >>> serialise_test_pattern(before)
         {
             'dx': 4,
             'dy': 10,
@@ -289,7 +289,7 @@ def serialise_picture(picture):
     return out
 
 
-def deserialise_picture(dictionary):
+def deserialise_test_pattern(dictionary):
     """
     Inverse of :py:func:`serialise_namedtuple`.
     """
@@ -327,9 +327,9 @@ def deserialise_picture(dictionary):
     }
 
 
-def serialise_test_signals(spec_namedtuple_type, test_signals):
+def serialise_test_patterns(spec_namedtuple_type, test_patterns):
     """
-    Convert a dictionary of analysis or synthesis test signals into a
+    Convert a dictionary of analysis or synthesis test patterns into a
     JSON-serialisable form.
     
     For example::
@@ -337,12 +337,12 @@ def serialise_test_signals(spec_namedtuple_type, test_signals):
         ...     (1, "LH", 2, 3): TestSignalSpecification(
         ...         target=(4, 5),
         ...         picture={(x, y): polarity, ...},
-        ...         picture_translation_multiple=(6, 7),
+        ...         pattern_translation_multiple=(6, 7),
         ...         target_translation_multiple=(8, 9),
         ...     ),
         ...     ...
         ... }
-        >>> serialise_test_signals(TestSignalSpecification, before)
+        >>> serialise_test_patterns(TestSignalSpecification, before)
         [
             {
                 "level": 1,
@@ -357,45 +357,45 @@ def serialise_test_signals(spec_namedtuple_type, test_signals):
                     "positive": ...,
                     "mask": ...,
                 },
-                "picture_translation_multiple": [6, 7],
+                "pattern_translation_multiple": [6, 7],
                 "target_translation_multiple": [8, 9],
             },
             ...
         ]
     
-    See :py:func:`serialise_picture` for the serialisation used for the picture
+    See :py:func:`serialise_test_pattern` for the serialisation used for the picture
     data.
     
     Parameters
     ==========
     spec_namedtuple_type : :py:class:`~collections.namedtuple` class
-        The namedtuple used to hold the test signal specification.
-    test_signals : {(level, array_name, x, y): (...), ...}
+        The namedtuple used to hold the test pattern specification.
+    test_patterns : {(level, array_name, x, y): (...), ...}
     """
     out = serialise_intermediate_value_dictionary({
         key: serialise_namedtuple(spec_namedtuple_type, value)
-        for key, value in test_signals.items()
+        for key, value in test_patterns.items()
     })
     
     for d in out:
-        d["picture"] = serialise_picture(d["picture"])
+        d["pattern"] = serialise_test_pattern(d["pattern"])
     
     return out
 
 
-def deserialise_test_signals(spec_namedtuple_type, test_signals):
+def deserialise_test_patterns(spec_namedtuple_type, test_patterns):
     """
-    Inverse of :py:func:`serialise_test_signals`.
+    Inverse of :py:func:`serialise_test_patterns`.
     """
-    for d in test_signals:
-        d["picture"] = deserialise_picture(d["picture"])
+    for d in test_patterns:
+        d["pattern"] = deserialise_test_pattern(d["pattern"])
         d["target"] = tuple(d["target"])
-        d["picture_translation_multiple"] = tuple(d["picture_translation_multiple"])
+        d["pattern_translation_multiple"] = tuple(d["pattern_translation_multiple"])
         d["target_translation_multiple"] = tuple(d["target_translation_multiple"])
     
     return {
         key: deserialise_namedtuple(spec_namedtuple_type, value)
-        for key, value in deserialise_intermediate_value_dictionary(test_signals).items()
+        for key, value in deserialise_intermediate_value_dictionary(test_patterns).items()
     }
 
 

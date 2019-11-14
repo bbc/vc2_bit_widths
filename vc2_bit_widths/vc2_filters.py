@@ -448,7 +448,7 @@ def add_missing_analysis_values(
     full_analysis_values : {(level, array_name, x, y): value, ...}
         A new dictionary of values with missing filters and phases filled in.
     """
-    # NB: Used only to enumerate the complete set of arrays/test signals and
+    # NB: Used only to enumerate the complete set of arrays and
     # get array periods
     _, intermediate_arrays = analysis_transform(
         h_filter_params,
@@ -580,7 +580,7 @@ def add_missing_synthesis_values(
     full_synthesis_values : {(level, array_name, x, y): value, ...}
         A new dictionary of values with missing filters and phases filled in.
     """
-    # NB: Used only to enumerate the complete set of arrays/test signals and
+    # NB: Used only to enumerate the complete set of arrays and
     # get array periods
     _, intermediate_arrays = synthesis_transform(
         h_filter_params,

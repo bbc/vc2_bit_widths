@@ -6,8 +6,8 @@ from collections import namedtuple
 
 from vc2_bit_widths.linexp import LinExp
 
-from vc2_bit_widths.signal_generation import (
-    OptimisedTestSignalSpecification,
+from vc2_bit_widths.pattern_generation import (
+    OptimisedTestPatternSpecification,
 )
 
 from vc2_bit_widths.json_serialisations import (
@@ -19,10 +19,10 @@ from vc2_bit_widths.json_serialisations import (
     deserialise_concrete_signal_bounds,
     serialise_namedtuple,
     deserialise_namedtuple,
-    serialise_picture,
-    deserialise_picture,
-    serialise_test_signals,
-    deserialise_test_signals,
+    serialise_test_pattern,
+    deserialise_test_pattern,
+    serialise_test_patterns,
+    deserialise_test_patterns,
     serialise_quantisation_matrix,
     deserialise_quantisation_matrix,
 )
@@ -130,7 +130,7 @@ def test_serialise_picture():
         (10, 22): +1,                                           (14, 22): -1,
     }
     
-    after = serialise_picture(before)
+    after = serialise_test_pattern(before)
     
     assert after["dx"] == 10
     assert after["dy"] == 20
@@ -156,22 +156,22 @@ def test_serialise_picture():
     
     after = json_roundtrip(after)
     
-    assert deserialise_picture(after) == before
+    assert deserialise_test_pattern(after) == before
 
 
-def test_serialise_test_signals():
+def test_serialise_test_patterns():
     before = {
-        (1, "LH", 2, 3): OptimisedTestSignalSpecification(
+        (1, "LH", 2, 3): OptimisedTestPatternSpecification(
             target=(4, 5),
-            picture={(10, 20): 1},
-            picture_translation_multiple=(6, 7),
+            pattern={(10, 20): 1},
+            pattern_translation_multiple=(6, 7),
             target_translation_multiple=(8, 9),
             quantisation_index=30,
             decoded_value=40,
             num_search_iterations=50,
         ),
     }
-    after = serialise_test_signals(OptimisedTestSignalSpecification, before)
+    after = serialise_test_patterns(OptimisedTestPatternSpecification, before)
     after = json_roundtrip(after)
     
     assert after == [
@@ -180,8 +180,8 @@ def test_serialise_test_signals():
             "array_name": "LH",
             "phase": [2, 3],
             "target": [4, 5],
-            "picture": serialise_picture({(10, 20): 1}),
-            "picture_translation_multiple": [6, 7],
+            "pattern": serialise_test_pattern({(10, 20): 1}),
+            "pattern_translation_multiple": [6, 7],
             "target_translation_multiple": [8, 9],
             "quantisation_index": 30,
             "decoded_value": 40,
@@ -189,7 +189,7 @@ def test_serialise_test_signals():
         },
     ]
     
-    assert deserialise_test_signals(OptimisedTestSignalSpecification, after) == before
+    assert deserialise_test_patterns(OptimisedTestPatternSpecification, after) == before
 
 
 def test_serialise_quantisation_matrix():

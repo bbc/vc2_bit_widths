@@ -4,7 +4,7 @@ import numpy as np
 
 from collections import OrderedDict
 
-from vc2_bit_widths.signal_generation import TestSignalSpecification as TSS
+from vc2_bit_widths.pattern_generation import TestPatternSpecification as TPS
 
 from vc2_bit_widths.picture_packing import (
     PackTree,
@@ -294,12 +294,12 @@ class TestPackTestPatterns(object):
         test_patterns = OrderedDict([
             (
                 (1, "Output", 0, 0),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (1, 0): +1,
                         (0, 1): -1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
@@ -325,12 +325,12 @@ class TestPackTestPatterns(object):
         test_patterns = OrderedDict([
             (
                 (1, "Output", 0, 0),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (2, 1): +1,
                         (1, 2): -1,
                     },
-                    picture_translation_multiple=(4, 4),
+                    pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
@@ -356,24 +356,24 @@ class TestPackTestPatterns(object):
         test_patterns = OrderedDict([
             (
                 (1, "Output", 0, 0),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (2, 1): +1,
                         (1, 2): -1,
                     },
-                    picture_translation_multiple=(4, 4),
+                    pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 1),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (2, 1): +1,
                         (1, 2): +1,
                     },
-                    picture_translation_multiple=(4, 4),
+                    pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
@@ -413,36 +413,36 @@ class TestPackTestPatterns(object):
         test_patterns = OrderedDict([
             (
                 (1, "Output", 0, 0),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (2, 1): +1,
                         (1, 2): -1,
                     },
-                    picture_translation_multiple=(4, 4),
+                    pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 1),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (10, 1): +1,
                         (1, 5): +1,
                     },
-                    picture_translation_multiple=(4, 4),
+                    pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 2),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (5, 1): -1,
                         (1, 5): -1,
                     },
-                    picture_translation_multiple=(4, 4),
+                    pattern_translation_multiple=(4, 4),
                     target=(2, 3),
                     target_translation_multiple=(4, 5),
                 ),
@@ -485,48 +485,48 @@ class TestPackTestPatterns(object):
         test_patterns = OrderedDict([
             (
                 (1, "Output", 0, 0),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (9, 0): -1,
                         (0, 9): -1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 1),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (19, 0): +1,
                         (0, 4): -1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 2),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (9, 0): +1,
                         (0, 9): +1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 3),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (19, 0): -1,
                         (0, 4): +1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
@@ -566,36 +566,36 @@ class TestPackTestPatterns(object):
         test_patterns = OrderedDict([
             (
                 (1, "Output", 0, 0),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (1, 0): +1,
                         (0, 1): -1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 1),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (100, 0): -1,
                         (0, 100): -1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),
             ),
             (
                 (1, "Output", 0, 2),
-                TSS(
-                    picture={
+                TPS(
+                    pattern={
                         (1, 0): -1,
                         (0, 1): +1,
                     },
-                    picture_translation_multiple=(1, 1),
+                    pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
                 ),

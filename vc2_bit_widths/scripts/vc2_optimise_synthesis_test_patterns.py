@@ -20,23 +20,23 @@ from vc2_bit_widths.scripts.argument_parsers import (
     parse_quantisation_matrix_argument,
 )
 
-from vc2_bit_widths.signal_generation import (
-    TestSignalSpecification,
-    OptimisedTestSignalSpecification,
+from vc2_bit_widths.pattern_generation import (
+    TestPatternSpecification,
+    OptimisedTestPatternSpecification,
 )
 
 from vc2_bit_widths.json_serialisations import (
     deserialise_signal_bounds,
-    deserialise_test_signals,
-    serialise_test_signals,
-    deserialise_test_signals,
+    deserialise_test_patterns,
+    serialise_test_patterns,
+    deserialise_test_patterns,
     serialise_quantisation_matrix,
 )
 
 from vc2_bit_widths.helpers import (
     evaluate_filter_bounds,
     quantisation_index_bound,
-    optimise_synthesis_test_signals,
+    optimise_synthesis_test_patterns,
 )
 
 
@@ -133,7 +133,7 @@ def parse_args(args=None):
         type=int, default=200,
         help="""
             The number of additional search iterations to perform when an
-            improved test signal is found. (Default: %(default)s).
+            improved test pattern is found. (Default: %(default)s).
         """,
     )
     
@@ -141,7 +141,7 @@ def parse_args(args=None):
         "--output", "-o",
         type=FileType("w"), default=sys.stdout,
         help="""
-            The name of the file to write the optimised test signal JSON file
+            The name of the file to write the optimised test pattern JSON file
             to. Defaults to stdout.
         """
     )
@@ -179,9 +179,9 @@ def main(args=None):
     synthesis_signal_bounds = deserialise_signal_bounds(
         static_filter_analysis["synthesis_signal_bounds"]
     )
-    synthesis_test_signals = deserialise_test_signals(
-        TestSignalSpecification,
-        static_filter_analysis["synthesis_test_signals"]
+    synthesis_test_patterns = deserialise_test_patterns(
+        TestPatternSpecification,
+        static_filter_analysis["synthesis_test_patterns"]
     )
     
     (
@@ -204,14 +204,14 @@ def main(args=None):
     
     random_state = np.random.RandomState(args.seed)
     
-    optimised_synthesis_test_signals = optimise_synthesis_test_signals(
+    optimised_synthesis_test_patterns = optimise_synthesis_test_patterns(
         wavelet_index=static_filter_analysis["wavelet_index"],
         wavelet_index_ho=static_filter_analysis["wavelet_index_ho"],
         dwt_depth=static_filter_analysis["dwt_depth"],
         dwt_depth_ho=static_filter_analysis["dwt_depth_ho"],
         quantisation_matrix=quantisation_matrix,
         picture_bit_width=args.picture_bit_width,
-        synthesis_test_signals=synthesis_test_signals,
+        synthesis_test_patterns=synthesis_test_patterns,
         max_quantisation_index=max_quantisation_index,
         random_state=random_state,
         number_of_searches=args.number_of_searches,
@@ -231,9 +231,9 @@ def main(args=None):
         "quantisation_matrix": serialise_quantisation_matrix(
             quantisation_matrix,
         ),
-        "optimised_synthesis_test_signals": serialise_test_signals(
-            OptimisedTestSignalSpecification,
-            optimised_synthesis_test_signals,
+        "optimised_synthesis_test_patterns": serialise_test_patterns(
+            OptimisedTestPatternSpecification,
+            optimised_synthesis_test_patterns,
         )
     }
     
