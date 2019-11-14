@@ -13,6 +13,8 @@ from vc2_bit_widths.pattern_generation import (
 from vc2_bit_widths.json_serialisations import (
     serialise_intermediate_value_dictionary,
     deserialise_intermediate_value_dictionary,
+    serialise_linexp,
+    deserialise_linexp,
     serialise_signal_bounds,
     deserialise_signal_bounds,
     serialise_concrete_signal_bounds,
@@ -56,6 +58,19 @@ def test_serialise_intermediate_value_dictionary():
     ]
     
     assert deserialise_intermediate_value_dictionary(after) == before
+
+
+def test_serialise_linexp():
+    before = LinExp("foo")/2 + 1
+    after = serialise_linexp(before)
+    after = json_roundtrip(after)
+    
+    assert after == [
+        {"symbol": "foo", "numer": "1", "denom": "2"},
+        {"symbol": None, "numer": "1", "denom": "1"},
+    ]
+    
+    assert deserialise_linexp(after) == before
 
 
 def test_serialise_signal_bounds():

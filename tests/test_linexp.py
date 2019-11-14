@@ -56,17 +56,6 @@ class TestLinExp(object):
         # Should pass through original object without creating a new value
         assert v1 is v2
     
-    def test_from_json(self):
-        assert LinExp.from_json([
-            {"symbol": "foo", "numer": "123", "denom": "2"},
-            {"symbol": "bar", "numer": "1", "denom": "3"},
-            {"symbol": None, "numer": "-10", "denom": "1"},
-        ]) == 123*LinExp("foo") / 2 + LinExp("bar") / 3 - 10
-    
-    def test_to_json(self):
-        expr = 123*LinExp("foo") / 2 + LinExp("bar") / 3 - 10
-        assert LinExp.from_json(expr.to_json()) == expr
-    
     def test_new_affine_error_symbol(self):
         e1 = LinExp.new_affine_error_symbol()
         e2 = LinExp.new_affine_error_symbol()

@@ -345,42 +345,6 @@ class LinExp(object):
         cls._next_error_term_id += 1
         return cls(AAError(cls._next_error_term_id))
     
-    def to_json(self):
-        """
-        Returns a JSON-seriallisable representation of this :py:class:`LinExp`.
-        
-        Restrictions:
-        
-        * Only supports expressions made up of rational values (no floating
-          point coefficients/constants.
-        * Symbols must be strings (no tuples or :py:class:`AAError` sybols)
-        
-        The JSON-seriallised format consists of a list as illustrated below::
-        
-            [
-                {"symbol", str or None, "numer": "int-in-str", "denom": "int-in-str"},
-                ...
-            ]
-        """
-        return [
-            {
-                "symbol": sym,
-                "numer": str(coeff.numerator),
-                "denom": str(coeff.denominator),
-            }
-            for sym, coeff in self._coeffs.items()
-        ]
-    
-    @classmethod
-    def from_json(cls, json):
-        """
-        Parse a deseriallised JSON representation of a :py:class:`LinExp`.
-        """
-        return LinExp({
-            d["symbol"]: Fraction(int(d["numer"]), int(d["denom"]))
-            for d in json
-        })
-    
     def symbols(self):
         """
         Return an iterator over the symbols in this :py:class:`LinExp` where

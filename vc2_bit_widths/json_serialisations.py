@@ -38,6 +38,8 @@ from collections import OrderedDict
 
 from vc2_bit_widths.linexp import LinExp
 
+from vc2_bit_widths.fractions import Fraction
+
 
 def serialise_intermediate_value_dictionary(dictionary):
     """
@@ -88,10 +90,60 @@ def deserialise_intermediate_value_dictionary(lst):
     return out
 
 
+def serialise_linexp(exp):
+    """
+    Serialise a restricted subset of :py:class:`~vc2_bit_widths.linexp.LinExp`
+    s into JSON form.
+    
+    Restrictions:
+    
+    * Only supports expressions made up of rational values (no floating
+      point coefficients/constants.
+    * Symbols must all be strings (no tuples or
+      :py:class:`~vc2_bit_widths.linexp.AAError` sybols)
+    
+    Example::
+        >>> before = LinExp({
+        ...     "a": Fraction(1, 5),
+        ...     "b": Fraction(10, 1),
+        ...     None: Fraction(-2, 3),
+        ... })
+        >>> serialise_linexp(before)
+        [
+            {"symbol": "a", "numer": "1", "denom": "5"},
+            {"symbol": "b", "numer": "10", "denom": "1"},
+            {"symbol": None, "numer": "-2", "denom": "3"},
+        ]
+    
+    Note that all numbers are encoded as strings to avoid floating point
+    precision limitations.
+    """
+    return [
+        {
+            "symbol": sym,
+            "numer": str(coeff.numerator),
+            "denom": str(coeff.denominator),
+        }
+        for sym, coeff in exp
+    ]
+
+def deserialise_linexp(json):
+    """
+    Inverse of :py:func:`serialise_linexp`.
+    """
+    return LinExp({
+        d["symbol"]: Fraction(int(d["numer"]), int(d["denom"]))
+        for d in json
+    })
+
+
 def serialise_signal_bounds(signal_bounds):
     """
     Convert a dictionary of analysis or synthesis signal bounds expressions
     into a JSON-serialisable form.
+    
+    See :py:func;`serialise_linexp` for details of the ``"lower_bound"`` and
+    ``"upper_bound"`` fields.
     
     For example::
         >>> before = {
@@ -121,8 +173,8 @@ def serialise_signal_bounds(signal_bounds):
     """
     return serialise_intermediate_value_dictionary({
         key: {
-            "lower_bound": LinExp(lower_bound).to_json(),
-            "upper_bound": LinExp(upper_bound).to_json(),
+            "lower_bound": serialise_linexp(LinExp(lower_bound)),
+            "upper_bound": serialise_linexp(LinExp(upper_bound)),
         }
         for key, (lower_bound, upper_bound) in signal_bounds.items()
     })
@@ -134,8 +186,8 @@ def deserialise_signal_bounds(signal_bounds):
     """
     return {
         key: (
-            LinExp.from_json(d["lower_bound"]),
-            LinExp.from_json(d["upper_bound"]),
+            deserialise_linexp(d["lower_bound"]),
+            deserialise_linexp(d["upper_bound"]),
         )
         for key, d in deserialise_intermediate_value_dictionary(signal_bounds).items()
     }
