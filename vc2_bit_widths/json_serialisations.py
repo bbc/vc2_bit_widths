@@ -441,7 +441,7 @@ def serialise_test_patterns(spec_namedtuple_type, test_patterns):
         The namedtuple used to hold the test pattern specification. One of
         :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`
         or
-        :py:class:`~vc2_bit_widths.pattern_generation.OptimisedTestPatternSpecification`.
+        :py:class:`~vc2_bit_widths.pattern_optimisation.OptimisedTestPatternSpecification`.
     test_patterns : {(level, array_name, x, y): (...), ...}
     """
     out = serialise_intermediate_value_dictionary({

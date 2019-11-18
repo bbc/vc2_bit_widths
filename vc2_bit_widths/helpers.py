@@ -87,13 +87,16 @@ from vc2_bit_widths.signal_bounds import (
 
 from vc2_bit_widths.pattern_generation import (
     TestPatternSpecification,
-    OptimisedTestPatternSpecification,
     invert_test_pattern_specification,
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
-    optimise_synthesis_maximising_test_pattern,
     evaluate_analysis_test_pattern_output,
     evaluate_synthesis_test_pattern_output,
+)
+
+from vc2_bit_widths.pattern_optimisation import (
+    OptimisedTestPatternSpecification,
+    optimise_synthesis_maximising_test_pattern,
 )
 
 from vc2_bit_widths.quantisation import (
@@ -498,7 +501,7 @@ def optimise_synthesis_test_patterns(
     
     Returns
     =======
-    optimised_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.OptimisedTestPatternSpecification`, ...}
+    optimised_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_optimisation.OptimisedTestPatternSpecification`, ...}
         The optimised test patterns.
         
         Note that arrays are omitted for arrays which are just interleavings of

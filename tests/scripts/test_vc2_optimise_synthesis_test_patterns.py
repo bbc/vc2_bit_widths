@@ -6,7 +6,7 @@ import shlex
 
 from vc2_data_tables import WaveletFilters
 
-from vc2_bit_widths.pattern_generation import (
+from vc2_bit_widths.pattern_optimisation import (
     OptimisedTestPatternSpecification,
 )
 

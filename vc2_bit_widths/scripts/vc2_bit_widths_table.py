@@ -123,6 +123,9 @@ from vc2_bit_widths.signal_bounds import (
 
 from vc2_bit_widths.pattern_generation import (
     TestPatternSpecification,
+)
+
+from vc2_bit_widths.pattern_optimisation import (
     OptimisedTestPatternSpecification,
 )
 

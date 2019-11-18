@@ -150,6 +150,9 @@ from vc2_bit_widths.scripts.argument_parsers import (
 
 from vc2_bit_widths.pattern_generation import (
     TestPatternSpecification,
+)
+
+from vc2_bit_widths.pattern_optimisation import (
     OptimisedTestPatternSpecification,
 )
 

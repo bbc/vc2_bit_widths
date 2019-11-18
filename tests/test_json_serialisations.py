@@ -6,7 +6,7 @@ from collections import namedtuple
 
 from vc2_bit_widths.linexp import LinExp
 
-from vc2_bit_widths.pattern_generation import (
+from vc2_bit_widths.pattern_optimisation import (
     OptimisedTestPatternSpecification,
 )
 

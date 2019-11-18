@@ -83,8 +83,8 @@ def analysis_filter_bounds(expression):
     Parameters
     ==========
     expression : :py:class:`~vc2_bit_widths.linexp.LinExp`
-        All symbols which are not :py:mod:`~vc2_bit_widths.affine_arithmetic`
-        error terms will be treated as picture values in the specified range.
+        All symbols which are not :py:class:`~vc2_bit_widths.linexp.AAError`
+        terms will be treated as picture values in the specified range.
     picture_lower_bound, picture_upper_bound : (lower, upper)
         The lower and upper bounds for the values of pixels in the input
         picture..
