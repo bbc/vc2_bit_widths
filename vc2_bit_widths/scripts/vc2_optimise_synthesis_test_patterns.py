@@ -92,6 +92,11 @@ as::
         2: {"HL": 1, "LH": 3, "HH": 3},
     }
 
+.. note::
+
+    The
+    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_quantisation_matrix`
+    Python utility function is provided for unpacking this structure.
 
 Test patterns
 `````````````
@@ -112,6 +117,12 @@ These fields give the quantisation index found to produce the most extreme
 value for the test pattern, the value it managed to produce and the number of
 search iterations taken to reach that test pattern. This information is
 provided for informational purposes only.
+
+.. note::
+
+    The
+    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_test_patterns`
+    Python utility function is provided for unpacking this structure.
 
 Missing values
 ``````````````

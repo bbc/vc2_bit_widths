@@ -2,27 +2,56 @@
 VC-2 Bit-Width Analysis Helper Functions
 ========================================
 
-This module contains helper routines which perform all of the key tasks
-implemented by this library.
+The :py:mod:`vc2_bit_widths.helpers` module provides a set of high-level
+utility functions implementing the key processes involved in bit-width analysis
+and test picture production for VC-2 codecs. These functions are used in much
+the same way as the command line interfaces, so refer to :ref:`usage-overview`
+for a more general introduction.
 
-The first step is typically to statically analyse a specified filter:
+Many of the functions in this module can take a significant amount of time to
+execute for very large filters. Status information is reported using Python's
+built-in :py:mod:`logging` library and may be made visible using::
+
+    >>> import logging
+    >>> logging.basicConfig(level=logging.INFO)
+
+
+Static filter analysis
+----------------------
 
 .. autofunction:: static_filter_analysis
 
-Next, the filter signal range statistics can be made concrete for a particular
-picture bit depth using:
+
+Calculating bit-width requirements
+----------------------------------
 
 .. autofunction:: evaluate_filter_bounds
 
-In addition, the maximum quantisation index required for a picture bit depth
-can also be determined:
+.. autofunction:: evaluate_test_pattern_outputs
+
+Bounding quantisation indices
+-----------------------------
 
 .. autofunction:: quantisation_index_bound
 
-The test patterns generated for the synthesis filter can be optimised and
-specialised for a particular codec configuration and bit depth:
+Optimising synthesis test patterns
+----------------------------------
 
 .. autofunction:: optimise_synthesis_test_patterns
+
+Generating test pictures
+------------------------
+
+.. autofunction:: generate_test_pictures
+
+.. autoclass:: AnalysisPicture
+    :no-members:
+
+.. autoclass:: SynthesisPicture
+    :no-members:
+
+.. autoclass:: TestPoint
+    :no-members:
 
 """
 
@@ -81,16 +110,10 @@ logger = logging.getLogger(__name__)
 def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth_ho):
     r"""
     Performs a complete static analysis of a VC-2 filter configuration,
-    computing upper- and lower-bounds for filter values and worst case and
-    heuristic test patterns for analysis and synthesis filters respectively.
-    
-    Internally this function is a thin wrapper around the following principal
-    functions:
-    
-    * :py:func:`vc2_bit_widths.signal_bounds.analysis_filter_bounds`
-    * :py:func:`vc2_bit_widths.signal_bounds.synthesis_filter_bounds`
-    * :py:func:`vc2_bit_widths.pattern_generation.make_analysis_maximising_signal`
-    * :py:func:`vc2_bit_widths.pattern_generation.make_synthesis_maximising_signal`
+    computing theoretical upper- and lower-bounds for signal values (see
+    :ref:`affine-bounds`) and heuristic test patterns (see
+    :ref:`heuristic-test-patterns`) for all intermediate and final analysis and
+    synthesis filter values.
     
     Parameters
     ==========
@@ -107,40 +130,43 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         Expressions defining the upper and lower bounds for all intermediate
         and final analysis and synthesis filter values.
         
-        The keys of the returned dictionaries give the level (int), array name
-        (str) and filter phase (x, y) for which each set of bounds corresponds.
-        The naming conventions used are those defined by
+        The keys of the returned dictionaries give the level, array name and
+        filter phase for which each pair of bounds corresponds (see
+        :ref:`terminology`). The naming
+        conventions used are those defined by
         :py:func:`vc2_bit_widths.vc2_filters.analysis_transform` and
         :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform`. Arrays which
-        are simple interleavings or renamings are omitted.
+        are just interleavings, subsamplings or renamings of other arrays are
+        omitted.
         
-        The lower and upper bounds are given as
-        :py:class:`vc2_bit_widths.linexp.LinExp`\ s.
+        The lower and upper bounds are given algebraically as
+        :py:class:`~vc2_bit_widths.linexp.LinExp`\ s.
         
         For the analysis filter bounds, the expressions are defined in terms of
         the variables ``LinExp("signal_min")`` and ``LinExp("signal_max")``.
         These should be substituted for the minimum and maximum picture signal
         level to find the upper and lower bounds for a particular picture bit
-        width. (See
-        :py:func:`vc2_bit_widths.signal_bounds.evaluate_analysis_filter_bounds`.)
+        width.
         
         For the synthesis filter bounds, the expressions are defined in terms
         of variables of the form ``LinExp("coeff_LEVEL_ORIENT_min")`` and
-        ``LinExp("coeff_LEVEL_ORIENT_max")``.  These should be substituted for
-        the lower and upper bounds computed for the relevant analysis filter
-        (See
-        :py:func:`vc2_bit_widths.signal_bounds.evaluate_synthesis_filter_bounds`.)
-    analysis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-        test patterns which attempt to maximise (or minimise) for each
-        intermediate and final analysis and synthesis filter output.
+        ``LinExp("coeff_LEVEL_ORIENT_max")`` which give lower and upper bounds
+        for the transform coefficients with the named level and orientation.
         
-        The keys of the returned dictionaries give the level (int), array name
-        (str) and filter phase (x, y) for which each set of bounds corresponds.
-        The naming conventions used are those defined by
-        :py:func:`vc2_bit_widths.vc2_filters.analysis_transform` and
-        :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform`. Arrays which
-        are simple interleavings or renamings are omitted.
+        The :py:func:`~vc2_bit_widths.helpers.evaluate_filter_bounds` function
+        may be used to substitute concrete values into these expressions for a
+        particular picture bit width.
+        
+    analysis_test_patterns: {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+        Heuristic test patterns which are designed to maximise a particular
+        intermediate or final filter value. For a minimising test pattern,
+        invert the polarities of the pixels.
+        
+        The keys of the returned dictionaries give the level, array name and
+        filter phase for which each set of bounds corresponds (see
+        :ref:`terminology`). Arrays which are just interleavings, subsamplings
+        or renamings of other arrays are omitted.
     """
     v_filter_params = LIFTING_FILTERS[wavelet_index]
     h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
@@ -298,10 +324,12 @@ def evaluate_filter_bounds(
     =======
     concrete_analysis_signal_bounds : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
     concrete_synthesis_signal_bounds : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
-        The concrete signal bounds for all analysis and signal filters given a
-        ``picture_bit_width`` input picture and worst-case quantisation.
-        Includes results for *all* arrays and phases, even those which are
-        duplicates.
+        The concrete, integer signal bounds for all analysis and signal filters
+        given a ``picture_bit_width``-bit input picture.
+        
+        Includes values for *all* arrays and phases, even if
+        array interleavings/subsamplings/renamings are omitted in the input
+        arguments.
     """
     h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
     v_filter_params = LIFTING_FILTERS[wavelet_index]
@@ -380,7 +408,7 @@ def quantisation_index_bound(concrete_analysis_signal_bounds, quantisation_matri
     
     Returns
     =======
-    quantisation_index : int
+    max_quantisation_index : int
         The upper bound for the quantisation indices sensibly used by an
         encoder. This value will be the smallest quantisation index which will
         quantise all possible transform coefficients to zero.
@@ -427,6 +455,9 @@ def optimise_synthesis_test_patterns(
     Perform a greedy search based optimisation of a complete set of synthesis
     test patterns.
     
+    See :ref:`optimisation` for details of the optimisation process and
+    parameters.
+    
     Parameters
     ==========
     wavelet_index : :py:class:`vc2_data_tables.WaveletFilters` or int
@@ -438,10 +469,9 @@ def optimise_synthesis_test_patterns(
         The quantisation matrix in use.
     picture_bit_width : int
         The number of bits in the input pictures.
-    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-        test patterns which attempt to maximise each intermediate and final
-        synthesis filter output, as produced by
-        :py:func:`static_filter_analysis`.
+    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+        Synthesis test patterns to use as the starting point for optimisation,
+        as produced by e.g.  :py:func:`static_filter_analysis`.
     max_quantisation_index : int
         The maximum quantisation index to use, e.g. computed using
         :py:func:`quantisation_index_bound`.
@@ -468,7 +498,7 @@ def optimise_synthesis_test_patterns(
     
     Returns
     =======
-    optimised_test_patterns : {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.OptimisedTestPatternSpecification`, ...}
+    optimised_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.OptimisedTestPatternSpecification`, ...}
         The optimised test patterns.
         
         Note that arrays are omitted for arrays which are just interleavings of
@@ -594,8 +624,8 @@ def evaluate_test_pattern_outputs(
     synthesis_test_patterns,
 ):
     """
-    Given a set of test patterns, compute the signal levels actually produced in
-    a real encoder/decoder.
+    Given a set of test patterns, compute the signal levels actually produced
+    by them when passed through a real encoder/decoder.
     
     Parameters
     ==========
@@ -607,27 +637,33 @@ def evaluate_test_pattern_outputs(
     picture_bit_width : int
         The number of bits in the input pictures.
     quantisation_matrix : {level: {orient: value, ...}, ...}
-        The quantisation matrix in use.
+        The quantisation matrix.
     max_quantisation_index : int
-        The maximum quantisation index to use (e.g. from
-        :py:func:`quantisation_index_bound`).
-    analysis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-        From :py:func:`static_filter_analysis` or
-        :py:func:`optimise_synthesis_test_patterns`. The test patterns to assess.
+        The maximum quantisation index to try (e.g. as computed by
+        :py:func:`quantisation_index_bound`). Each synthesis test pattern will
+        be quantised with every quantisation index up to (and inclusing) this
+        limit and the worst-case value for any quantisation index will be
+        reported.
+    analysis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+        The test patterns to assess, e.g. from
+        :py:func:`static_filter_analysis` or
+        :py:func:`optimise_synthesis_test_patterns`.
     
     Returns
     =======
     analysis_test_pattern_outputs : {(level, array_name, x, y): (lower_bound, upper_bound), ...}
-        The signal levels achieved for each of the provided analysis test
-        signals for minimising signal values and maximising values
-        respectively. Includes results for *all* arrays and phases, even those
-        which are duplicates.
     synthesis_test_pattern_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
-        The signal levels achieved, and quantisation indices used to achieve
-        them, for each of the provided synthesis test patterns. Given for
-        minimising signal values and maximising values respectively. Includes
-        results for *all* arrays and phases, even those which are duplicates.
+        The worst-case signal levels achieved for each of the provided test
+        signals when using minimising and maximising versions of the test
+        pattern respectively.
+        
+        For the syntehsis test patterns, the quantisation index used to achieve
+        the worst-case values is also reported.
+        
+        Includes values for *all* arrays and phases, even if array
+        interleavings/subsamplings/renamings are omitted in the input
+        arguments.
     """
     h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
     v_filter_params = LIFTING_FILTERS[wavelet_index]
@@ -718,8 +754,8 @@ def evaluate_test_pattern_outputs(
 
 TestPoint = namedtuple("TestPoint", "level,array_name,x,y,maximise,tx,ty")
 """
-Definition of the location of a point in an encoder/decoder tested by a test
-picture.
+:py:func:`~collections.namedtuple`. Definition of the location of a point in
+an encoder/decoder tested by a test picture.
 
 Parameters
 ==========
@@ -740,11 +776,12 @@ ty : int
 
 AnalysisPicture = namedtuple("AnalysisPicture", "picture,test_points")
 """
-A test picture which is to be used to assess an analysis filter.
+:py:func:`~collections.namedtuple`. A test picture which is to be used to
+assess an analysis filter.
 
 Parameters
 ==========
-picture : :py:class:`numpy.array`, ...
+picture : :py:class:`numpy.array`
     The test picture.
 test_points : [:py:class:`TestPoint`, ...]
     A list of locations within the analysis filter being tested by this
@@ -753,11 +790,12 @@ test_points : [:py:class:`TestPoint`, ...]
 
 SynthesisPicture = namedtuple("SynthesisPicture", "picture,quantisation_index,test_points")
 """
-A test picture which is to be used to assess an synthesis filter.
+:py:func:`~collections.namedtuple`. A test picture which is to be used to
+assess an synthesis filter.
 
 Parameters
 ==========
-picture : :py:class:`numpy.array`, ...
+picture : :py:class:`numpy.array`
     The test picture. Values are given as +1, 0 and -1 which must be enlarged
     to the full signal range before use.
 quantisation_index : int
@@ -792,8 +830,8 @@ def generate_test_pictures(
     synthesis_test_pattern_outputs,
 ):
     """
-    Pack a set of analysis and synthesis test patterns into a set of test
-    pictures.
+    Generate a series of test pictures containing the supplied selection of
+    test patterns.
     
     Parameters
     ==========
@@ -802,21 +840,34 @@ def generate_test_pictures(
         The dimensions of the pictures to generate.
     picture_bit_width : int
         The number of bits in the input pictures.
-    analysis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    analysis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
         The individual analysis and synthesis test patterns to be combined. A
-        value maximising and value minimising variant of each signal will be
-        included in the output. As computed by
-        :py:func:`static_filter_analysis`.
+        maximising and minimising variant of each pattern will be included in
+        the output. See :py:func:`static_filter_analysis` and
+        :py:func:`optimise_synthesis_test_patterns`.
     synthesis_test_pattern_outputs : {(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), ...}
-        Information about the worst-case quantisation indicies for each
-        synthesis test pattern. As computed by
-        :py:func:`evaluate_test_pattern_outputs`.
+        The worst-case quantisation indicies for each synthesis test pattern,
+        as computed by :py:func:`evaluate_test_pattern_outputs`.
     
     Returns
     =======
     analysis_pictures : [:py:class:`AnalysisPicture`, ...]
     synthesis_pictures : [:py:class:`SynthesisPicture`, ...]
+        A series of test pictures containing correctly aligned instances of
+        each supplied test pattern.
+        
+        Each analysis picture includes a subset of the test patterns supplied
+        (see :py:class:`AnalysisPicture`). The analysis test pictures are
+        intended to be passed to an analysis filter as-is.
+        
+        Each synthesis test picture includes a subset of the test patterns
+        supplied, grouped according to the quantisation index to be used.  The
+        synthesis test pictures should first be passed through a synthesis
+        filter and then the transform coefficients quantised using the
+        quantisation index specified (see :py:class:`SynthesisPicture`). The
+        quantised transform coefficients should then be passed through the
+        synthesis filter.
     """
     input_min, input_max = signed_integer_range(picture_bit_width)
     

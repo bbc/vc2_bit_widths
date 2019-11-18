@@ -80,6 +80,12 @@ synthesis filter phase (see :ref:`terminology`) as follows::
         ...
     ]
 
+.. note::
+
+    The
+    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_signal_bounds`
+    Python utility function is provided for unpacking this structure.
+
 Each ``<algebraic-expression>`` defines an algebraic linear expression. As an
 example, the following expression:
 
@@ -105,9 +111,6 @@ In the expressions defining the synthesis filter signal levels, symbols with
 the form ``coeff_<level>_<orient>_min`` and ``coeff_<level>_<orient>_min`` are
 used. For example ``coeff_1_LL_min`` would mean the minimum value a level-1
 'LL' subband value could have.
-
-See also :py:class:`~vc2_bit_widths.linexp.LinExp` for a Python API for working
-with these expressions.
 
 .. _vc2-static-filter-analysis-json-test-patterns:
 
@@ -135,6 +138,12 @@ test patterns for each analysis and synthesis filter phase like so::
         "positive": <string>,
         "mask": <string>,
     }
+
+.. note::
+
+    The
+    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_test_patterns`
+    Python utility function is provided for unpacking this structure.
 
 Test patterns are defined in terms of a collection of pixel polarity values
 which indicate which pixels should be set to their maximum level and which

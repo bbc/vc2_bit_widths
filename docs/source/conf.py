@@ -50,6 +50,7 @@ autodoc_default_flags = [
 
 intersphinx_mapping = {
     "python": ("http://docs.python.org/3", None),
+    "numpy": ("http://docs.scipy.org/doc/numpy/", None),
 }
 
 

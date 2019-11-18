@@ -1,32 +1,46 @@
 """
-Data file formatting utilities
-==============================
+JSON Data File Serialisation/Deserialisation
+============================================
 
-This module contains utilities for serialising and deserialising bit width
-analysis and test pattern data as JSON. In particular it concentrates on the
-data types returned by the functions in :py:mod:`vc2_bit_widths.helpers`
-module.
+The :py:mod:`vc2_bit_widths.json_serialisations` module provides functions for
+serialising and deserialising parts of the JSON files produced by the various
+command-line interfaces to :py:mod:`vc2_bit_widths` (see :ref:`cli`).
 
-Specifically:
+.. note::
 
-:py:func:`vc2_bit_widths.helpers.static_filter_analysis`'s output can be
-(de)serialised by:
+    These functions do not serialise/deserialise JSON directly, instead they
+    produce/accept standard Python data structures compatible with the Python
+    :py:mod:`json` module.
+
+Signal bounds
+-------------
 
 .. autofunction:: serialise_signal_bounds
 
 .. autofunction:: deserialise_signal_bounds
 
+.. autofunction:: serialise_linexp
+
+.. autofunction:: deserialise_linexp
+
+
+Test patterns
+-------------
+
 .. autofunction:: serialise_test_patterns
 
 .. autofunction:: deserialise_test_patterns
 
-:py:func:`vc2_bit_widths.helpers.evaluate_filter_bounds`'s output can be
-(de)serialised by :py:func:`serialise_signal_bounds` and
-:py:func:`deserialise_signal_bounds` too.
+.. autofunction:: serialise_test_pattern
 
-:py:func:`vc2_bit_widths.helpers.optimise_synthesis_test_patterns`'s output can
-be (de)serialised by :py:func:`serialise_test_patterns` and
-:py:func:`deserialise_test_patterns` too.
+.. autofunction:: deserialise_test_pattern
+
+Quantisation matrices
+---------------------
+
+.. autofunction:: serialise_quantisation_matrix
+
+.. autofunction:: deserialise_quantisation_matrix
 
 """
 
@@ -97,9 +111,9 @@ def serialise_linexp(exp):
     
     Restrictions:
     
-    * Only supports expressions made up of rational values (no floating
+    * Only supports expressions made up of rational values (i.e. no floating
       point coefficients/constants.
-    * Symbols must all be strings (no tuples or
+    * Symbols must all be strings (i.e. no tuples or
       :py:class:`~vc2_bit_widths.linexp.AAError` sybols)
     
     Example::
@@ -115,8 +129,10 @@ def serialise_linexp(exp):
             {"symbol": None, "numer": "-2", "denom": "3"},
         ]
     
-    Note that all numbers are encoded as strings to avoid floating point
-    precision limitations.
+    .. note::
+        
+        Numbers are encoded as strings to avoid floating point precision
+        limitations.
     """
     return [
         {
@@ -142,7 +158,7 @@ def serialise_signal_bounds(signal_bounds):
     Convert a dictionary of analysis or synthesis signal bounds expressions
     into a JSON-serialisable form.
     
-    See :py:func;`serialise_linexp` for details of the ``"lower_bound"`` and
+    See :py:func:`serialise_linexp` for details of the ``"lower_bound"`` and
     ``"upper_bound"`` fields.
     
     For example::
@@ -250,7 +266,7 @@ def serialise_namedtuple(namedtuple_type, value):
     
     Parameters
     ==========
-    namedtuple_type : :py:class:`~collections.namedtuple`
+    namedtuple_type : :py:func:`~collections.namedtuple`
         The namedtuple class of the value to be serialised.
     value : tuple
     """
@@ -384,24 +400,28 @@ def serialise_test_patterns(spec_namedtuple_type, test_patterns):
     Convert a dictionary of analysis or synthesis test patterns into a
     JSON-serialisable form.
     
+    See :py:func:`serialise_test_pattern` for the serialisation used for the
+    pattern data.
+    
     For example::
+    
         >>> before = {
-        ...     (1, "LH", 2, 3): TestSignalSpecification(
+        ...     (1, "LH", 2, 3): TestPatternSpecification(
         ...         target=(4, 5),
-        ...         picture={(x, y): polarity, ...},
+        ...         pattern={(x, y): polarity, ...},
         ...         pattern_translation_multiple=(6, 7),
         ...         target_translation_multiple=(8, 9),
         ...     ),
         ...     ...
         ... }
-        >>> serialise_test_patterns(TestSignalSpecification, before)
+        >>> serialise_test_patterns(TestPatternSpecification, before)
         [
             {
                 "level": 1,
                 "array_name": "LH",
                 "phase": [2, 3],
                 "target": [4, 5],
-                "picture": {
+                "pattern": {
                     "dx": ...,
                     "dy": ...,
                     "width": ...,
@@ -415,13 +435,13 @@ def serialise_test_patterns(spec_namedtuple_type, test_patterns):
             ...
         ]
     
-    See :py:func:`serialise_test_pattern` for the serialisation used for the picture
-    data.
-    
     Parameters
     ==========
-    spec_namedtuple_type : :py:class:`~collections.namedtuple` class
-        The namedtuple used to hold the test pattern specification.
+    spec_namedtuple_type : :py:func:`~collections.namedtuple` class
+        The namedtuple used to hold the test pattern specification. One of
+        :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`
+        or
+        :py:class:`~vc2_bit_widths.pattern_generation.OptimisedTestPatternSpecification`.
     test_patterns : {(level, array_name, x, y): (...), ...}
     """
     out = serialise_intermediate_value_dictionary({
