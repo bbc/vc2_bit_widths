@@ -20,3 +20,4 @@ should be used.
     introduction/index
     cli/index
     high_level_apis/index
+    internals/index

@@ -13,3 +13,7 @@ dist/
 etc/
 *.egg-info/
 pip-selfcheck.json
+
+*.json
+*.csv
+
