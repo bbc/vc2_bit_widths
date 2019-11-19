@@ -1,174 +1,300 @@
 r"""
-Infinite Arrays
+Infinite arrays
 ===============
 
-Infinite array types which may be used to construct descriptions of wavelet
-filters on infinite inputs.
+:py:class:`InfiniteArray` and its subclasses provide a way to define and
+analyse VC-2 filters.
 
-:py:class:`InfiniteArray` types
--------------------------------
 
-The implementation assumes all inputs (and therefore outputs) to every
-operation are infinite 2D arrays. As a consequence, no edge-extension or
-padding is performed and so no artefacts from these processes appear in the
-results. This is useful when analysing the general behaviour of a filter since
-there is no need to determine which outputs are free from edge artefacts.
+Tutorial
+--------
 
-The underlying type used in this module is the :py:class:`InfiniteArray`. An
-:py:class:`InfiniteArray` is an :math:`n`-dimensional array which may be
-indexed using the usual Python syntax (e.g. an element in a 2D array might be
-accessed as ``a[1, -2]``).
+In the worked example below we'll see how a simple LeGall (5, 3) synthesis
+filter can be described using :py:class:`InfiniteArray`\ s. We'll use this
+description to enumerate all of the resulting filter phases and generate
+algebraic expressions for them.
 
-Entries in an :py:class:`InfiniteArray` are computed on demand (infinite memory
-not required!) and the actual values depend entirely on the implementation of
-the :py:class:`InfiniteArray` subclass.
+Building a VC-2 filter
+``````````````````````
+
+A horizontal-only LeGall (5, 3) synthesis transform takes as input two arrays
+of transform coefficients (a low-pass band, ``L``, and high-pass band, ``H``)
+and produces a single output array. Lets start by defining the two input arrays::
+
+    >>> from vc2_bit_widths.infinite_arrays import SymbolArray
+    
+    >>> L = SymbolArray(2, "L")
+    >>> H = SymbolArray(2, "H")
+
+The :py:class:`SymbolArray` class defines an infinite array of
+:py:class:`~vc2_bit_widths.linexp.LinExp`\ s containing a single symbol of the
+form ``LinExp((prefix, x, y))``. Like all :py:class:`InfiniteArray` subclasses,
+we can access entries in our arrays using the usual Python subscript syntax::
+
+    >>> L[3, 4]
+    LinExp(('L', 3, 4))
+    >>> H[7, -5]
+    LinExp(('H', 7, -5))
+
+Notice that the coordinate system extends to positive and negative infinity.
+
+Next we'll create an :py:class:`InterleavedArray` which contains a horizontal
+interleaving of the two inputs::
+
+    >>> from vc2_bit_widths.infinite_arrays import InterleavedArray
+    
+    >>> interleaved = InterleavedArray(L, H, 0)
+
+The new interleaved array can be accessed just as before::
+
+    >>> interleaved[0, 0]
+    LinExp(('L', 0, 0))
+    >>> interleaved[1, 0]
+    LinExp(('H', 0, 0))
+    >>> interleaved[2, 1]
+    LinExp(('L', 1, 1))
+    >>> interleaved[3, 1]
+    LinExp(('H', 1, 1))
+
+Next we'll apply the two lifting stages which implement the LeGall (5, 3)
+transform using a :py:class:`LiftedArray`::
+
+    >>> from vc2_bit_widths.infinite_arrays import LiftedArray
+    
+    >>> from vc2_data_tables import LIFTING_FILTERS, WaveletFilters
+    >>> wavelet = LIFTING_FILTERS[WaveletFilters.le_gall_5_3]
+    >>> stage_0, stage_1 = wavelet.stages
+    
+    >>> lifted_once = LiftedArray(interleaved, stage_0, 0)
+    >>> lifted_twice = LiftedArray(lifted_once, stage_1, 0)
+
+Finally we'll use a :py:class:`RightShiftedArray` to apply the final bit shift
+operation to the result::
+
+    >>> from vc2_bit_widths.infinite_arrays import RightShiftedArray
+    
+    >>> output = RightShiftedArray(lifted_twice, wavelet.filter_bit_shift)
+
+This final array now, in effect, contains a complete algebraic description of
+how each entry is computed in terms of our two input arrays, ``L`` and ``H``::
+
+    >>> output[0, 0]
+    LinExp({('L', 0, 0): Fraction(1, 2), ('H', -1, 0): Fraction(-1, 8), ('H', 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})
+
+Notice that the expression above refers to transform coefficients with negative
+coordinates (e.g. ``('H', -1, 0)``). This is because the infinite dimensions of
+:py:class:`InfiniteArray`\ s allows :py:class:`LiftedArray` to ignore VC-2's
+filter edge effect behaviour. This makes it easier to analyse filter behaviours
+without having to carefully avoid edge effected behaviour.
+
+Filter phases
+`````````````
+
+The :py:class:`InfiniteArray` subclasses automatically keep track of the period
+of each array (see :ref:`terminology`) in the :py:attr:`InfiniteArray.period`
+property::
+
+    >>> L.period
+    (1, 1)
+    >>> H.period
+    (1, 1)
+    
+    >>> output.period
+    (2, 1)
+
+This makes it easy to automatically obtain an example of each filter phase in
+our output::
+
+    >>> all_output_filter_phases = [
+    ...     output[x, y]
+    ...     for x in range(output.period[0])
+    ...     for y in range(output.period[1])
+    ... ]
+
+
+Detecting no-operations
+```````````````````````
+
+When performing a computationally expensive analysis on a set of filters
+described by :py:class:`InfiniteArray`\ s it can be helpful to skip arrays
+which just consist of interleavings and other non-transformative views of other
+arrays. For this purpose, the :py:attr:`InfiniteArray.nop` property indicates
+if a given array implements a no-operation (nop) and therefore may be skipped.
+
+From the example above::
+
+    >>> L.nop
+    False
+    >>> H.nop
+    False
+    
+    >>> interleaved.nop
+    True
+    
+    >>> lifted_once.nop
+    False
+    >>> lifted_twice.nop
+    False
+    
+    >>> output.nop
+    False
+
+Here we can see that the interleaving stage is identified as having no material
+effect on the values it contains.
+
+
+Relative array stepping
+```````````````````````
+
+:py:class:`InfiniteArray`\ s provide a
+:py:meth:`InfiniteArray.relative_step_size_to` method for calculating the
+scaling relationships between arrays. This can be useful for finding array
+values which don't use inputs with negative coordinates (i.e. would not be
+affected by edge-effect behaviour in a real VC-2 filter).
+
+For example, consider the top-left pixel of the filter output from before::
+
+    >>> output[0, 0]
+    LinExp({('L', 0, 0): Fraction(1, 2), ('H', -1, 0): Fraction(-1, 8), ('H', 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})
+
+This uses the input ``('H', -1, 0)`` which has negative coordinates. Thanks to
+the :py:attr:`~InfiniteArray.period` property we know that any array value with
+an even-numbered X coordinate implements the same filter phase as [0, 0].
+
+We could start trying every even-numbered X coordinate until we find an entry
+without a negative ``H`` coordinate, but this would be fairly inefficient.
+Instead lets use :py:meth:`~InfiniteArray.relative_step_size_to` to work out
+how many steps we must move in ``output`` to move all our ``H`` coordinates
+right by one step.
+
+    >>> output.relative_step_size_to(H)
+    (Fraction(1, 2), Fraction(1, 1))
+
+This tells us that for every step we move in the X-dimension of ``output``, we
+move half a step in that direction in ``H``.  Therefore, we must pick a
+coordinate at least two steps to the right in ``output`` to avoid the -1
+coordinate in ``H``. Moving to [2, 0] also gives an even
+numbered X coordinate so we know that we're going to see the same filter phase
+and so we get::
+
+    >>> output[2, 0]
+    LinExp({('L', 1, 0): Fraction(1, 2), ('H', 0, 0): Fraction(-1, 8), ('H', 1, 0): Fraction(-1, 8), AAError(id=3): Fraction(-1, 4), AAError(id=6): Fraction(1, 2)})
+
+Which implements the same filter phase as ``output[0, 0]`` but without any
+negative coordinates.
+
+Caching
+```````
+
+All of the subclasses of :py:class:`InfiniteArray` which perform a non-trivial
+operation internally cache array values when they're accessed.
+
+The most obvious benefit of this behaviour is to impart a substantial
+performance improvement for larger filter designs.
+
+A secondary benefit applies to :py:class:`InfiniteArray`\ s containing
+:py:class:`~vc2_bit_widths.linexp.LinExp`\ s. By caching the results of
+operations which introduce affine arithmetic error symbols
+(:py:class:`~vc2_bit_widths.linexp.AAError`), these errors can correctly
+combine or cancel when that result is reused. As a result, while caching is not
+essential for correctness, it can materially improve the tightness of the
+bounds produced.
+
+In some instances, this basic caching behaviour may not go far enough.  For
+example, the contents of ``output[0, 0]`` and ``output[2, 0]`` are extremely
+similar, consisting of essentially the same coefficients, just translated to
+the right::
+
+    >>> output[0, 0]
+    LinExp({('L', 0, 0): Fraction(1, 2), ('H', -1, 0): Fraction(-1, 8), ('H', 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})
+    >>> output[2, 0]
+    LinExp({('L', 1, 0): Fraction(1, 2), ('H', 0, 0): Fraction(-1, 8), ('H', 1, 0): Fraction(-1, 8), AAError(id=3): Fraction(-1, 4), AAError(id=6): Fraction(1, 2)})
+
+In principle, the cached result of ``output[0, 0]`` could be re-used (and the
+coefficients suitably translated) to save the computational cost of evaluating
+``output[2, 0]`` from scratch. For extremely large transforms, this
+optimisation can result in substantial savings in runtime and RAM. For use in
+such scenarios the :py:class:`SymbolicPeriodicCachingArray` array type is provided::
+
+    >>> from vc2_bit_widths.infinite_arrays import SymbolicPeriodicCachingArray
+    
+    >>> output_cached = SymbolicPeriodicCachingArray(output, L, H)
+
+The constructor takes the array to be cached along with all
+:py:class:`SymbolArray`\ s used its definition. The new array may be accessed
+as usual but with more aggressive caching taking place internally::
+
+    >>> output_cached[0, 0]
+    LinExp({('L', 0, 0): Fraction(1, 2), ('H', -1, 0): Fraction(-1, 8), ('H', 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})
+    >>> output_cached[2, 0]
+    LinExp({('L', 1, 0): Fraction(1, 2), ('H', 0, 0): Fraction(-1, 8), ('H', 1, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})
+
+.. warning::
+
+    Note that in the cached version of the array, the
+    :py:class:`~vc2_bit_widths.linexp.AAError` terms are not unique between
+    ``output_cached[0, 0]`` and ``output_cached[2, 0]``, though they should be.
+    This is a result of the caching mechanism having no way to know how error
+    terms should change between entries in the array. As a result,
+    :py:class:`SymbolicPeriodicCachingArray` must not be used when the affine
+    error terms in its output are expected to be significant.
+
+.. note::
+
+    :py:class:`SymbolicPeriodicCachingArray` only works with
+    :py:class:`InfiniteArray`\ s defined in terms of :py:class:`SymbolArray`\
+    s.
+
+
+API
+---
+
+:py:class:`InfiniteArray` (base class)
+``````````````````````````````````````
 
 .. autoclass:: InfiniteArray
     :members:
 
-Typically when building algebraic descriptions using
-:py:class:`~vc2_bit_widths.linexp.LinExp`, the starting point for any filtering
-operation will be one or more :py:class:`SymbolArray`\ s.
+
+Base value type arrays
+``````````````````````
 
 .. autoclass:: SymbolArray
-
-Alternatively, when building Python functions to implement a filter using
-:py:class:`~vc2_bit_widths.pyexp.PyExp`, :py:class:`VariableArray`\ s may be
-used.
+    :no-members:
 
 .. autoclass:: VariableArray
+    :no-members:
 
-A single, one-dimensional lifting filter stage may be applied to the values in
-a :py:class:`InfiniteArray` using:
+
+Computation arrays
+``````````````````
 
 .. autoclass:: LiftedArray
-
-Values may be subjected to a bit-shift operation using:
+    :no-members:
 
 .. autoclass:: LeftShiftedArray
+    :no-members:
 
 .. autoclass:: RightShiftedArray
+    :no-members:
 
-Arrays may be subsampled or interleaved, producing new
-:py:class:`InfiniteArray`\ s, using:
+
+Sampling arrays
+```````````````
 
 .. autoclass:: SubsampledArray
+    :no-members:
 
 .. autoclass:: InterleavedArray
+    :no-members:
 
 
-Array period
-------------
-
-While :py:class:`InfiniteArray`\ s have an infinite number of elements,
-these elements are typically very similar.
-
-Consider the following example:
-
-    >>> from vc2_data_tables import LIFTING_FILTERS, WaveletFilters
-    >>> from vc2_bit_widths.infinite_arrays import (
-    ...     SymbolArray,
-    ...     LiftedArray,
-    ... )
-    
-    >>> v = SymbolArray(2)
-    >>> stage = LIFTING_FILTERS[WaveletFilters.haar_no_shift].stages[0]
-    >>> out = LiftedArray(v, stage, 0)
-    
-    >>> out[0, 0]
-    e_1 + v_0_0 - v_1_0/2 - 1/2
-    >>> out[1, 0]
-    v_1_0
-    >>> out[2, 0]
-    e_2 + v_2_0 - v_3_0/2 - 1/2
-    >>> out[3, 0]
-    v_3_0
-
-In this example, after a lifting stage all odd-numbered values consist of a
-single symbol and all even numbered values follow the same algebraic pattern
-(i.e. ``e_? + v_?_0 - v_?_0/2 - 1/2``).
-
-An array's *period* is the period with which the algebraic structures in the
-array repeat. The array in the example has a period of (2, 1) because the
-pattern of values repeats every two elements horizontally and on every element
-vertically. The period of a given :py:class:`InfiniteArray` can be obtained
-from its :py:attr:`~InfiniteArray.period` property. For example::
-
-    >>> out.period
-    (2, 1)
-    
-    >>> # NB: SymbolArrays always have a period of 1 in every dimension
-    >>> v.period
-    (1, 1)
-
-
-Relative step sizes
--------------------
-
-When a :py:class:`SubsampledArray` or :py:class:`InterleavedArray` is used, the
-step size between neighbouring indices in the resulting array changes. For
-exaple, consider the following::
-
-    >>> from vc2_bit_widths.infinite_arrays import (
-    ...     SymbolArray,
-    ...     SubsampledArray,
-    ...     InterleavedArray,
-    ... )
-    
-    >>> v = SymbolArray(2)
-    >>> ss = SubsampledArray(v, (2, 3), (0, 0))
-    
-    >>> ss[0, 0]
-    v_0_0
-    >>> ss[1, 0]
-    v_2_0
-    >>> ss[2, 0]
-    v_4_0
-    >>> ss[0, 1]
-    v_0_3
-    >>> ss[0, 2]
-    v_0_6
-
-Here the step size of the array ``ss`` is twice (horizontally) and thrice
-(vertically) that of the array ``a``.
-
-Conversely::
-
-    >>> v1 = SymbolArray(2, "v1")
-    >>> v2 = SymbolArray(2, "v2")
-    >>> il = InterleavedArray(v1, v2, 0)
-    
-    >>> il[0, 0]
-    v1_0_0
-    >>> il[2, 0]
-    v1_1_0
-    >>> il[4, 0]
-    v1_2_0
-    >>> il[0, 1]
-    v1_0_1
-    >>> il[0, 2]
-    v1_0_2
-
-This time, the step size of ``il`` is half, horizontally, that of ``v1`` (or
-``v2``) but the same vertically.
-
-The step size relationships between pairings of arrays may be looked up using
-the :py:meth:`InfiniteArray.relative_step_size_to` method. For example::
-
-    >>> ss.relative_step_size_to(v)
-    (Fraction(2, 1), Fraction(3, 1))
-    >>> il.relative_step_size_to(v1)
-    (Fraction(1, 2), Fraction(1, 1))
-
-Periodic Caching
-----------------
-
-When a large chain of :py:class:`InfiniteArray`\ s have been chained together,
-computing the value of an element can become expensive. The
-:py:class:`SymbolicPeriodicCachingArray` array implements a smart caching
-behaviour for arrays whose contents are derived from :py:class:`SymbolArray`\ s.
+Caching arrays
+``````````````
 
 .. autoclass:: SymbolicPeriodicCachingArray
+    :no-members:
+
 
 """
 
@@ -262,11 +388,7 @@ class InfiniteArray(object):
     @property
     def period(self):
         """
-        Return the period of this array.
-        
-        An array's period is the interval at which the algebraic form of
-        elements in the array are similar (see
-        :mod:`vc2_bit_widths.infinite_arrays`).
+        Return the period of this array (see :ref:`terminology`).
         
         Returns
         =======
@@ -305,30 +427,30 @@ class InfiniteArray(object):
 
 
 class SymbolArray(InfiniteArray):
+    r"""
+    An infinite array of :py:class:`~vc2_bit_widths.linexp.LinExp` symbols.
+    
+    Symbols will be identified by tuples like ``(prefix, n)`` for a one
+    dimensional array, ``(prefix, n, n)`` for a two-dimensional array,
+    ``(prefix, n, n, n)`` for a three-dimensional array and so-on.
+    
+    Example usage::
+
+        >>> a = SymbolArray(3, "foo")
+        >>> a[1, 2, 3]
+        LinExp(('foo', 1, 2, 3))
+        >>> a[100, -5, 0]
+        LinExp(('foo', 100, -5, 0))
+    
+    Parameters
+    ==========
+    ndim : int
+        The number of dimensions in the array.
+    prefix : object
+        A prefix to be used as the first element of every symbol tuple.
+    """
     
     def __init__(self, ndim, prefix="v"):
-        r"""
-        An infinite array of :py:class:`LinExp` symbols.
-        
-        Symbols will be identified by tuples like ``(prefix, n)`` for a one
-        dimensional array, ``(prefix, n, n)`` for a two-dimensional array,
-        ``(prefix, n, n, n)`` for a three-dimensional array and so-on.
-        
-        Example usage::
-    
-            >>> a = SymbolArray(3, "foo")
-            >>> a[1, 2, 3]
-            LinExp(('foo', 1, 2, 3))
-            >>> a[100, -5, 0]
-            LinExp(('foo', 100, -5, 0))
-        
-        Parameters
-        ==========
-        ndim : int
-            The number of dimensions in the array.
-        prefix : object
-            A prefix to be used as the first element of every symbol tuple.
-        """
         self._prefix = prefix
         super(SymbolArray, self).__init__(ndim, cache=False)
     
@@ -356,29 +478,30 @@ class SymbolArray(InfiniteArray):
 
 
 class VariableArray(InfiniteArray):
+    r"""
+    An infinite array of subscripted :py:class:`~vc2_bit_widths.pyexp.PyExp`
+    expressions.
+    
+    Example usage::
+
+        >>> from vc2_bit_widths.pyexp import Argument
+        
+        >>> arg = Argument("arg")
+        >>> a = VariableArray(2, arg)
+        >>> a[1, 2]
+        Subscript(Argument('arg'), Constant((1, 2)))
+        >>> a[-10, 3]
+        Subscript(Argument('arg'), Constant((-10, 3)))
+    
+    Parameters
+    ==========
+    ndim : int
+        The number of dimensions in the array.
+    exp : :py:class:`~vc2_bit_widths.pyexp.PyExp`
+        The expression to be subscripted in each array element.
+    """
     
     def __init__(self, ndim, exp):
-        r"""
-        An infinite array of subscripted :py:class:`PyExp` expressions.
-        
-        Example usage::
-    
-            >>> from vc2_bit_widths.pyexp import Argument
-            
-            >>> arg = Argument("arg")
-            >>> a = VariableArray(2, arg)
-            >>> a[1, 2]
-            Subscript(Argument('arg'), Constant((1, 2)))
-            >>> a[-10, 3]
-            Subscript(Argument('arg'), Constant((-10, 3)))
-        
-        Parameters
-        ==========
-        ndim : int
-            The number of dimensions in the array.
-        exp : :py:class:`~vc2_bit_widths.pyexp.PyExp`
-            The expression to be subscripted in each array element.
-        """
         self._exp = exp
         super(VariableArray, self).__init__(ndim, cache=False)
     
@@ -406,22 +529,22 @@ class VariableArray(InfiniteArray):
 
 
 class LiftedArray(InfiniteArray):
+    """
+    Apply a one-dimensional lifting filter step to an array, as described
+    in the VC-2 specification (15.4.4).
+    
+    Parameters
+    ==========
+    input_array : :py:class:`InfiniteArray`
+        The input array whose entries will be filtered by the specified
+        lifting stage.
+    stage : :py:class:`vc2_data_tables.LiftingStage`
+        A description of the lifting stage.
+    interleave_dimension: int
+        The dimension along which the filter will act.
+    """
     
     def __init__(self, input_array, stage, filter_dimension):
-        """
-        Apply a one-dimensional lifting filter step to an array, as described
-        in the VC-2 specification (15.4.4).
-        
-        Parameters
-        ==========
-        input_array : :py:class:`InfiniteArray`
-            The input array whose entries will be filtered by the specified
-            lifting stage.
-        stage : :py:class:`vc2_data_tables.LiftingStage`
-            A description of the lifting stage.
-        interleave_dimension: int
-            The dimension along which the filter will act.
-        """
         if filter_dimension >= input_array.ndim:
             raise TypeError("filter dimension out of range")
         
@@ -569,24 +692,23 @@ class LiftedArray(InfiniteArray):
 
 
 class RightShiftedArray(InfiniteArray):
+    r"""
+    Apply a right bit shift to every value in an input array.
+    
+    The right-shift operation is based on the description in the VC-2
+    specification (15.4.3). Specifically, :math:`2^\textrm{shift_bits-1}`
+    is added to the input values prior to the right-shift operation (which
+    is used to implement rounding behaviour in integer arithmetic).
+    
+    Parameters
+    ==========
+    input_array : :py:class:`InfiniteArray`
+        The array to have its values right-sifted
+    shift_bits: int
+        Number of bits to shift by
+    """
     
     def __init__(self, input_array, shift_bits=1):
-        r"""
-        Apply a right bit shift (implemented as a division) to every value in
-        an input array.
-        
-        The right-shift operation is based on the description in the VC-2
-        specification (15.4.3). Specifically, :math:`2^\textrm{shift_bits-1}`
-        is added to the input values prior to the right-shift operation (which
-        is used to implement rounding behaviour in integer arithmetic).
-        
-        Parameters
-        ==========
-        input_array : :py:class:`InfiniteArray`
-            The array to have its values right-sifted
-        shift_bits: int
-            Number of bits to shift by
-        """
         self._input_array = input_array
         self._shift_bits = shift_bits
         
@@ -618,19 +740,18 @@ class RightShiftedArray(InfiniteArray):
 
 
 class LeftShiftedArray(InfiniteArray):
+    """
+    Apply a left bit shift to every value in an input array.
+    
+    Parameters
+    ==========
+    input_array : :py:class:`InfiniteArray`
+        The array to have its values left-shifted.
+    shift_bits: int
+        Number of bits to shift by.
+    """
     
     def __init__(self, input_array, shift_bits=1):
-        """
-        Apply a left bit shift (implemented as a multiplication) to every value
-        in an input array.
-        
-        Parameters
-        ==========
-        input_array : :py:class:`InfiniteArray`
-            The array to have its values left-shifted.
-        shift_bits: int
-            Number of bits to shift by.
-        """
         self._input_array = input_array
         self._shift_bits = shift_bits
         
@@ -655,23 +776,23 @@ class LeftShiftedArray(InfiniteArray):
 
 
 class SubsampledArray(InfiniteArray):
+    """
+    A subsampled view of another :py:class:`InfiniteArray`.
+    
+    Parameters
+    ==========
+    input_array : :py:class:`InfiniteArray`
+        The array to be subsampled.
+    steps, offsets: (int, ...)
+        Tuples giving the step size and start offset for each dimension.
+        
+        When this array is indexed, the index into the input array is
+        computed as::
+        
+            input_array_index[n] = (index[n] * step[n]) + offset[n]
+    """
     
     def __init__(self, input_array, steps, offsets):
-        """
-        A subsampled view of another :py:class:`InfiniteArray`.
-        
-        Parameters
-        ==========
-        input_array : :py:class:`InfiniteArray`
-            The array to be subsampled.
-        steps, offsets: (int, ...)
-            Tuples giving the step size and start offset for each dimension.
-            
-            When this array is indexed, the index into the input array is
-            computed as::
-            
-                input_array_index[n] = (index[n] * step[n]) + offset[n]
-        """
         if len(steps) != len(offsets):
             raise TypeError("steps and offsets do not match in length")
         if input_array.ndim != len(steps):
@@ -751,21 +872,21 @@ class SubsampledArray(InfiniteArray):
 
 
 class InterleavedArray(InfiniteArray):
+    r"""
+    An array view which interleaves two :py:class:`InfiniteArray`\ s
+    together into a single array.
+    
+    Parameters
+    ==========
+    array_even, array_odd : :py:class:`InfiniteArray`
+        The two arrays to be interleaved. 'array_even' will be used for
+        even-indexed values in the specified dimension and 'array_odd' for
+        odd.
+    interleave_dimension: int
+        The dimension along which the two arrays will be interleaved.
+    """
     
     def __init__(self, array_even, array_odd, interleave_dimension):
-        r"""
-        An array view which interleaves two :py:class:`InfiniteArray`\ s
-        together into a single array.
-        
-        Parameters
-        ==========
-        array_even, array_odd : :py:class:`InfiniteArray`
-            The two arrays to be interleaved. 'array_even' will be used for
-            even-indexed values in the specified dimension and 'array_odd' for
-            odd.
-        interleave_dimension: int
-            The dimension along which the two arrays will be interleaved.
-        """
         if array_even.ndim != array_odd.ndim:
             raise TypeError("arrays do not have same number of dimensions")
         if interleave_dimension >= array_even.ndim:
@@ -884,81 +1005,81 @@ class InterleavedArray(InfiniteArray):
 
 
 class SymbolicPeriodicCachingArray(InfiniteArray):
+    r"""
+    A caching view of a :py:class:`InfiniteArray` of
+    :py:class:`~vc2_bit_widths.linexp.LinExp` values.
+    
+    This view will request at most one value from each filter phase of
+    the input array and compute all other values by altering the indices in
+    the previously computed values.
+    
+    For example, normally, when accessing values within a
+    :py:class:`InfiniteArray`, values are computed from scratch on-demand::
+    
+        >>> s = SymbolArray(2, "s")
+        >>> stage = <some filter stage>
+        >>> la = LiftedArray(s, stage, 0)
+        >>> la[0, 0]  # la[0, 0] worked out from scratch
+        LinExp(...)
+        >>> la[0, 1]  # la[0, 1] worked out from scratch
+        LinExp(...)
+        >>> la[0, 2]  # la[0, 2] worked out from scratch
+        LinExp(...)
+        >>> la[0, 3]  # la[0, 3] worked out from scratch
+        LinExp(...)
+    
+    By contrast, when values are accessed in a
+    :py:class:`SymbolicPeriodicCachingArray`, only the first access to each
+    filter phase is computed from scratch. All other values are found by
+    changing the symbol indices in the cached array value::
+        
+        >>> cached_la = SymbolicPeriodicCachingArray(la, s)
+        >>> cached_la[0, 0]  # la[0, 0] worked out from scratch
+        LinExp(...)
+        >>> cached_la[0, 1]  # la[0, 1] worked out from scratch
+        LinExp(...)
+        >>> cached_la[0, 2]  # Cached value of la[0, 0] reused and mutated
+        LinExp(...)
+        >>> cached_la[0, 3]  # Cached value of la[0, 1] reused and mutated
+        LinExp(...)
+    
+    Parameters
+    ==========
+    array : :py:class:`InfiniteArray`
+        The array whose values are to be cached. These array values must
+        consist only of symbols from :py:class:`SymbolArray`\ s passed as
+        arguments, :py:class:`~vc2_bit_widths.linexp.AAError` terms and
+        constants.
+        
+        .. warning::
+            
+            Error terms may be repeated as returned from this array where
+            they would usually be unique. If this is a problem, you should
+            not use this caching view.
+            
+            For example::
+            
+                >>> s = SymbolArray(2, "s")
+                >>> sa = RightShiftedArray(s, 1)
+                
+                >>> # Unique AAError terms (without caching)
+                >>> sa[0, 0]
+                LinExp({('s', 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
+                >>> sa[0, 1]
+                LinExp({('s', 0, 1): Fraction(1, 2), AAError(id=2): Fraction(1, 2)})
+                
+                >>> # Non-unique AAError terms after caching
+                >>> ca = SymbolicPeriodicCachingArray(sa, s)
+                >>> ca[0, 0]
+                LinExp({('s', 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
+                >>> ca[0, 1]
+                LinExp({('s', 0, 1): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
+    
+    symbol_arrays : :py:class:`SymbolArray`
+        The symbol arrays which the 'array' argument is constructed from.
+    """
     
     def __init__(self, array, *symbol_arrays):
-        r"""
-        A caching view of a :py:class:`InfiniteArray` of
-        :py:class:`~vc2_bit_widths.linexp.LinExp` values.
-        
-        This view will request at most one value from each filter phase of
-        the input array and compute all other values by altering the indices in
-        the previously computed values.
-        
-        For example, normally, when accessing values within a
-        :py:class:`InfiniteArray`, values are computed from scratch on-demand::
-        
-            >>> s = SymbolArray(2, "s")
-            >>> stage = <some filter stage>
-            >>> la = LiftedArray(s, stage, 0)
-            >>> la[0, 0]  # la[0, 0] worked out from scratch
-            LinExp(...)
-            >>> la[0, 1]  # la[0, 1] worked out from scratch
-            LinExp(...)
-            >>> la[0, 2]  # la[0, 2] worked out from scratch
-            LinExp(...)
-            >>> la[0, 3]  # la[0, 3] worked out from scratch
-            LinExp(...)
-        
-        By contrast, when values are accessed in a
-        :py:class:`SymbolicPeriodicCachingArray`, only the first access to each
-        filter phase is computed from scratch. All other values are found by
-        changing the symbol indices in the cached array value::
-            
-            >>> cached_la = SymbolicPeriodicCachingArray(la, s)
-            >>> cached_la[0, 0]  # la[0, 0] worked out from scratch
-            LinExp(...)
-            >>> cached_la[0, 1]  # la[0, 1] worked out from scratch
-            LinExp(...)
-            >>> cached_la[0, 2]  # Cached value of la[0, 0] reused and mutated
-            LinExp(...)
-            >>> cached_la[0, 3]  # Cached value of la[0, 1] reused and mutated
-            LinExp(...)
-        
-        Parameters
-        ==========
-        array : :py:class:`InfiniteArray`
-            The array whose values are to be cached. These array values must
-            consist only of symbols from :py:class:`SymbolArray`\ s passed as
-            arguments, :py:class:`~vc2_bit_widths.linexp.AAError` terms and
-            constants.
-            
-            .. warning::
-                
-                Error terms may be repeated as returned from this array where
-                they would usually be unique. If this is a problem, you should
-                not use this caching view.
-                
-                For example::
-                
-                    >>> s = SymbolArray(2, "s")
-                    >>> sa = RightShiftedArray(s, 1)
-                    
-                    >>> # Unique AAError terms (without caching)
-                    >>> sa[0, 0]
-                    LinExp({('s', 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
-                    >>> sa[0, 1]
-                    LinExp({('s', 0, 1): Fraction(1, 2), AAError(id=2): Fraction(1, 2)})
-                    
-                    >>> # Non-unique AAError terms after caching
-                    >>> ca = SymbolicPeriodicCachingArray(sa, s)
-                    >>> ca[0, 0]
-                    LinExp({('s', 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
-                    >>> ca[0, 1]
-                    LinExp({('s', 0, 1): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})
-        
-        symbol_arrays : :py:class:`SymbolArray`
-            The symbol arrays which the 'array' argument is constructed from.
-        """
         self._prefix_to_symbol_array = {
             array.prefix: array
             for array in symbol_arrays

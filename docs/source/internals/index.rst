@@ -20,6 +20,7 @@ introduced in turn in the following sections.
     linexp
     signal_bounds
     quantisation
+    infinite_arrays
 
 
 ..

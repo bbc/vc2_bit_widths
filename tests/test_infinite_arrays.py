@@ -534,8 +534,7 @@ class TestLeftShiftedArray(object):
 
 
 class TestSymbolicPeriodicCachingArray(object):
-    # Also serves to test PeriodicCachingArray
-
+    
     def test_period(self):
         a = RepeatingSymbolArray((1, 2, 3))
         pca = SymbolicPeriodicCachingArray(a, a)
