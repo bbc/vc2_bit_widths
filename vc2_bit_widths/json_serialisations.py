@@ -52,7 +52,7 @@ from collections import OrderedDict
 
 from vc2_bit_widths.linexp import LinExp
 
-from vc2_bit_widths.fractions import Fraction
+from vc2_bit_widths.fast_fractions import Fraction
 
 
 def serialise_intermediate_value_dictionary(dictionary):

@@ -298,7 +298,7 @@ Caching arrays
 
 """
 
-from vc2_bit_widths.fractions import Fraction, gcd
+from vc2_bit_widths.fast_fractions import Fraction, gcd
 
 from vc2_data_tables import LiftingFilterTypes
 
