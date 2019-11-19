@@ -2,6 +2,12 @@ r"""
 VC-2 Quantisation
 =================
 
+The :py:mod:`vc2_bit_widths.quantisation` module contains an implementation of
+VC-2's quantisation scheme along with functions for analysing its properties.
+
+Quantisation & dequantisation
+-----------------------------
+
 The VC-2 quantisation related pseudocode functions are implemented as follows:
 
 .. autofunction:: forward_quant
@@ -11,6 +17,10 @@ The VC-2 quantisation related pseudocode functions are implemented as follows:
 .. autofunction:: quant_factor
 
 .. autofunction:: quant_offset
+
+
+Analysis
+--------
 
 The following functions compute incidental information about the behaviour of
 the VC-2 quantisation scheme.
@@ -40,7 +50,7 @@ def forward_quant(coeff, quant_index):
 
 
 def inverse_quant(quantized_coeff, quant_index):
-    """(13.3.1)"""
+    """Dequantise a value using the normative method in (13.3.1)"""
     magnitude = abs(quantized_coeff)
     if magnitude != 0:
         magnitude *= quant_factor(quant_index)
@@ -51,7 +61,9 @@ def inverse_quant(quantized_coeff, quant_index):
 
 
 def quant_factor(index):
-    """(13.3.2)"""
+    """
+    Compute the quantisation factor for a given quantisation index. (13.3.2)
+    """
     base = 2**(index//4)
     if (index%4) == 0:
         return (4 * base)
@@ -64,7 +76,9 @@ def quant_factor(index):
 
 
 def quant_offset(index):
-    """(13.3.2)"""
+    """
+    Compute the quantisation offset for a given quantisation index. (13.3.2)
+    """
     if index == 0:
         offset = 1
     elif index == 1:
@@ -93,6 +107,8 @@ def maximum_dequantised_magnitude(value):
     """
     Find the value with the largest magnitude that the supplied value may be
     dequantised to for any quantisation index.
+    
+    See :ref:`quantisation-proof` for a proof of this method.
     """
     # NB: A proof of the correctness of this function is provided in the
     # documentation.

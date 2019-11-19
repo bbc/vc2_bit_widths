@@ -1,35 +1,54 @@
 r"""
-Find Bounds for Filter Output Values
-====================================
+Finding bounds for filter output values
+=======================================
 
-This module contains functions for computing theoretical lower- and
-upper-bounds for VC-2 codec intermediate and final values. These bounds are
-based on :py:mod:`~vc2_bit_widths.affine_arithmetic` models of rounding and
-quantisation errors. As a consequence, the computed ranges will over-estimate
-the true range of values possible but are guaranteed to not be an
-under-estimate.
+The :py:mod:`vc2_bit_widths.signal_bounds` module contains functions for
+computing theoretical lower- and upper-bounds for VC-2 codec intermediate and
+final values.
 
-The following functions compute :py:class:`~vc2_bit_widths.linexp.LinExp`\ s
-which give the upper and lower bounds of a particular filter expression in
-terms of input picture signal ranges or transform coefficient ranges.
+Finding signal bounds
+---------------------
+
+The following functions may be used to convert algebraic descriptions of a VC-2
+filters into worst-case signal ranges (according to an affine arithmetic based
+model of rounding and quantisation).
+
+The process of finding signal bounds is split into two stages:
+
+1. Finding a generic algebraic expression for worst-case signal bounds.
+2. Evaluating those expressions for a particular picture bit width.
+
+The two steps are split this way to allow step 2 to be inexpensively repeated
+for different picture bit widths.
+
+Analysis filter
+```````````````
 
 .. autofunction:: analysis_filter_bounds
 
-.. autofunction:: synthesis_filter_bounds
-
-The following utility functions may be used to substitute concrete numbers into
-the output of the above to get concrete lower and upper bounds.
-
 .. autofunction:: evaluate_analysis_filter_bounds
+
+Synthesis filter
+````````````````
+
+.. autofunction:: synthesis_filter_bounds
 
 .. autofunction:: evaluate_synthesis_filter_bounds
 
-Finally the following utility function may be used to find the number of bits
-required to hold a particular value:
+
+Integer representation utilities
+--------------------------------
+
+The following utility functions compute the relationship between bit-width and
+numerical range.
 
 .. autofunction:: twos_compliment_bits
 
 .. autofunction:: signed_integer_range
+
+The following function may be used to pessimistically round values to integers:
+
+.. autofunction:: round_away_from_zero
 
 """
 
@@ -76,26 +95,25 @@ def twos_compliment_bits(value):
 
 def analysis_filter_bounds(expression):
     """
-    Find the lower- and upper bound reachable in a
-    :py:class:`~vc2_bit_widths.linexp.LinExp` containing an analysis filter
-    expression.
+    Find the lower- and upper-bound reachable in a
+    :py:class:`~vc2_bit_widths.linexp.LinExp` describing an analysis filter.
+    
+    The filter expression must consist of only affine error symbols
+    (:py:class:`~vc2_bit_widths.linexp.AAError`) and symbols of the form ``(_,
+    x, y)`` representing pixel values in an input picture.
     
     Parameters
     ==========
     expression : :py:class:`~vc2_bit_widths.linexp.LinExp`
-        All symbols which are not :py:class:`~vc2_bit_widths.linexp.AAError`
-        terms will be treated as picture values in the specified range.
-    picture_lower_bound, picture_upper_bound : (lower, upper)
-        The lower and upper bounds for the values of pixels in the input
-        picture..
     
     Returns
     =======
     lower_bound : :py:class:`~vc2_bit_widths.linexp.LinExp`
     upper_bound : :py:class:`~vc2_bit_widths.linexp.LinExp`
-        Lower and upper bounds for the signal level in terms of the symbols
-        ``LinExp("signal_min")`` and ``LinExp("signal_max")``, representing the
-        minimum and maximum signal picture levels respectively.
+        Algebraic expressions for the lower and upper bounds for the signal
+        level. These expressions are given in terms of the symbols
+        ``LinExp("signal_min")`` and ``LinExp("signal_max")``, which represent
+        the minimum and maximum picture signal levels respectively.
     """
     signal_min = LinExp("signal_min")
     signal_max = LinExp("signal_max")
@@ -153,19 +171,16 @@ def evaluate_analysis_filter_bounds(lower_bound_exp, upper_bound_exp, num_bits):
 
 def synthesis_filter_bounds(expression):
     """
-    Find the lower- and upper bound reachable in a
-    :py:class:`~vc2_bit_widths.linexp.LinExp` containing a synthesis filter
-    expression.
+    Find the lower- and upper-bound reachable in a
+    :py:class:`~vc2_bit_widths.linexp.LinExp` describing a synthesis filter.
+    
+    The filter expression must contain only affine error symbols
+    (:py:class:`~vc2_bit_widths.linexp.AAError`) and symbols of the form ``((_,
+    level, orient), x, y)`` representing transform coefficients.
     
     Parameters
     ==========
     expression : :py:class:`~vc2_bit_widths.linexp.LinExp`
-        All symbols which are not :py:mod:`~vc2_bit_widths.affine_arithmetic`
-        error terms will be treated as transform coefficient values in the
-        specified range. Coefficients are assumed to be named as per the
-        convention used by
-        :py:func:`vc2_bit_widths.vc2_filters.analysis_transform` and
-        :py:func:`vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays`.
     
     Returns
     =======

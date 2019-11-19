@@ -1,28 +1,29 @@
 r"""
-:py:mod:`linexp`: A simple computer algebra system with affine arithmetic
+:py:mod:`linexp`: A simple Computer Algebra System with affine arithmetic
 =========================================================================
 
 This module implements a Computer Algebra System (CAS) which is able to perform
-simple linear algebraic manipulations on linear expressions (linexps). In
-addition, affine arithmetic may be used to model a limited set of non-linear
-operations relating to integer truncation.
+simple linear algebraic manipulations on linear expressions. In addition, a
+limited set of non-linear operations (such as truncating division) are
+supported and modelled using affine arithmetic.
 
 .. note::
 
-    Compared with the mature and powerful :py:mod:`sympy` CAS, :py:mod:`linexp`
-    is extremely limited. However, within its restricted domain,
-    :py:mod:`linexp` is significantly more computationally efficient.
+    Compared with the mature and powerful :py:mod:`sympy` CAS,
+    :py:mod:`~vc2_bit_widths.linexp` is extremely limited. However, within its
+    restricted domain, :py:mod:`~vc2_bit_widths.linexp` is significantly more
+    computationally efficient.
 
-Computer Algbra System Usage
-----------------------------
+Linear expressions
+------------------
 
 Linear expressions are defined as being of the form:
 
 .. math::
     
-    c_1 v_1 + c_2 v_2 + \cdots + c_3
+    k_1 v_1 + k_2 v_2 + \cdots + k_j
 
-Where :math:`c_n` are constants and :math:`v_n` are free symbols (i.e.
+Where :math:`k_n` are constants and :math:`v_n` are free symbols (i.e.
 variables). For example, the following represents a linear expression:
 
 .. math::
@@ -31,6 +32,9 @@ variables). For example, the following represents a linear expression:
 
 Where :math:`a`, :math:`b` and :math:`c` are the free symbols and 1, 2, -3 and
 100 are the relevant constants.
+
+Usage
+-----
 
 The expression above may be constructed using this library as follows::
 
@@ -45,7 +49,7 @@ The expression above may be constructed using this library as follows::
     >>> print(expr)
     a + 2*b + -3*c + 100
 
-The :py:meth:`LinExp.subs` method may then be used to substitute symbols with
+The :py:meth:`LinExp.subs` method may be used to substitute symbols with
 numbers::
 
     >>> result = expr.subs({"a": 1000, "b": 10000, "c": 100000})
@@ -171,17 +175,10 @@ arithmetic bounds of an expression will remain correct. For example:
     >>> print(affine_upper_bound(expr))
     a + 100
 
-Bounds computed by affine arithmetic are not exact in the general case but are
-guaranteed to be at least as wide as the true bounds. This largely arises from
-the fact that affine arithmetic is limited to bounding non-linear operations
-using purely linear functions. However, as a rule of thumb, so long as the
-rounding errors in an expression are small, this over estimate will be small
-too.
-
 As well as the inherent limitations of affine arithmetic, :py;class:`LinExp` is
 also naive in its implementation leading to additional sources of
 over-estimates. For example, in the following we might know that 'a' is an
-integer so the expected result should be just 'a', but :py;class:`LinExp` is
+integer so the expected result should be just 'a', but :py:class:`LinExp` is
 unable to use this information::
 
     >>> expr = (a * 2) // 2
@@ -208,13 +205,13 @@ API
 
 .. autoclass:: AAError
 
-.. autoclass:: strip_affine_errors
+.. autofunction:: strip_affine_errors
 
-.. autoclass:: affine_lower_bound
+.. autofunction:: affine_lower_bound
 
-.. autoclass:: affine_upper_bound
+.. autofunction:: affine_upper_bound
 
-.. autoclass:: affine_error_with_range
+.. autofunction:: affine_error_with_range
 
 """
 
@@ -243,8 +240,8 @@ __all__ = [
 
 AAError = namedtuple("AAError", "id")
 """
-An Affine Arithmetic error term. Should be considered an unknown value in the
-range :py:math:`[-1, +1]`.
+An Affine Arithmetic error term. This symbol should be considered to represent
+an unknown value in the range :math:`[-1, +1]`.
 """
 
 
@@ -338,8 +335,7 @@ class LinExp(object):
     @classmethod
     def new_affine_error_symbol(cls):
         """
-        Create a :py:class:`LinExp` with a unique :py:class:`AAError` symbol. This
-        term should be considered as having a value in the range :math:`[-1, +1]`.
+        Create a :py:class:`LinExp` with a unique :py:class:`AAError` symbol.
         """
         cls._next_error_term_id
         cls._next_error_term_id += 1
@@ -376,7 +372,7 @@ class LinExp(object):
     @property
     def is_constant(self):
         """
-        Property. True iff this :py:class:`LinExp` represents only a constant
+        True iff this :py:class:`LinExp` represents only a constant
         value (including zero) and includes no symbols.
         """
         return (
@@ -387,8 +383,8 @@ class LinExp(object):
     @property
     def constant(self):
         """
-        If :py:attr:`is_constant` is True, returns the value as a normal
-        numerical Python type. Otherwise raises :py:exc:TypeError`
+        If :py:attr:`is_constant` is True, contains the value as a normal
+        numerical Python type. Otherwise raises :py:exc:`TypeError` on access.
         """
         if self.is_constant:
             return self[None]
@@ -407,7 +403,7 @@ class LinExp(object):
     @property
     def is_symbol(self):
         """
-        Property. True iff this :py:class:`LinExp` represents only single
+        True iff this :py:class:`LinExp` represents only single
         1-weighted symbols.
         """
         return (
@@ -419,9 +415,9 @@ class LinExp(object):
     @property
     def symbol(self):
         """
-        Property. Iff this :py:class:`LinExp` contains only a single 1-weighted
-        symbol (see :py:attr:`is_symbol`) returns that symbol. Otherwise throws
-        a :py:exc:`TypeError`.
+        Iff this :py:class:`LinExp` contains only a single 1-weighted symbol
+        (see :py:attr:`is_symbol`) returns that symbol. Otherwise raises
+        :py:exc:`TypeError` on access.
         """
         if self.is_symbol:
             return next(iter(self._coeffs))
