@@ -21,6 +21,7 @@ introduced in turn in the following sections.
     signal_bounds
     quantisation
     infinite_arrays
+    vc2_filters
 
 
 ..
