@@ -90,6 +90,9 @@ from vc2_bit_widths.pattern_generation import (
     invert_test_pattern_specification,
     make_analysis_maximising_signal,
     make_synthesis_maximising_signal,
+)
+
+from vc2_bit_widths.pattern_evaluation import (
     evaluate_analysis_test_pattern_output,
     evaluate_synthesis_test_pattern_output,
 )

@@ -13,7 +13,7 @@ from vc2_conformance.picture_decoding import idwt
 
 from vc2_bit_widths.quantisation import forward_quant, inverse_quant
 
-from vc2_bit_widths.pattern_generation import (
+from vc2_bit_widths.pattern_evaluation import (
     evaluate_analysis_test_pattern_output,
     evaluate_synthesis_test_pattern_output,
 )

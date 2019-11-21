@@ -18,7 +18,7 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
     FastPartialAnalyseQuantiseSynthesise,
 )
 
-from vc2_bit_widths.pattern_generation import (
+from vc2_bit_widths.pattern_evaluation import (
     convert_test_pattern_to_array_and_slice,
 )
 
