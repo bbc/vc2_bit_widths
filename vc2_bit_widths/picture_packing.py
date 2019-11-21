@@ -1,9 +1,33 @@
 """
-Pack test patterns into pictures
-================================
+:py:mod:`vc2_bit_widths.picture_packing`: Pack test patterns into pictures
+==========================================================================
 
 This module contains a simple packing algorithm which attempts to efficiently
 pack a collection of test patterns onto a small number of test pictures.
+
+
+API
+---
+
+.. autofunction:: pack_test_patterns
+
+
+Example output
+--------------
+
+The :py:func:`pack_test_patterns` function takes a dictionary of
+:py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification` or
+:py:class:`~vc2_bit_widths.pattern_optimisation.OptimisedTestPatternSpecification`
+objects and arranges these over as few pictures as possible. An example output
+picture is shown below:
+
+.. image:: /_static/example_packed_test_patterns.png
+    :alt: An example HD picture containing a selection of test patterns.
+
+In typical use, several independent sets of packed test pictures should be
+created. One set can be created for all analysis transform test patterns. For
+synthesis transform test patterns, the patterns should be divided up into
+groups based on the quantisation index which should be used.
 
 """
 
