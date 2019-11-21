@@ -2,9 +2,9 @@ r"""
 :py:mod:`pyexp`: Construct Python programs implementing arithmetic expressions
 ==============================================================================
 
-The Python Expression (:py:mod:`pyexp`) module provides :py:class:`PyExp`
-objects which track operations performed on them. These objects may later be
-used to generate a Python function which implements these steps.
+This module provides the :py:class:`PyExp` class which tracks arithmetic
+operations performed on its instances. These objects may later be used to
+generate a Python function which implements these steps.
 
 
 Motivation
@@ -41,23 +41,24 @@ add them together::
 Rather than immediately computing a result, adding the :py:class:`Constant`\ s
 together produced a new :py:class:`PyExp` (of type :py:class:`BinaryOperator`)
 representing the computation to be carried out. Using the
-:py:meth:`make_function` method, we can create a Python function which actually
-evaluates the expression::
+:py:meth:`~PyExp.make_function` method, we can create a Python function which
+actually evaluates the expression::
 
     >>> compute_five_add_nine = five_add_nine.make_function()
     >>> compute_five_add_nine()
     14
 
-The :py:meth:`generate_code` method may be used to inspect the generated code.
-Here we can see that the generated function does actually perform the
+The :py:meth:`~PyExp.generate_code` method may be used to inspect the generated
+code.  Here we can see that the generated function does actually perform the
 computation on demand::
 
     >>> print(five_add_nine.generate_code())
     def f():
         return (5 + 9)
 
-To build more interesting expressions we can also define :py;class:`Argument`\
-s::
+To build more interesting functions we can define :py:class:`Argument`\ s.  The
+names passed to the :py:class:`Argument` constructor become the argument names
+in the generated function::
 
     >>> from vc2_bit_widths.pyexp import Argument
     
@@ -69,18 +70,8 @@ s::
     >>> average(a=10, b=15)
     12.5
 
-The names passed to the :py:class:`Argument` objects become the argument names
-in the generated function. If you use multiple :py:class:`Argument`\  s in an
-expression, their order in the generated function is defined by
-:py:meth:`PyExp.get_all_argument_names`. If only one :py;class:`Argument` is
-used, or the order is insignificant (as in this case!) the names may be
-omitted, but it is good practice to retain them in other situations::
-
-    >>> average(4, 8)
-    6.0
-
 :py:class:`PyExp` instances support many Python operators and will
-automatically wrap non-:py:class:`PyExp` values in :py;class:`Constant`. For
+automatically wrap non-:py:class:`PyExp` values in :py:class:`Constant`. For
 example::
 
     >>> array = Argument("array")
@@ -139,7 +130,7 @@ Manipulating expressions
 ------------------------
 
 :py:class:`PyExp` supports simple manipulation of expressions in the form of
-the :py:meth:`PyExp.subs` method which substitutes subexpressions within an
+the :py:meth:`~PyExp.subs` method which substitutes subexpressions within an
 expression. For example::
 
     >>> a = Argument("a")
@@ -162,15 +153,23 @@ API
 ---
 
 .. autoclass:: PyExp
-    :members: make_function generate_code subs
+    :exclude-members: set_inline, get_dependencies, get_argument_names, get_definitions, get_expression
 
 .. autoclass:: Constant
+    :members: value
+    :exclude-members: get_dependencies, get_argument_names, get_definitions, get_expression
 
 .. autoclass:: Argument
+    :members: name
+    :exclude-members: get_dependencies, get_argument_names, get_definitions, get_expression
 
 .. autoclass:: Subscript
+    :members: exp, key
+    :exclude-members: get_dependencies, get_argument_names, get_definitions, get_expression, subs
 
 .. autoclass:: BinaryOperator
+    :members: lhs, rhs, operator
+    :exclude-members: set_inline, get_dependencies, get_argument_names, get_definitions, get_expression, subs, is_no_op
 
 """
 
@@ -396,7 +395,7 @@ class PyExp(object):
         
         The returned function will expect (as keyword arguments) any
         :py:class:`Argument`\ s used in the definition of this
-        ;py:class:`PyExp`.
+        :py:class:`PyExp`.
         
         See also :py:meth:`generate_code`.
         """
@@ -473,16 +472,16 @@ class PyExp(object):
 
 
 class Constant(PyExp):
+    """
+    A constant value.
+    
+    Parameters
+    ==========
+    value : any
+        Must be serialised to a valid Python expression by :py:func:`repr`
+    """
     
     def __init__(self, value):
-        """
-        A constant value.
-        
-        Parameters
-        ==========
-        value : any
-            Must be serialised to a valid Python expression by :py:func:`repr`
-        """
         super(Constant, self).__init__()
         
         self._value = value
@@ -515,17 +514,17 @@ class Constant(PyExp):
 
 
 class Argument(PyExp):
+    """
+    An named argument which will be expected by the Python function
+    implementing this expression.
+    
+    Parameters
+    ==========
+    name : str
+        A valid Python argument name
+    """
     
     def __init__(self, name):
-        """
-        An named argument which will be expected by the Python function
-        implementing this expression.
-        
-        Parameters
-        ==========
-        name : str
-            A valid Python argument name
-        """
         super(Argument, self).__init__()
         
         self._name = name
@@ -558,18 +557,18 @@ class Argument(PyExp):
 
 
 class Subscript(PyExp):
+    """
+    Subscript an expression, i.e. ``exp[key]``.
+    
+    Parameters
+    ==========
+    exp : :py:class:`PyExp`
+        The value to be subscripted.
+    key : :py:class:`PyExp`
+        The key to access.
+    """
     
     def __init__(self, exp, key):
-        """
-        Subscript an expression, i.e. ``exp[key]``.
-        
-        Parameters
-        ==========
-        exp : :py:class:`PyExp`
-            The value to be subscripted.
-        key : :py:class:`PyExp`
-            The key to access.
-        """
         super(Subscript, self).__init__()
         
         self._exp = exp
@@ -628,6 +627,17 @@ class Subscript(PyExp):
 
 
 class BinaryOperator(PyExp):
+    r"""
+    A binary operation applied to two :py:class:`PyExp`\ s, e.g. addition.
+    
+    Parameters
+    ==========
+    lhs : :py:class:`PyExp`
+    rhs : :py:class:`PyExp`
+        The arguments to the operator.
+    operator : str
+        The python operator symbol to apply (e.g. "+").
+    """
     
     @staticmethod
     def is_no_op(lhs, rhs, operator):
@@ -667,17 +677,6 @@ class BinaryOperator(PyExp):
         return None
     
     def __init__(self, lhs, rhs, operator):
-        r"""
-        A binary operation applied to two :py:class:`PyExp`\ s, e.g. addition.
-        
-        Parameters
-        ==========
-        lhs : :py:class:`PyExp`
-        rhs : :py:class:`PyExp`
-            The arguments to the operator.
-        operator : str
-            The python operator symbol to apply (e.g. "+").
-        """
         super(BinaryOperator, self).__init__()
         
         self._lhs = lhs
