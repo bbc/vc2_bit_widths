@@ -6,6 +6,81 @@ This module implements a relatively efficient (for Python) implementation of an
 encode, quantise and decode cycle where only a single decoder output (or
 intermediate) value is computed.
 
+Example usage
+-------------
+
+The example below demonstrates how the
+:py:func:`FastPartialAnalyseQuantiseSynthesise` function may be used to compute
+the output of a VC-2 decoder intermediate value for a given picture::
+
+    >>> import numpy as np
+    >>> from vc2_data_tables import (
+    ...     LIFTING_FILTERS,
+    ...     WaveletFilters,
+    ...     QUANTISATION_MATRICES,
+    ... )
+    >>> from vc2_bit_widths.vc2_filters import (
+    ...     synthesis_transform,
+    ...     make_variable_coeff_arrays,
+    ... )
+    >>> from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
+    ...     FastPartialAnalyseQuantiseSynthesise,
+    ... )
+    
+    >>> # Codec parameters
+    >>> wavelet_index = WaveletFilters.le_gall_5_3
+    >>> wavelet_index_ho = WaveletFilters.le_gall_5_3
+    >>> dwt_depth = 2
+    >>> dwt_depth_ho = 0
+    
+    >>> # Quantisation settings
+    >>> quantisation_indices = list(range(64))
+    >>> quantisation_matrix = QUANTISATION_MATRICES[(
+    ...     wavelet_index,
+    ...     wavelet_index_ho,
+    ...     dwt_depth,
+    ...     dwt_depth_ho,
+    ... )]
+    
+    >>> # A test picture
+    >>> width = 1024  # NB: Must be appropriate multiple for
+    >>> height = 512  # filter depth chosen!
+    >>> picture = np.random.randint(-512, 511, (height, width))
+    
+    >>> h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    >>> v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
+    >>> # Construct synthesis expression for target synthesis value
+    >>> level = 1
+    >>> array_name = "L"
+    >>> tx, ty = 200, 100
+    >>> _, intermediate_synthesis_arrays = synthesis_transform(
+    ...     h_filter_params,
+    ...     v_filter_params,
+    ...     dwt_depth,
+    ...     dwt_depth_ho,
+    ...     make_variable_coeff_arrays(dwt_depth, dwt_depth_ho)
+    ... )
+    >>> synthesis_exp = intermediate_synthesis_arrays[(level, array_name)][tx, ty]
+    
+    >>> # Setup codec
+    >>> codec = FastPartialAnalyseQuantiseSynthesise(
+    ...     h_filter_params,
+    ...     v_filter_params,
+    ...     dwt_depth,
+    ...     dwt_depth_ho,
+    ...     quantisation_matrix,
+    ...     quantisation_indices,
+    ...     synthesis_exp,
+    ... )
+    
+    >>> # Perform the analysis/quantise/synthesis transforms
+    >>> codec.analyse_quantise_synthesise(picture.copy())  # NB: corrupts array!
+
+
+API
+---
+
 .. autoclass:: FastPartialAnalyseQuantiseSynthesise
     :members:
 

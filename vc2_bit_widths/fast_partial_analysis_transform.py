@@ -21,6 +21,43 @@ values.
     native software implementation. However, being pure Python, it is more
     portable and therefore useful in this application.
 
+Example usage
+-------------
+
+The example below demonstrates how the
+:py:func:`fast_partial_analysis_transform` function may be used to perform an
+analysis transform on an example picture::
+
+    >>> import numpy as np
+    >>> from vc2_data_tables import LIFTING_FILTERS, WaveletFilters
+    >>> from vc2_bit_widths.fast_partial_analysis_transform import (
+    ...     fast_partial_analysis_transform,
+    ... )
+    
+    >>> # Codec parameters
+    >>> wavelet_index = WaveletFilters.le_gall_5_3
+    >>> wavelet_index_ho = WaveletFilters.le_gall_5_3
+    >>> dwt_depth = 2
+    >>> dwt_depth_ho = 0
+    
+    >>> # A test picture
+    >>> width = 1024  # NB: Must be appropriate multiple for
+    >>> height = 512  # filter depth chosen!
+    >>> picture = np.random.randint(-512, 511, (height, width))
+    
+    >>> h_filter_params = LIFTING_FILTERS[wavelet_index_ho]
+    >>> v_filter_params = LIFTING_FILTERS[wavelet_index]
+    
+    >>> # Perform the analysis transform (in place)
+    >>> transform_coeffs = fast_partial_analysis_transform(
+    ...     h_filter_params,
+    ...     v_filter_params,
+    ...     dwt_depth,
+    ...     dwt_depth_ho,
+    ...     picture,
+    ... )
+
+
 API
 ---
 
