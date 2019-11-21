@@ -1,6 +1,21 @@
 """
-Measure the outputs achieved by test patterns
-=============================================
+:py:mod:`vc2_bit_widths.pattern_evaluation`: Measure the outputs achieved by test patterns
+==========================================================================================
+
+This module provides routines for passing test patterns through a VC encoder
+and decoder and determining the values produced.
+
+Evaluation functions
+--------------------
+
+.. autofunction:: evaluate_analysis_test_pattern_output
+
+.. autofunction:: evaluate_synthesis_test_pattern_output
+
+Utility functions
+-----------------
+
+.. autofunction:: convert_test_pattern_to_array_and_slice
 
 """
 
@@ -40,6 +55,8 @@ def convert_test_pattern_to_array_and_slice(
     Returns
     =======
     pattern : :py:class:`numpy.array`
+        A 2D array containing the test pattern (with all undefined pixels set
+        to 0.
     search_slice : (:py:class:`slice`, :py:class:`slice`)
         A 2D slice out of ``test_pattern`` which contains the active pixels in
         ``test_pattern`` (i.e. excluding any padding).
@@ -174,12 +191,12 @@ def evaluate_synthesis_test_pattern_output(
     quantisation_matrix : {level: {orient: int, ...}, ...}
         The VC-2 quantisation matrix to use.
     synthesis_pyexp : :py:class:`~vc2_bit_widths.PyExp`
-        A :py:class:`~vc2_bit_widths.PyExp` expression which defines the
+        A :py:class:`~vc2_bit_widths.pyexp.PyExp` expression which defines the
         synthesis process for the decoder value the test pattern is
         maximising/minimising. Such an expression is usually obtained from the
-        use of :py:func;`~vc2_bit_widths.vc2_filters.synthesis_transform` and
-        :py:func;`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
-    test_pattern : :py:class:`TestPatternSpecification`
+        use of :py:func:`~vc2_bit_widths.vc2_filters.synthesis_transform` and
+        :py:func:`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
+    test_pattern : :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`
         The test pattern to evaluate.
     input_min : int
     input_max : int
