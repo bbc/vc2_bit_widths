@@ -1,22 +1,19 @@
 """
-Fast(-er) Partial VC-2 Wavelet Analysis Transform
-=================================================
+:py:mod:`vc2_bit_widths.fast_partial_analysis_transform`: Wavelet analysis transform
+====================================================================================
 
 This module contains a :py:mod:`numpy`-based implementation of a VC-2-like
 integer lifting wavelet analysis (encoding) transform. This implementation is
-approximately 100x faster than executing the VC-2 pseudocode in Python. It also
-optionally may be used to extract intermediate results from the codec.
+approximately 100x faster than executing the equivalent VC-2 pseudocode under
+Python. It also optionally may be used to extract intermediate results from the
+codec.
 
-This module is primarily intended to be used to rapidly encode filter test
-pattern candidates produced inside :py:mod:`~vc2_bit_widths.signal_generation`.
-These test patterns are designed to exercise specific paths through an
-encoder-decoder pair. A property of these signals is that VC-2's edge extension
-behaviour is never used.
-
-Since it is not necessary, this module omits edge extension in the name of
-simplicity (and a marginal performance boost) -- hence the 'partial' moniker.
-Any output transform coefficients which directly or indirectly rely on edge
-extension should be considered undefined.
+This module is not indended as a general-purpose encoder implementation but
+rather for rapid evaluation of test patterns. Since test patterns are
+edge-effect free, this implementation does not implement VC-2's edge effect
+handling behaviour -- hence the 'partial' part of the module name. Output
+values which would have been effected by edge effects will contain nonsense
+values.
 
 .. note::
 
@@ -24,7 +21,8 @@ extension should be considered undefined.
     native software implementation. However, being pure Python, it is more
     portable and therefore useful in this application.
 
-The analysis transform is provided as follows:
+API
+---
 
 .. autofunction:: fast_partial_analysis_transform
 
