@@ -1,17 +1,38 @@
 """
-Heuristic Test Pattern Generation
-=================================
+:py:mod:`vc2_bit_widths.pattern_generation`: Heuristic test pattern generation
+==============================================================================
 
-The routines in this module are designed to produce test patterns for VC-2
-encoders and decoders which produce near-maximum magnitude values in the
-target.
+The routines in this module implement heuristcs for producing test patterns for
+VC-2 filters which produce near-maximum magnitude values in a target
+intermediate or final value.
 
 Due to non-linearities in VC-2's filters (i.e. rounding and quantisation), the
 test patterns generated are not true worst-case signals but rather a 'best
-effort' to get close to the worst case. Encoder test patterns will tend to be
-very close to worst-case signals while decoder signals are likely to be modest
-under-estimates. Nevertheless, these signals are likely to have value ranges
-well above real picture signals.
+effort' to get close to the worst case. Analysis test patterns will tend to be
+very close to worst-case signals while synthesis signals are likely to be
+modest under-estimates. Nevertheless, these signals often reach values well
+above real pictures and noise.
+
+Test pattern generators
+-----------------------
+
+Analysis
+````````
+
+.. autofunction:: make_analysis_maximising_pattern
+
+Synthesis
+`````````
+
+.. autofunction:: make_synthesis_maximising_pattern
+
+:py:class:`TestPatternSpecification`
+====================================
+
+.. autoclass:: TestPatternSpecification
+    :no-members:
+
+.. autofunction:: invert_test_pattern_specification
 
 """
 
@@ -57,15 +78,18 @@ to maximise the value of a particular intermediate or output value of a VC-2
 filter.
 
 Test patterns for both for analysis and synthesis filters are defined in terms
-of a picture. For analysis filters, the picture should be fed to an encoder and
-the resulting transform coefficients analysed. For synthesis filters, the
-picture should be fed to an encoder where it may be quantised before being fed
-to a decoder.
+of picture test patterns. For analysis filters, the picture should be fed
+directly to the encoder under test. For synthesis filters, the pattern must
+first be fed to an encoder and the transform coefficients quantised before
+being fed to a decoder.
 
-The pictures defined for a test pattern tend to be quite small and may be
-relocated within a larger picture if required. Translations are only permitted
-by multiples of ``pattern_translation_multiple`` and have the effect of moving
-the coordinate of the maximised target value by an equivalent multiple of
+Test patterns tend to be quite small (tens to low hundreds of pixels square)
+and so it is usually sensible to collect together many test patterns into a
+single picture (see :py:mod:`vc2_bit_widths.picture_packing`). To retain their
+functionality, test patterns must remain correctly aligned with their target
+filter. When relocating a test pattern, the pattern must be moved only by
+multiples of the values in ``pattern_translation_multiple``. For each multiple
+moved, the target value effected by the pattern moves by the same multiple of
 ``target_translation_multiple``.
 
 Parameters
@@ -82,10 +106,13 @@ pattern : {(x, y): polarity, ...}
     be set to its minimum value.
     
     To produce a test pattern which minimises, rather than maximises the target
-    value, the meaning of the polarity should be inverted.
+    value, the meaning of the polarity should be inverted (see
+    :py:func:`invert_test_pattern_specification`).
     
-    All pixels be located such that for the left-most pixel, 0 <= x < mx and for the
-    top-most pixel, 0 <= y < my (see pattern_translation_multiple).
+    The test pattern is specified such that the pattern is as close to the
+    top-left corner as possible given ``pattern_translation_multiple``, without
+    any negative pixel coordinates. That is, ``0 <= min(x) < mx`` and ``0 <=
+    min(y) < my``.
 pattern_translation_multiple : (mx, my)
 target_translation_multiple : (tmx, tmy)
     The multiples by which pattern pixel coordinates and target array
@@ -115,7 +142,7 @@ def invert_test_pattern_specification(test_pattern):
     return tuple_type(**values)
 
 
-def make_analysis_maximising_signal(input_array, target_array, tx, ty):
+def make_analysis_maximising_pattern(input_array, target_array, tx, ty):
     """
     Create a test pattern which maximises a value within an intermediate/final
     output of an analysis filter.
@@ -142,7 +169,7 @@ def make_analysis_maximising_signal(input_array, target_array, tx, ty):
         An intermediate or final output array produced by the analysis filter
         within which a value should be maximised.
     tx, ty : int
-        The index of the value within the target_array which is to be
+        The coordinates of the target value within target_array which is to be
         maximised.
     
     Returns
@@ -187,7 +214,7 @@ def make_analysis_maximising_signal(input_array, target_array, tx, ty):
     )
 
 
-def make_synthesis_maximising_signal(
+def make_synthesis_maximising_pattern(
     analysis_input_array,
     analysis_transform_coeff_arrays,
     synthesis_target_array,
@@ -202,9 +229,9 @@ def make_synthesis_maximising_signal(
         
         Because (heavy) lossy VC-2 encoding is a non-linear process, finding
         encoder inputs which maximise the decoder output is not feasible in
-        general. This function uses a simple heuristic to attempt to achieve
-        this goal but cannot provide any guarantees about the extent to which
-        it succeeds.
+        general. This function uses a simple heuristic (see
+        :ref:`heuristic-test-patterns`) to attempt to achieve this goal but
+        cannot provide any guarantees about the extent to which it succeeds.
     
     Parameters
     ==========

@@ -87,7 +87,7 @@ def evaluate_analysis_test_pattern_output(
 ):
     """
     Given an analysis test pattern (e.g. created using
-    :py:func:`make_analysis_maximising_signal`), return the actual intermediate
+    :py:func:`make_analysis_maximising_pattern`), return the actual intermediate
     encoder value when the signal is processed.
     
     Parameters
@@ -157,7 +157,7 @@ def evaluate_synthesis_test_pattern_output(
 ):
     """
     Given a synthesis test pattern (e.g. created using
-    :py:func:`make_synthesis_maximising_signal` or
+    :py:func:`make_synthesis_maximising_pattern` or
     :py:func:`optimise_synthesis_maximising_test_pattern`), return the actual decoder
     value, and worst-case quantisation index when the signal is processed.
     

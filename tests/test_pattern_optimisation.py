@@ -28,7 +28,7 @@ from vc2_data_tables import LIFTING_FILTERS, WaveletFilters, QUANTISATION_MATRIC
 from vc2_bit_widths.pattern_generation import TestPatternSpecification as TPS
 
 from vc2_bit_widths.pattern_generation import (
-    make_synthesis_maximising_signal,
+    make_synthesis_maximising_pattern,
 )
 
 from vc2_bit_widths.pattern_optimisation import OptimisedTestPatternSpecification as OTPS
@@ -284,7 +284,7 @@ class TestOptimiseSynthesisMaximisingSignal(object):
         for tx in range(synthesis_target_linexp_array.period[0]):
             for ty in range(synthesis_target_linexp_array.period[1]):
                 # Produce test pattern
-                ts = make_synthesis_maximising_signal(
+                ts = make_synthesis_maximising_pattern(
                     analysis_input_linexp_array,
                     analysis_coeff_linexp_arrays,
                     synthesis_target_linexp_array,

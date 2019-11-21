@@ -32,8 +32,8 @@ from vc2_bit_widths.pattern_optimisation import OptimisedTestPatternSpecificatio
 from vc2_bit_widths.pattern_generation import (
     invert_test_pattern_specification,
     get_maximising_inputs,
-    make_analysis_maximising_signal,
-    make_synthesis_maximising_signal,
+    make_analysis_maximising_pattern,
+    make_synthesis_maximising_pattern,
 )
 
 
@@ -161,7 +161,7 @@ class TestMakeAnalysisMaximisingSignal(object):
         for (level, name), target_array in intermediate_arrays.items():
             for tx in range(target_array.period[0]):
                 for ty in range(target_array.period[1]):
-                    ts = make_analysis_maximising_signal(
+                    ts = make_analysis_maximising_pattern(
                         input_array,
                         target_array,
                         tx, ty,
@@ -186,7 +186,7 @@ class TestMakeAnalysisMaximisingSignal(object):
         for (level, name), target_array in intermediate_arrays.items():
             for tx in range(target_array.period[0]):
                 for ty in range(target_array.period[1]):
-                    ts = make_analysis_maximising_signal(
+                    ts = make_analysis_maximising_pattern(
                         input_array,
                         target_array,
                         tx, ty,
@@ -234,7 +234,7 @@ class TestMakeAnalysisMaximisingSignal(object):
                 for tx in range(target_array.period[0]):
                     for ty in range(target_array.period[1]):
                         # Produce a test pattern
-                        ts = make_analysis_maximising_signal(
+                        ts = make_analysis_maximising_pattern(
                             input_array,
                             target_array,
                             tx, ty,
@@ -347,7 +347,7 @@ class TestMakeSynthesisMaximisingSignal(object):
         for (level, name), synthesis_target_array in synthesis_intermediate_arrays.items():
             for tx in range(synthesis_target_array.period[0]):
                 for ty in range(synthesis_target_array.period[1]):
-                    ts = make_synthesis_maximising_signal(
+                    ts = make_synthesis_maximising_pattern(
                         analysis_input_array,
                         analysis_transform_coeff_arrays,
                         synthesis_target_array,
@@ -379,7 +379,7 @@ class TestMakeSynthesisMaximisingSignal(object):
         for (level, name), synthesis_target_array in synthesis_intermediate_arrays.items():
             for tx in range(synthesis_target_array.period[0]):
                 for ty in range(synthesis_target_array.period[1]):
-                    ts = make_synthesis_maximising_signal(
+                    ts = make_synthesis_maximising_pattern(
                         analysis_input_array,
                         analysis_transform_coeff_arrays,
                         synthesis_target_array,
@@ -442,7 +442,7 @@ class TestMakeSynthesisMaximisingSignal(object):
         for tx in range(synthesis_output_array.period[0]):
             for ty in range(synthesis_output_array.period[1]):
                 # Produce a test pattern
-                ts = make_synthesis_maximising_signal(
+                ts = make_synthesis_maximising_pattern(
                     analysis_input_array,
                     analysis_transform_coeff_arrays,
                     synthesis_output_array,
@@ -500,7 +500,7 @@ class TestMakeSynthesisMaximisingSignal(object):
         for tx in range(synthesis_output_array.period[0]):
             for ty in range(synthesis_output_array.period[1]):
                 # Produce a test pattern
-                ts = make_synthesis_maximising_signal(
+                ts = make_synthesis_maximising_pattern(
                     analysis_input_array,
                     analysis_transform_coeff_arrays,
                     synthesis_output_array,

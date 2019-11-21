@@ -24,8 +24,8 @@ from vc2_bit_widths.pattern_optimisation import (
 )
 
 from vc2_bit_widths.pattern_generation import (
-    make_analysis_maximising_signal,
-    make_synthesis_maximising_signal,
+    make_analysis_maximising_pattern,
+    make_synthesis_maximising_pattern,
 )
 
 from vc2_bit_widths.pattern_evaluation import (
@@ -126,7 +126,7 @@ def test_evaluate_analysis_test_pattern_output():
                 )
                 
                 # Create a test pattern
-                test_pattern = make_analysis_maximising_signal(
+                test_pattern = make_analysis_maximising_pattern(
                     input_array,
                     target_array,
                     x, y,
@@ -203,7 +203,7 @@ def test_evaluate_synthesis_test_pattern_output():
         for x in range(target_array.period[0]):
             for y in range(target_array.period[1]):
                 # Create a test pattern
-                test_pattern = make_synthesis_maximising_signal(
+                test_pattern = make_synthesis_maximising_pattern(
                     input_array,
                     analysis_transform_coeff_arrays,
                     target_array,

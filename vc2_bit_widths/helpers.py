@@ -88,8 +88,8 @@ from vc2_bit_widths.signal_bounds import (
 from vc2_bit_widths.pattern_generation import (
     TestPatternSpecification,
     invert_test_pattern_specification,
-    make_analysis_maximising_signal,
-    make_synthesis_maximising_signal,
+    make_analysis_maximising_pattern,
+    make_synthesis_maximising_pattern,
 )
 
 from vc2_bit_widths.pattern_evaluation import (
@@ -222,7 +222,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
                 )
                 
                 # Generate test pattern
-                analysis_test_patterns[(level, array_name, x, y)] = make_analysis_maximising_signal(
+                analysis_test_patterns[(level, array_name, x, y)] = make_analysis_maximising_pattern(
                     picture_array,
                     target_array,
                     x, y,
@@ -284,7 +284,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
                 )
                 
                 # Compute test pattern
-                synthesis_test_patterns[(level, array_name, x, y)] = make_synthesis_maximising_signal(
+                synthesis_test_patterns[(level, array_name, x, y)] = make_synthesis_maximising_pattern(
                     picture_array,
                     cached_analysis_coeff_arrays,
                     target_array,
