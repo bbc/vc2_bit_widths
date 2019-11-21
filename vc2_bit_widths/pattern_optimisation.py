@@ -1,10 +1,134 @@
 """
-(Synthesis) Test Pattern Optimisation
-=====================================
+:py:mod:`vc2_bit_widths.pattern_optimisation`: (Synthesis) Test Pattern Optimisation
+====================================================================================
 
 This module contains routines for optimising heuristic synthesis filter test
 patterns for a particular codec configuration (e.g. bit width and quantisation
 matrix).
+
+
+.. _optimisation:
+
+Search algorithm & parameters
+-----------------------------
+
+At a high-level the greedy search proceeds to optimise a test pattern in the
+following steps:
+
+1. Make some random changes to the input pattern.
+2. See if these changes made the decoded output value larger. If they did, keep
+   the changes, if they didn't, discard them.
+3. Go to step 1, unless no progress has been made for some time.
+
+As an added detail, the whole search process may be repeated several times to
+reduce the impact of local minima encountered during a search.
+
+The search is controlled by a number of parameters, explained below. These must
+be chosen appropriately for each codec configuration and good parameters for
+one transform may perform poorly with others. Only general advice is offered
+about the effect of each parameter, experimentation is essential.
+
+
+Step 1: Random perturbations
+````````````````````````````
+
+Test patterns are perturbed as follows:
+
+1. ``removed_corruptions_per_iteration`` pixels within the test pattern are
+   selected at random (with replacement -- i.e. fewer than
+   ``removed_corruptions_per_iteration`` pixels may be chosen in some cases).
+2. The chosen pixels are set back to their original state, before optimisation
+   began.
+3. ``added_corruptions_per_iteration`` pixels within the test pattern are
+   selected at random (in the same way as above).
+4. The chosen pixels are overwritten with a positive or negative polarity at
+   random.
+
+The ``added_corruptions_per_iteration`` parameter controls the exploratory
+tendency of the search. Setting this to a low value will make the search move
+more slowly but tend not less readily discard good features of a pattern
+discovered so far. Setting this to a high value will allow the search to more
+easily escape local minima but may require increased runtime to complete.
+
+The ``removed_corruptions_per_iteration`` parameter can allow a search to
+'undo' bad decisions, working on the basis that the starting pattern is more
+effective than random noise.
+
+The effect of these two parameters varies widely between wavelets.
+Experimentation is recommended.
+
+
+Step 2: Evaluate the perturbed test pattern
+```````````````````````````````````````````
+
+This step in the algorithm uses
+:py:class:`~vc2_bit_widths.fast_partial_analyse_quantise_synthesise.FastPartialAnalyseQuantiseSynthesise`
+to evaluate the test pattern's performance over a range of quantisation
+indices. This process exactly matches the integer arithmetic specified in the
+VC-2 standard.
+
+This step is parameterised by the obvious wavelet, transform depth,
+quantisation matrix and picture signal range parameters.
+
+The ``max_quantisation_index`` specifies the maximum quantisation index which
+will be used to evaluate a test pattern. This should be sufficiently high that
+at any higher level, all transform coefficients are quantised to zero. Setting
+this parameter too low may cause especially effective test patterns to be
+missed (the most effective patterns often work best at high quantisation
+indices). Setting this parameter too high simply wastes time. The
+:py:func:`~vc2_bit_widths.helpers.quantisation_index_bound` function may be
+used to determine the ideal value for this parameter.
+
+
+Step 3: Repeat or terminate
+```````````````````````````
+
+If the perturbed test pattern was found to produce a larger signal value than
+both the unmodified test pattern and the best perturbed pattern found
+previously, the new test pattern will be accepted as the new starting point for
+subsequent searches. If no improvement was found, the perturbed pattern is
+discarded and the previous best pattern is used for the next search iteration.
+
+To trigger the eventual termination of the search, a counter is used. This
+counter is initialised ``base_iterations`` parameter and is decremented by one
+after each search iteration. Whenever an improved test pattern is discovered,
+the counter is incremented by ``added_iterations_per_improvement``. When the
+counter reaches zero, the search is terminated.
+
+These parameters should be set experimentally according to the time available
+and wavelet used. Longer searches produce larger, though diminishing,
+improvements. The ``added_iterations_per_improvement`` parameter allows
+fruitful searches to continue for longer than searches which do not appear to
+be producing results.
+
+
+Search repitition
+`````````````````
+
+The whole search process may be repeated, re-starting from the unmodified test
+pattern each time, to escape local minima encountered during a search. The best
+result found in any attempt will be returned as the final result.
+
+The ``number_of_searches`` parameter may be used to set the number of times the
+whole search process should be repeated. It can sometimes be more productive to
+choose a larger ``number_of_searches`` with lower ``base_iterations`` and
+``added_iterations_per_improvement`` over fewer but longer searchs.
+
+For certain test patterns, random search may never manage to make any
+improvements. In these cases, the ``terminate_early`` parameter may be used to
+stop repeating the search process before ``number_of_searches`` if no search
+manages to find any improvement. When ``base_iterations`` is sufficiently
+large, this early termination behaviour should be unlikely to result in false
+negatives.
+
+
+API
+---
+
+.. autofunction:: optimise_synthesis_maximising_test_pattern
+
+.. autoclass:: OptimisedTestPatternSpecification
+    :no-members:
 
 """
 
@@ -43,7 +167,7 @@ target : (tx, ty)
 pattern : {(x, y): polarity, ...}
 pattern_translation_multiple : (mx, my)
 target_translation_multiple : (tmx, tmy)
-    Same as :py:class:`TestPatternSpecification`
+    Same as :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`
 quantisation_index : int
     The quantisation index which, when used for all coded picture slices,
     produces the largest values when this pattern is decoded.
@@ -124,20 +248,6 @@ def greedy_stochastic_search(
     """
     Use a greedy stochastic search to find perturbations to the supplied test
     pattern which produce larger decoded values after quantisation.
-    
-    At a high-level the greedy search proceeds as follows:
-    
-    1. Make some random changes to the input pattern.
-    2. See if these changes made the decoded output larger. If they did, keep
-       the changes, if they didn't, discard them.
-    3. Go to step 1.
-    
-    The algorithm uses a simple self-termination scheme to stop the search once
-    a local maximum has been found. A counter is initially set to
-    ``base_iterations`` and decremented after every iteration. If the iteration
-    produced an larger output value, the counter is incremented by
-    ``added_iterations_per_improvement``. Once the counter reaches zero, the
-    search terminates and the best pattern found is returned.
     
     Parameters
     ==========
@@ -278,39 +388,40 @@ def optimise_synthesis_maximising_test_pattern(
 ):
     """
     Optimise a test pattern generated by
-    :py:func:`make_synthesis_maximising_signal` using repeated greedy
-    stochastic search, attempting to produce larger signal values for specific
-    codec configurations.
+    :py:func:`~vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern`
+    using repeated greedy stochastic search, attempting to produce larger
+    signal values for the specified codec configuration.
     
-    The basic :py:func:`make_synthesis_maximising_signal` function simply uses
-    a heuristic to produce a patterns likely to produce extreme values in the
-    general case. By contrast this function attempts to more directly optimise
-    the test pattern for particular input signal ranges and quantiser
-    configurations.
+    The basic
+    :py:func:`~vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern`
+    function simply uses a heuristic to produce a patterns likely to produce
+    extreme values in the general case. By contrast this function attempts to
+    more directly optimise the test pattern for particular input signal ranges
+    and quantiser configurations.
     
     Parameters
     ==========
     h_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
     v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
-        Horizontal and vertical filter *synthesis* (not analysis!) filter
-        parameters (e.g. from :py:data:`vc2_data_tables.LIFTING_FILTERS`)
-        defining the wavelet transform used.
+        Horizontal and vertical filter synthesis filter parameters (e.g. from
+        :py:data:`vc2_data_tables.LIFTING_FILTERS`) defining the wavelet
+        transform used.
     dwt_depth : int
     dwt_depth_ho : int
         The transform depth used by the filters.
     quantisation_matrix : {level: {orient: int, ...}, ...}
         The VC-2 quantisation matrix to use.
     synthesis_pyexp : :py:class:`~vc2_bit_widths.PyExp`
-        A :py:class:`~vc2_bit_widths.PyExp` expression which defines the
+        A :py:class:`~vc2_bit_widths.pyexp.PyExp` expression which defines the
         synthesis process for the decoder value the test pattern is
         maximising/minimising. Such an expression is usually obtained from the
-        use of :py:func;`~vc2_bit_widths.vc2_filters.synthesis_transform` and
-        :py:func;`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
+        use of :py:func:`~vc2_bit_widths.vc2_filters.synthesis_transform` and
+        :py:func:`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
     test_pattern : :py:class:`TestPatternSpecification`
         The test pattern to optimise. This test pattern must be translated such
         that no analysis or synthesis step depends on VC-2's edge extension
         behaviour. This will be the case for test patterns produced by
-        :py:class:`make_synthesis_maximising_signal`.
+        :py:func:`~vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern`.
     input_min : int
     input_max : int
         The minimum and maximum value which may be used in the test pattern.
@@ -328,11 +439,16 @@ def optimise_synthesis_maximising_test_pattern(
         If an integer, stop searching if the first ``terminate_early`` searches
         fail to find an improvement. If None, always performs all searches.
     added_corruptions_per_iteration : int
+        The number of pixels to assign with a random value during each search
+        attempt.
     removed_corruptions_per_iteration : int
+        The number of pixels entries to reset to their original value during
+        each search attempt.
     base_iterations : int
+        The initial number of search iterations to perform.
     added_iterations_per_improvement : int
-        Greedy stochastic search parameters. See the equivalently named
-        parameters to :py:func:`greedy_stochastic_search`.
+        The number of additional search iterations to perform whenever an
+        improved pattern is found.
     
     Returns
     =======
