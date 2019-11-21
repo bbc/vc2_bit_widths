@@ -1,12 +1,13 @@
 """
-Fast(-ish) Encode, Quantise and Decode for a single decoder value
-=================================================================
+:py:mod:`vc2_bit_widths.fast_partial_analyse_quantise_synthesise`: Fast single value encode, quantise and decode
+================================================================================================================
 
-This module implements a relatively efficient (for Python code) implementation
-of an Encode, Quantise and Decode cycle where only a single output value (or
-intermediate value) is to be computed.
+This module implements a relatively efficient (for Python) implementation of an
+encode, quantise and decode cycle where only a single decoder output (or
+intermediate) value is computed.
 
 .. autoclass:: FastPartialAnalyseQuantiseSynthesise
+    :members:
 
 """
 
@@ -311,6 +312,44 @@ def apply_quantisation_sweep(
 
 
 class FastPartialAnalyseQuantiseSynthesise(object):
+    r"""
+    An object which encodes a picture, quantises the transform coefficients
+    at a range of different quantisation indices, and then decodes a single
+    decoder output or intermediate value at each quantisation level.
+    
+    For valid results to be produced by this class, both the analysis and
+    synthesis processes must be completely edge-effect free. If this condition
+    is not met, behaviour is undefined and may crash or produce invalid
+    results.
+    
+    Parameters
+    ==========
+    h_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+    v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
+        Horizontal and vertical filter *synthesis* (not analysis!) filter
+        parameters (e.g. from :py:data:`vc2_data_tables.LIFTING_FILTERS`)
+        defining the wavelet transform types to use.
+    dwt_depth : int
+    dwt_depth_ho : int
+        Transform depths for 2D and horizontal-only transforms.
+    quantisation_matrix : {level: {orient: int, ...}, ...}
+        The VC-2 quantisation matrix to use (e.g. from
+        :py:data:`vc2_data_tables.QUANTISATION_MATRICES`).
+    quantisation_indices : [qi, ...]
+        A list of quantisation indices to use during the quantisation step.
+    synthesis_exp : :py:class:`~vc2_bit_widths.pyexp.PyExp`
+        A :py:class:`~vc2_bit_widths.pyexp.PyExp` object which describes
+        the partial synthesis (decoding) process to be performed.
+        
+        This expression will typically be an output of a
+        :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform` which has
+        been fed coefficient :py:class:`~vc2_bit_widths.pyexp.Argument`\ s
+        produced by
+        :py:func:`vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
+        
+        This expression must only rely on transform coefficients known to
+        be edge-effect free in the encoder's output.
+    """
     
     def __init__(
         self,
@@ -322,45 +361,6 @@ class FastPartialAnalyseQuantiseSynthesise(object):
         quantisation_indices,
         synthesis_exp,
     ):
-        r"""
-        An object which encodes a picture, quantises the transform coefficients
-        at a range of different quantisation indices, and then decodes a single
-        decoder output or intermediate value at each quantisation level.
-        
-        For valid results to be produced by this class both the analysis and
-        synthesis processes must be completely edge-effect free since this
-        implementation does not implement VC-2's edge extension mechanism. If
-        this condition is not met, behaviour is undefined and may produce
-        misleading results or crashes.
-        
-        Parameters
-        ==========
-        h_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
-        v_filter_params : :py:class:`vc2_data_tables.LiftingFilterParameters`
-            Horizontal and vertical filter *synthesis* (not analysis!) filter
-            parameters (e.g. from :py:data:`vc2_data_tables.LIFTING_FILTERS`)
-            defining the wavelet transform types to use.
-        dwt_depth : int
-        dwt_depth_ho: int
-            Transform depths for 2D and horizontal-only transforms.
-        quantisation_matrix : {level: {orient: int, ...}, ...}
-            The VC-2 quantisation matrix to use (e.g. from
-            :py:data:`vc2_data_tables.QUANTISATION_MATRICES`).
-        quantisation_indices : [qi, ...]
-            A list of quantisation indices to use during the quantisation step.
-        synthesis_exp : :py:class:`~vc2_bit_widths.pyexp.PyExp`
-            A :py:class:`~vc2_bit_widths.pyexp.PyExp` object which describes
-            the partial synthesis (decoding) process to be performed.
-            
-            This expression will typically be an output of a
-            :py:func:`vc2_bit_widths.vc2_filters.synthesis_transform` which has
-            been fed coefficient :py:class:`~vc2_bit_widths.pyexp.Argument`\ s
-            produced by
-            :py:func:`vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
-            
-            This expression must only rely on transform coefficients known to
-            be edge-effect free in the encoder's output.
-        """
         self._h_filter_params = h_filter_params
         self._v_filter_params = v_filter_params
         self._dwt_depth = dwt_depth
