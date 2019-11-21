@@ -22,6 +22,14 @@ introduced in turn in the following sections.
     quantisation
     infinite_arrays
     vc2_filters
+    
+    pattern_generation
+    fast_partial_analysis_transform
+    pyexp
+    fast_partial_analyse_quantise_synthesise
+    pattern_evaluation
+    pattern_optimisation
+    picture_packing
 
 
 ..
@@ -58,3 +66,7 @@ introduced in turn in the following sections.
             * Fast synthesis
                 * PyExp
             * fast_partial_analyse_quantise_synthesise
+    * Picture generation
+        * Evaluation & Grouping
+        * Packing
+        * picture_packing
