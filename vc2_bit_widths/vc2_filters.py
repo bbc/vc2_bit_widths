@@ -1,6 +1,6 @@
 r"""
-VC-2 Filters Implemented as :py:class:`~vc2_bit_widths.infinite_arrays.InfiniteArray`\ s
-========================================================================================
+:py:mod:`vc2_bit_widths.vc2_filters`: VC-2 Filters Implemented as :py:class:`~vc2_bit_widths.infinite_arrays.InfiniteArray`\ s
+==============================================================================================================================
 
 This module provides an implementation of the complete VC-2 wavelet filtering
 process in terms of :py:class:`~vc2_bit_widths.infinite_arrays.InfiniteArray`\

@@ -1,6 +1,6 @@
 r"""
-Infinite arrays
-===============
+:py:mod:`vc2_bit_widths.infinite_arrays`: Infinite arrays
+=========================================================
 
 :py:class:`InfiniteArray` and its subclasses provide a way to define and
 analyse VC-2 filters.

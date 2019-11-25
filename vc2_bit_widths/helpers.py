@@ -1,6 +1,6 @@
 """
-VC-2 Bit-Width Analysis Helper Functions
-========================================
+Helper Functions
+================
 
 The :py:mod:`vc2_bit_widths.helpers` module provides a set of high-level
 utility functions implementing the key processes involved in bit-width analysis

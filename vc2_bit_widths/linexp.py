@@ -1,6 +1,6 @@
 r"""
-:py:mod:`linexp`: A simple Computer Algebra System with affine arithmetic
-=========================================================================
+:py:mod:`vc2_bit_widths.linexp`: A simple Computer Algebra System with affine arithmetic
+========================================================================================
 
 This module implements a Computer Algebra System (CAS) which is able to perform
 simple linear algebraic manipulations on linear expressions. In addition, a

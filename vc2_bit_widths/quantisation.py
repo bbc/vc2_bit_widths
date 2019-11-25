@@ -1,6 +1,6 @@
 r"""
-VC-2 Quantisation
-=================
+:py:mod:`vc2_bit_widths.quantisation`: VC-2 Quantisation
+========================================================
 
 The :py:mod:`vc2_bit_widths.quantisation` module contains an implementation of
 VC-2's quantisation scheme along with functions for analysing its properties.

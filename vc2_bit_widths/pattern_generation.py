@@ -27,7 +27,7 @@ Synthesis
 .. autofunction:: make_synthesis_maximising_pattern
 
 :py:class:`TestPatternSpecification`
-====================================
+------------------------------------
 
 .. autoclass:: TestPatternSpecification
     :no-members:

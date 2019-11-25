@@ -19,5 +19,6 @@ should be used.
     
     introduction/index
     cli/index
-    high_level_apis/index
-    internals/index
+    high_level_api/index
+    theory_and_design/index
+    low_level_api/index

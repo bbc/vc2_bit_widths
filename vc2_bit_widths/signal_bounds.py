@@ -1,6 +1,6 @@
 r"""
-Finding bounds for filter output values
-=======================================
+:py:mod:`vc2_bit_widths.signal_bounds`: Finding bounds for filter output values
+===============================================================================
 
 The :py:mod:`vc2_bit_widths.signal_bounds` module contains functions for
 computing theoretical lower- and upper-bounds for VC-2 codec intermediate and

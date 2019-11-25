@@ -1,6 +1,6 @@
 r"""
-:py:mod:`pyexp`: Construct Python programs implementing arithmetic expressions
-==============================================================================
+:py:mod:`vc2_bit_widths.pyexp`: Construct Python programs implementing arithmetic expressions
+=============================================================================================
 
 This module provides the :py:class:`PyExp` class which tracks arithmetic
 operations performed on its instances. These objects may later be used to
