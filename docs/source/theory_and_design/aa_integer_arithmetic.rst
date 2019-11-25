@@ -1,32 +1,44 @@
-Computing theoretical filter bounds
-===================================
+.. _theory-affine-arithmetic:
 
-VC-2 implements an integer approximation of the wavelet transform, a linear
-filter. While linear filters are easily analysed to find their worst-case
-outputs, once rounding and quantisation are introduced (as in VC-2), this is
-no-longer the case.
+Computing signal bounds with Affine Arithmetic
+==============================================
 
+Though VC-2 implements the discrete wavelet transform, a linear filter, integer
+rounding and quantisation make VC-2 a non-linear filter. In this section we
+describe the process by which Affine Arithmetic (AA) may be used to find
+upper-bounds for signal ranges in VC-2.
 
-Linear filters
---------------
+Analysing linear filters
+------------------------
 
 Given an algebraic description of a linear filter, it is straight-forward to
-determine the inputs which produce the most extreme output values. For example,
-consider the following algebraic filter description:
+determine the inputs which produce the most extreme output values.
+
+For example, consider the following algebraic description which could describe
+how a linear filter might compute the value of a particular output, given two
+input pixel values :math:`a` and :math:`b`:
 
 .. math::
 
     \frac{a}{2} - \frac{b}{8} + 1
 
-Where :math:`a` and :math:`b` are inputs to the filter.
+In this expression :math:`a` is weighted with a positive coefficient
+(:math:`\frac{1}{2}`) while :math:`b` is weighted with a negative coefficient
+(:math:`-\frac{1}{8}`). As a consequence, to produce an output with the highest
+possible value we should set :math:`a` to a large positive value and :math:`b`
+to a large negative value. Conversely, the opposite is true if we wish to
+produce the lowest possible value.
 
-If we define our input signal range as being :math:`[-100, 100]`, it is
-straight-forward to see that the maximum result, 63.5, is produced when
-:math:`a=100` and :math:`b=-100` and the minimum result, -61.5, when
-:math:`a=-100` and :math:`b=100`.
+For example, if we define the input signal range as being :math:`[-100, 100]`,
+it is maximum result, 63.5, is produced when :math:`a=100` and :math:`b=-100`
+and the minimum result, -61.5, when :math:`a=-100` and :math:`b=100`.
+
+In this way, given an algebraic description of a linear filter, we can compute
+a set of worst-case input values (i.e. a test pattern) and also the output
+signal range.
 
 
-Affine Arithmetic
+Affine arithmetic
 -----------------
 
 `Affine arithmetic <https://en.wikipedia.org/wiki/Affine_arithmetic>`_ provides
@@ -65,8 +77,8 @@ As a rule of thumb, so long as the rounding errors in an expression are small,
 so too is the range indicated by affine arithmetic.
 
 
-Example
--------
+Worked example
+--------------
 
 The example below demonstrates the procedure used to find the theoretical
 bounds of a filter.

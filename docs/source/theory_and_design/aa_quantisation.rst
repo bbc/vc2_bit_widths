@@ -1,17 +1,10 @@
-Modelling quantisation errors
-=============================
+.. _theory-affine-arithmetic-quantisation:
 
-
-
-
-Affine arithmetic
------------------
+Quantisation and affine arithmetic
+==================================
 
 Affine arithmetic may also be used to model the effects of quantisation since
 VC-2's dead-zone quantiser is essentially just truncating integer division.
-However, in the most extreme cases, quantisation can introduce errors with the
-same magnitude as the values being quantised, resulting in an extremely broad
-range being generated.
 
 Consider the following (simplified) definition of VC-2's quantiser and
 dequantiser:
@@ -64,26 +57,4 @@ When negative numbers are taken into account, the affine range becomes:
 
 That is, worst-case quantisation has the effect of replacing the quantised
 value with an affine error variable with a magnitude :math:`\frac{3}{2}\times`
-the quantised value.
-
-
-Refining worst-case quantisation errors
----------------------------------------
-
-Though in some cases quantisation can result in the quantised value growing by
-a factor of :math:`\frac{3}{2}` as predicted by affine arithmetic, for many
-values the worst-case gain is slightly lower.
-
-For any value in the range :math:`[-x_{\text{max}}, x_{\text{max}}]`, the
-largest value possible after quantisation and dequantisation is found by
-quantising and dequantising :math:`x_{\text{max}}` by the largest quantisation
-index which doesn't quantise the value to zero. Once known, this figure may be
-used to define a slightly smaller affine range to represent the target value.
-
-A formal proof of the property above is provided below for the interested
-reader.
-
-.. toctree::
-    :maxdepth: 2
-    
-    quantisation_proof
+the quantised value. In the next section we'll attempt to bound this range.

@@ -117,8 +117,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     r"""
     Performs a complete static analysis of a VC-2 filter configuration,
     computing theoretical upper- and lower-bounds for signal values (see
-    :ref:`affine-bounds`) and heuristic test patterns (see
-    :ref:`heuristic-test-patterns`) for all intermediate and final analysis and
+    :ref:`theory-affine-arithmetic`) and heuristic test patterns (see
+    :ref:`theory-test-patterns`) for all intermediate and final analysis and
     synthesis filter values.
     
     Parameters

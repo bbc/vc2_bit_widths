@@ -1,7 +1,22 @@
-.. _quantisation-proof:
+.. _theory-quantisation-proof:
 
-Proof of worst-case quantisation bounds
+Refining worst-case quantisation errors
 =======================================
+
+Though in some cases quantisation can result in the quantised value growing by
+a factor of :math:`\frac{3}{2}`, as predicted by affine arithmetic, for many
+values the worst-case gain is lower.
+
+For any value in the range :math:`[-x_{\text{max}}, x_{\text{max}}]`, the
+largest value possible after quantisation and dequantisation is found by
+quantising and dequantising :math:`x_{\text{max}}` by the largest quantisation
+index which doesn't quantise the value to zero. Once known, this figure may be
+used to define a slightly smaller affine range to represent the target value.
+
+A formal proof of this statement is provided in the sections below.
+
+Proof
+-----
 
 Quantisation using VC-2's quantisation/dequantisation process can fairly simply
 be shown to produce outputs up to :math:`\frac{3}{2}\times` larger than the
@@ -9,7 +24,7 @@ original value. This proof sets out to show the exact upper bound of the output
 of VC-2's quantiser given a defined input range.
 
 Definitions
------------
+```````````
 
 VC-2 defines a dead-zone quantiser based on an integer approximation of the
 following:
@@ -35,7 +50,7 @@ defined in terms of the quantisation index, :math:`qi`, as follows:
     qf = 2^{qi/4} \quad \text{for} \quad qi \in \mathbb{N}
 
 Formal problem statement
-------------------------
+````````````````````````
 
 Given some value, :math:`x_{\text{max}}`, what is the largest-magnitude value
 which may be produced by
@@ -44,7 +59,7 @@ which may be produced by
 
 
 Lemmas
-------
+``````
 
 In these lemmas the following shorthand notation will be used:
 
@@ -248,7 +263,7 @@ QED.
 
 
 Problem solution
-----------------
+````````````````
 
 Using the lemmas above we are able to define a solution to our original
 problem statement, repeated here for convenience:
@@ -278,9 +293,11 @@ The solution to the problem, therefore, is:
             qf_{\text{max},x_{\text{max}}}
         )
 
+QED.
+
 
 Validity under integer arithmetic
----------------------------------
+`````````````````````````````````
 
 Under VC-2's integer arithmetic, all fractional values are truncated towards
 zero, that is, results are monotonically adjusted downward in magnitude. As a

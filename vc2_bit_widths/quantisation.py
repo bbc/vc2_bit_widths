@@ -108,7 +108,7 @@ def maximum_dequantised_magnitude(value):
     Find the value with the largest magnitude that the supplied value may be
     dequantised to for any quantisation index.
     
-    See :ref:`quantisation-proof` for a proof of this method.
+    See :ref:`theory-affine-arithmetic-quantisation` for a proof of this method.
     """
     # NB: A proof of the correctness of this function is provided in the
     # documentation.

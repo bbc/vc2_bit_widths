@@ -230,7 +230,7 @@ def make_synthesis_maximising_pattern(
         Because (heavy) lossy VC-2 encoding is a non-linear process, finding
         encoder inputs which maximise the decoder output is not feasible in
         general. This function uses a simple heuristic (see
-        :ref:`heuristic-test-patterns`) to attempt to achieve this goal but
+        :ref:`theory-test-patterns`) to attempt to achieve this goal but
         cannot provide any guarantees about the extent to which it succeeds.
     
     Parameters
