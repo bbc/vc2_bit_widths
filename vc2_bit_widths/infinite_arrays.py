@@ -379,6 +379,13 @@ class InfiniteArray(object):
         """
         raise NotImplementedError()
     
+    def clear_cache(self):
+        """
+        Clear the cache (if enabled).
+        """
+        if self._cache is not None:
+            self._cache.clear()
+    
     @property
     def ndim(self):
         """The number of dimensions in the array."""

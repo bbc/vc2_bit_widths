@@ -98,12 +98,27 @@ class TestInfiniteArray(object):
         assert a[10, 20] == ((10, 20), 1)
         assert a[20, 10] == ((20, 10), 2)
         
+        a.clear_cache()
+        assert a[10, 20] == ((10, 20), 3)
+        assert a[10, 20] == ((10, 20), 3)
+        assert a[20, 10] == ((20, 10), 4)
+        assert a[10, 20] == ((10, 20), 3)
+        assert a[20, 10] == ((20, 10), 4)
+        
         a = self.MyArray(2, cache=False)
         assert a[10, 20] == ((10, 20), 1)
         assert a[10, 20] == ((10, 20), 2)
         assert a[20, 10] == ((20, 10), 3)
         assert a[10, 20] == ((10, 20), 4)
         assert a[20, 10] == ((20, 10), 5)
+        
+        # NOP
+        a.clear_cache()
+        assert a[10, 20] == ((10, 20), 6)
+        assert a[10, 20] == ((10, 20), 7)
+        assert a[20, 10] == ((20, 10), 8)
+        assert a[10, 20] == ((10, 20), 9)
+        assert a[20, 10] == ((20, 10), 10)
 
 
 def test_symbol_array():

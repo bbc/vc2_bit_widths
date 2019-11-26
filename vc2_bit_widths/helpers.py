@@ -294,6 +294,13 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
                     synthesis_output_array,
                     x, y,
                 )
+                
+                # For extremely large filters, a noteworthy amount of overall
+                # RAM can be saved by not caching synthesis filters. These
+                # filters generally don't benefit much in terms of runtime from
+                # caching so this has essentially no impact on runtime.
+                for a in intermediate_synthesis_arrays.values():
+                    a.clear_cache()
     
     return (
         analysis_signal_bounds,
