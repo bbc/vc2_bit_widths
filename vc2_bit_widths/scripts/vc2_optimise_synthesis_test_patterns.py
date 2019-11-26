@@ -121,7 +121,7 @@ provided for informational purposes only.
 .. note::
 
     The
-    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_test_patterns`
+    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications`
     Python utility function is provided for unpacking this structure.
 
 Missing values
@@ -148,19 +148,15 @@ from vc2_bit_widths.scripts.argument_parsers import (
     parse_quantisation_matrix_argument,
 )
 
-from vc2_bit_widths.pattern_generation import (
+from vc2_bit_widths.patterns import (
     TestPatternSpecification,
-)
-
-from vc2_bit_widths.pattern_optimisation import (
     OptimisedTestPatternSpecification,
 )
 
 from vc2_bit_widths.json_serialisations import (
     deserialise_signal_bounds,
-    deserialise_test_patterns,
-    serialise_test_patterns,
-    deserialise_test_patterns,
+    serialise_test_pattern_specifications,
+    deserialise_test_pattern_specifications,
     serialise_quantisation_matrix,
 )
 
@@ -312,7 +308,7 @@ def main(args=None):
     synthesis_signal_bounds = deserialise_signal_bounds(
         static_filter_analysis["synthesis_signal_bounds"]
     )
-    synthesis_test_patterns = deserialise_test_patterns(
+    synthesis_test_patterns = deserialise_test_pattern_specifications(
         TestPatternSpecification,
         static_filter_analysis["synthesis_test_patterns"]
     )
@@ -364,7 +360,7 @@ def main(args=None):
         "quantisation_matrix": serialise_quantisation_matrix(
             quantisation_matrix,
         ),
-        "optimised_synthesis_test_patterns": serialise_test_patterns(
+        "optimised_synthesis_test_patterns": serialise_test_pattern_specifications(
             OptimisedTestPatternSpecification,
             optimised_synthesis_test_patterns,
         )

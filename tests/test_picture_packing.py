@@ -4,7 +4,8 @@ import numpy as np
 
 from collections import OrderedDict
 
-from vc2_bit_widths.pattern_generation import TestPatternSpecification as TPS
+from vc2_bit_widths.patterns import TestPattern as TP
+from vc2_bit_widths.patterns import TestPatternSpecification as TPS
 
 from vc2_bit_widths.picture_packing import (
     PackTree,
@@ -295,10 +296,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 0),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (1, 0): +1,
                         (0, 1): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -326,10 +327,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 0),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (2, 1): +1,
                         (1, 2): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -357,10 +358,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 0),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (2, 1): +1,
                         (1, 2): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -369,10 +370,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 1),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (2, 1): +1,
                         (1, 2): +1,
-                    },
+                    }),
                     pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -414,10 +415,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 0),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (2, 1): +1,
                         (1, 2): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -426,10 +427,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 1),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (10, 1): +1,
                         (1, 5): +1,
-                    },
+                    }),
                     pattern_translation_multiple=(4, 4),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -438,10 +439,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 2),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (5, 1): -1,
                         (1, 5): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(4, 4),
                     target=(2, 3),
                     target_translation_multiple=(4, 5),
@@ -486,10 +487,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 0),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (9, 0): -1,
                         (0, 9): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -498,10 +499,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 1),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (19, 0): +1,
                         (0, 4): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -510,10 +511,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 2),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (9, 0): +1,
                         (0, 9): +1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -522,10 +523,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 3),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (19, 0): -1,
                         (0, 4): +1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -567,10 +568,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 0),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (1, 0): +1,
                         (0, 1): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -579,10 +580,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 1),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (100, 0): -1,
                         (0, 100): -1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),
@@ -591,10 +592,10 @@ class TestPackTestPatterns(object):
             (
                 (1, "Output", 0, 2),
                 TPS(
-                    pattern={
+                    pattern=TP({
                         (1, 0): -1,
                         (0, 1): +1,
-                    },
+                    }),
                     pattern_translation_multiple=(1, 1),
                     target=(1, 1),
                     target_translation_multiple=(1, 1),

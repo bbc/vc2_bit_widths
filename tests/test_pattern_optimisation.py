@@ -25,13 +25,13 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
 
 from vc2_data_tables import LIFTING_FILTERS, WaveletFilters, QUANTISATION_MATRICES
 
-from vc2_bit_widths.pattern_generation import TestPatternSpecification as TPS
+from vc2_bit_widths.patterns import TestPattern as TP
+from vc2_bit_widths.patterns import TestPatternSpecification as TPS
+from vc2_bit_widths.patterns import OptimisedTestPatternSpecification as OTPS
 
 from vc2_bit_widths.pattern_generation import (
     make_synthesis_maximising_pattern,
 )
-
-from vc2_bit_widths.pattern_optimisation import OptimisedTestPatternSpecification as OTPS
 
 from vc2_bit_widths.pattern_optimisation import (
     choose_random_indices_of,
@@ -302,7 +302,7 @@ class TestOptimiseSynthesisMaximisingSignal(object):
                     "dwt_depth_ho": dwt_depth_ho,
                     "quantisation_matrix": quantisation_matrix,
                     "synthesis_pyexp": synthesis_pyexp,
-                    "test_pattern": ts,
+                    "test_pattern_specification": ts,
                     "input_min": input_min,
                     "input_max": input_max,
                     "max_quantisation_index": max_quantisation_index,
@@ -334,8 +334,7 @@ class TestOptimiseSynthesisMaximisingSignal(object):
                 assert imp_ts.num_search_iterations >= 3 * 100
                 
                 # Ensure new test pattern is normalised to polarities
-                for value in imp_ts.pattern.values():
-                    assert value in (-1, +1)
+                assert np.all(np.isin(imp_ts.pattern.polarities, (-1, +1)))
                 
                 # Should have improved over the test pattern alone
                 if abs(imp_ts.decoded_value) > abs(base_ts.decoded_value):
@@ -343,18 +342,9 @@ class TestOptimiseSynthesisMaximisingSignal(object):
                 
                 # Check to see if decoded value matches what the pseudocode decoder
                 # would produce
-                xs, ys = zip(*imp_ts.pattern)
-                width = max(xs) + 1
-                height = max(ys) + 1
-                imp_test_pattern_picture = [
-                    [
-                        input_min
-                        if imp_ts.pattern.get((x, y), 0) < 0 else
-                        input_max
-                        for x in range(width)
-                    ]
-                    for y in range(height)
-                ]
+                imp_test_pattern_picture, _ = imp_ts.pattern.as_picture_and_slice(input_min, input_max)
+                height, width = imp_test_pattern_picture.shape
+                imp_test_pattern_picture = imp_test_pattern_picture.tolist()
                 kwargs = {
                     "width": width,
                     "height": height,
@@ -390,7 +380,7 @@ class TestOptimiseSynthesisMaximisingSignal(object):
         
         ts = TPS(
             target=(0, 0),
-            pattern={(0, 0): -1},
+            pattern=TP({(0, 0): -1}),
             pattern_translation_multiple=(0, 0),
             target_translation_multiple=(0, 0),
         )
@@ -404,7 +394,7 @@ class TestOptimiseSynthesisMaximisingSignal(object):
             "dwt_depth_ho": 0,
             "quantisation_matrix": {0: {"LL": 0}},
             "synthesis_pyexp": synthesis_pyexp,
-            "test_pattern": ts,
+            "test_pattern_specification": ts,
             "input_min": input_min,
             "input_max": input_max,
             "max_quantisation_index": 1,
@@ -435,7 +425,12 @@ class TestOptimiseSynthesisMaximisingSignal(object):
         assert new_ts.num_search_iterations == 100 * 3
         
         # Should run all iterations if an improvement is found
-        kwargs["test_pattern"].pattern[(0, 0)] = +1
+        kwargs["test_pattern_specification"] = TPS(
+            target=(0, 0),
+            pattern=TP({(0, 0): +1}),
+            pattern_translation_multiple=(0, 0),
+            target_translation_multiple=(0, 0),
+        )
         new_ts = optimise_synthesis_maximising_test_pattern(
             terminate_early=3,
             **kwargs

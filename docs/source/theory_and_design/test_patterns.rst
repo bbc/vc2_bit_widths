@@ -63,10 +63,12 @@ target value and the transform coefficients is constructed from a 'collage' of
 test patterns like so:
 
 1. Start with an empty test pattern.
+
 2. Ignoring all non-linearities, enumerate the set of transform coefficients
    (and their weights) that contribute to the target output of the synthesis
    filter (labelled '(2)' in the previous illustration).  For each transform
    coefficient in turn, in ascending order of weight magnitude:
+   
     a. Compute the test pattern which maximises this transform coefficient in
        isolation (i.e. the same way the analysis filter test patterns were
        produced).
@@ -74,6 +76,7 @@ test patterns like so:
        pattern found in 'a'.
     c. Copy the transform coefficient maximising test pattern into our test
        pattern, overwriting any previously set pixel values.
+
 3. Ignoring all non-linearities, enumerate the input pixels which directly
    contribute to the target synthesis filter output (e.g. pixel '(4)' in the
    earlier illustration). For each pixel with a positive weight, set the

@@ -6,11 +6,11 @@ import shlex
 
 from vc2_data_tables import WaveletFilters
 
-from vc2_bit_widths.pattern_generation import TestPatternSpecification as TPS
+from vc2_bit_widths.patterns import TestPatternSpecification as TPS
 
 from vc2_bit_widths.json_serialisations import (
     deserialise_signal_bounds,
-    deserialise_test_patterns,
+    deserialise_test_pattern_specifications,
 )
 
 from vc2_bit_widths.scripts.vc2_static_filter_analysis import main
@@ -37,8 +37,8 @@ def test_sanity(tmpdir):
     analysis_signal_bounds = deserialise_signal_bounds(d["analysis_signal_bounds"])
     synthesis_signal_bounds = deserialise_signal_bounds(d["synthesis_signal_bounds"])
     
-    analysis_test_patterns = deserialise_test_patterns(TPS, d["analysis_test_patterns"])
-    synthesis_test_patterns = deserialise_test_patterns(TPS, d["synthesis_test_patterns"])
+    analysis_test_patterns = deserialise_test_pattern_specifications(TPS, d["analysis_test_patterns"])
+    synthesis_test_patterns = deserialise_test_pattern_specifications(TPS, d["synthesis_test_patterns"])
     
     # Check self consistent
     assert set(analysis_signal_bounds) == set(analysis_test_patterns)

@@ -15,4 +15,5 @@ and deserialisation of the file formats used by the command-line utilities.
     :caption: Contents:
     
     helpers
+    patterns
     json_serialisations

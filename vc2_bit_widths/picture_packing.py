@@ -16,8 +16,8 @@ Example output
 --------------
 
 The :py:func:`pack_test_patterns` function takes a dictionary of
-:py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification` or
-:py:class:`~vc2_bit_widths.pattern_optimisation.OptimisedTestPatternSpecification`
+:py:class:`~vc2_bit_widths.patterns.TestPatternSpecification` or
+:py:class:`~vc2_bit_widths.patterns.OptimisedTestPatternSpecification`
 objects and arranges these over as few pictures as possible. An example output
 picture is shown below:
 
@@ -385,7 +385,7 @@ class PackTree(object):
         return x, y
 
 
-def pack_test_patterns(width, height, test_patterns):
+def pack_test_patterns(width, height, test_pattern_specifications):
     """
     Given a picture size and a series of test patterns, pack those patterns
     onto as few pictures as possible.
@@ -395,7 +395,7 @@ def pack_test_patterns(width, height, test_patterns):
     width, height : int
         The size of the pictures on to which the test patterns should be
         allocated.
-    test_patterns : {key: :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    test_pattern_specifications : {key: :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
         The test patterns to be packed.
     
     Returns
@@ -418,15 +418,12 @@ def pack_test_patterns(width, height, test_patterns):
     
     locations = OrderedDict()
     
-    for key, test_pattern in test_patterns.items():
+    for key, test_pattern_specification in test_pattern_specifications.items():
         # Find extents of the test pattern
-        xs, ys = map(np.array, zip(*test_pattern.pattern))
-        px = np.min(xs)
-        py = np.min(ys)
-        pw = np.max(xs) - px + 1
-        ph = np.max(ys) - py + 1
+        py, px = test_pattern_specification.pattern.origin
+        ph, pw = test_pattern_specification.pattern.polarities.shape
         
-        mx, my = test_pattern.pattern_translation_multiple
+        mx, my = test_pattern_specification.pattern_translation_multiple
         
         # Allocate a space for the picture
         for picture_index, (picture, allocator) in enumerate(zip(pictures, allocators)):
@@ -453,12 +450,12 @@ def pack_test_patterns(width, height, test_patterns):
         new_px, new_py = allocation
         dx = new_px - px
         dy = new_py - py
-        picture[(ys + dy, xs + dx)] = list(test_pattern.pattern.values())
+        picture[new_py:new_py+ph, new_px:new_px+pw] = test_pattern_specification.pattern.polarities
         
         # Adjust the target coordinates according to the position of the test
         # pattern
-        tx, ty = test_pattern.target
-        tmx, tmy = test_pattern.target_translation_multiple
+        tx, ty = test_pattern_specification.target
+        tmx, tmy = test_pattern_specification.target_translation_multiple
         
         tx += (dx // mx) * tmx
         ty += (dy // my) * tmy

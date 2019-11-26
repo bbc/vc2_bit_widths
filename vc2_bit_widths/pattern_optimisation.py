@@ -127,14 +127,9 @@ API
 
 .. autofunction:: optimise_synthesis_maximising_test_pattern
 
-.. autoclass:: OptimisedTestPatternSpecification
-    :no-members:
-
 """
 
 import logging
-
-from collections import namedtuple
 
 import numpy as np
 
@@ -142,42 +137,17 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
     FastPartialAnalyseQuantiseSynthesise,
 )
 
+from vc2_bit_widths.patterns import (
+    TestPattern,
+    OptimisedTestPatternSpecification,
+)
+
 from vc2_bit_widths.pattern_evaluation import (
-    convert_test_pattern_to_array_and_slice,
+    convert_test_pattern_to_padded_picture_and_slice,
 )
 
 
 logger = logging.getLogger(__name__)
-
-
-OptimisedTestPatternSpecification = namedtuple(
-    "OptimisedTestPatternSpecification",
-    (
-        "target,pattern,pattern_translation_multiple,target_translation_multiple,"
-        "quantisation_index,decoded_value,num_search_iterations"
-    ),
-)
-"""
-A test pattern specification which has been optimised to produce more extreme
-signal values for a particular codec configuration.
-
-Parameters
-==========
-target : (tx, ty)
-pattern : {(x, y): polarity, ...}
-pattern_translation_multiple : (mx, my)
-target_translation_multiple : (tmx, tmy)
-    Same as :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`
-quantisation_index : int
-    The quantisation index which, when used for all coded picture slices,
-    produces the largest values when this pattern is decoded.
-decoded_value : int
-    For informational purposes. The value which will be produced in the target
-    decoder array for this input pattern.
-num_search_iterations : int
-    For informational purposes. The number of search iterations performed to
-    find this value.
-"""
 
 
 def find_quantisation_index_with_greatest_output_magnitude(
@@ -374,7 +344,7 @@ def optimise_synthesis_maximising_test_pattern(
     dwt_depth_ho,
     quantisation_matrix,
     synthesis_pyexp,
-    test_pattern,
+    test_pattern_specification,
     input_min,
     input_max,
     max_quantisation_index,
@@ -417,7 +387,7 @@ def optimise_synthesis_maximising_test_pattern(
         maximising/minimising. Such an expression is usually obtained from the
         use of :py:func:`~vc2_bit_widths.vc2_filters.synthesis_transform` and
         :py:func:`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
-    test_pattern : :py:class:`TestPatternSpecification`
+    test_pattern_specification : :py:class:`TestPatternSpecification`
         The test pattern to optimise. This test pattern must be translated such
         that no analysis or synthesis step depends on VC-2's edge extension
         behaviour. This will be the case for test patterns produced by
@@ -455,8 +425,8 @@ def optimise_synthesis_maximising_test_pattern(
     optimised_test_pattern : :py:class:`OptimisedTestPatternSpecification`
         The optimised test pattern found during the search.
     """
-    pattern_array, search_slice = convert_test_pattern_to_array_and_slice(
-        test_pattern.pattern,
+    pattern_array, search_slice = convert_test_pattern_to_padded_picture_and_slice(
+        test_pattern_specification.pattern,
         input_min,
         input_max,
         dwt_depth,
@@ -562,21 +532,20 @@ def optimise_synthesis_maximising_test_pattern(
     )
     
     # Convert test pattern description back from vector form
-    optimised_pattern = {
+    optimised_pattern = TestPattern({
         (x, y): 1 if best_pattern[y, x] == input_max else -1
-        for (x, y) in test_pattern.pattern
-        if best_pattern[y, x] in (input_min, input_max)
-    }
+        for (y, x) in zip(*np.nonzero(best_pattern))
+    })
     
     # Convert out of Numpy int type (which cannot be serialised into JSON
     # later)
     best_decoded_value = int(best_decoded_value)
     
     return OptimisedTestPatternSpecification(
-        target=test_pattern.target,
+        target=test_pattern_specification.target,
         pattern=optimised_pattern,
-        pattern_translation_multiple=test_pattern.pattern_translation_multiple,
-        target_translation_multiple=test_pattern.target_translation_multiple,
+        pattern_translation_multiple=test_pattern_specification.pattern_translation_multiple,
+        target_translation_multiple=test_pattern_specification.target_translation_multiple,
         quantisation_index=best_qi,
         decoded_value=best_decoded_value,
         num_search_iterations=total_iterations,

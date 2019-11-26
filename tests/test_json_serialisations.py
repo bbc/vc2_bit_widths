@@ -6,9 +6,8 @@ from collections import namedtuple
 
 from vc2_bit_widths.linexp import LinExp
 
-from vc2_bit_widths.pattern_optimisation import (
-    OptimisedTestPatternSpecification,
-)
+from vc2_bit_widths.patterns import TestPattern as TP
+from vc2_bit_widths.patterns import OptimisedTestPatternSpecification as OTPS
 
 from vc2_bit_widths.json_serialisations import (
     serialise_intermediate_value_dictionary,
@@ -23,8 +22,8 @@ from vc2_bit_widths.json_serialisations import (
     deserialise_namedtuple,
     serialise_test_pattern,
     deserialise_test_pattern,
-    serialise_test_patterns,
-    deserialise_test_patterns,
+    serialise_test_pattern_specifications,
+    deserialise_test_pattern_specifications,
     serialise_quantisation_matrix,
     deserialise_quantisation_matrix,
 )
@@ -139,11 +138,11 @@ def test_serialise_namedtuple():
 
 
 def test_serialise_picture():
-    before = {
+    before = TP({
         (10, 20): +1, (11, 20): -1, (12, 20): +1, (13, 20): -1, (14, 20): +1,
         (10, 21): +1,               (12, 21): -1,               (14, 21): +1,
         (10, 22): +1,                                           (14, 22): -1,
-    }
+    })
     
     after = serialise_test_pattern(before)
     
@@ -174,11 +173,11 @@ def test_serialise_picture():
     assert deserialise_test_pattern(after) == before
 
 
-def test_serialise_test_patterns():
+def test_serialise_test_pattern_specifications():
     before = {
-        (1, "LH", 2, 3): OptimisedTestPatternSpecification(
+        (1, "LH", 2, 3): OTPS(
             target=(4, 5),
-            pattern={(10, 20): 1},
+            pattern=TP({(10, 20): 1}),
             pattern_translation_multiple=(6, 7),
             target_translation_multiple=(8, 9),
             quantisation_index=30,
@@ -186,7 +185,7 @@ def test_serialise_test_patterns():
             num_search_iterations=50,
         ),
     }
-    after = serialise_test_patterns(OptimisedTestPatternSpecification, before)
+    after = serialise_test_pattern_specifications(OTPS, before)
     after = json_roundtrip(after)
     
     assert after == [
@@ -195,7 +194,7 @@ def test_serialise_test_patterns():
             "array_name": "LH",
             "phase": [2, 3],
             "target": [4, 5],
-            "pattern": serialise_test_pattern({(10, 20): 1}),
+            "pattern": serialise_test_pattern(TP({(10, 20): 1})),
             "pattern_translation_multiple": [6, 7],
             "target_translation_multiple": [8, 9],
             "quantisation_index": 30,
@@ -204,7 +203,7 @@ def test_serialise_test_patterns():
         },
     ]
     
-    assert deserialise_test_patterns(OptimisedTestPatternSpecification, after) == before
+    assert deserialise_test_pattern_specifications(OTPS, after) == before
 
 
 def test_serialise_quantisation_matrix():

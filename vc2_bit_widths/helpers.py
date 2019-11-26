@@ -1,6 +1,6 @@
 """
-Helper Functions
-================
+:py:mod:`vc2_bit_widths.helpers`: Helper Functions
+==================================================
 
 The :py:mod:`vc2_bit_widths.helpers` module provides a set of high-level
 utility functions implementing the key processes involved in bit-width analysis
@@ -85,9 +85,13 @@ from vc2_bit_widths.signal_bounds import (
     signed_integer_range,
 )
 
-from vc2_bit_widths.pattern_generation import (
-    TestPatternSpecification,
+from vc2_bit_widths.patterns import (
     invert_test_pattern_specification,
+    TestPatternSpecification,
+    OptimisedTestPatternSpecification,
+)
+
+from vc2_bit_widths.pattern_generation import (
     make_analysis_maximising_pattern,
     make_synthesis_maximising_pattern,
 )
@@ -98,7 +102,6 @@ from vc2_bit_widths.pattern_evaluation import (
 )
 
 from vc2_bit_widths.pattern_optimisation import (
-    OptimisedTestPatternSpecification,
     optimise_synthesis_maximising_test_pattern,
 )
 
@@ -163,8 +166,8 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         may be used to substitute concrete values into these expressions for a
         particular picture bit width.
         
-    analysis_test_patterns: {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    analysis_test_patterns: {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
+    synthesis_test_patterns: {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
         Heuristic test patterns which are designed to maximise a particular
         intermediate or final filter value. For a minimising test pattern,
         invert the polarities of the pixels.
@@ -230,7 +233,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     
     # Create the algebraic representation of the synthesis transform
     coeff_arrays = make_symbol_coeff_arrays(dwt_depth, dwt_depth_ho)
-    synthesis_output_array, intermediate_synthesis_values = synthesis_transform(
+    synthesis_output_array, intermediate_synthesis_arrays = synthesis_transform(
         h_filter_params,
         v_filter_params,
         dwt_depth,
@@ -252,7 +255,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     # Count the total number of arrays for use in logging messages
     num_arrays = sum(
         array.period[0] * array.period[1]
-        for array in intermediate_synthesis_values.values()
+        for array in intermediate_synthesis_arrays.values()
         if not array.nop
     )
     array_num = 0
@@ -260,7 +263,7 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     # Compute bounds/test pattern for every intermediate/output analysis value
     synthesis_signal_bounds = OrderedDict()
     synthesis_test_patterns = OrderedDict()
-    for (level, array_name), target_array in intermediate_synthesis_values.items():
+    for (level, array_name), target_array in intermediate_synthesis_arrays.items():
         # Skip arrays which are just views of other arrays
         if target_array.nop:
             continue
@@ -475,7 +478,7 @@ def optimise_synthesis_test_patterns(
         The quantisation matrix in use.
     picture_bit_width : int
         The number of bits in the input pictures.
-    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
         Synthesis test patterns to use as the starting point for optimisation,
         as produced by e.g.  :py:func:`static_filter_analysis`.
     max_quantisation_index : int
@@ -504,7 +507,7 @@ def optimise_synthesis_test_patterns(
     
     Returns
     =======
-    optimised_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_optimisation.OptimisedTestPatternSpecification`, ...}
+    optimised_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.OptimisedTestPatternSpecification`, ...}
         The optimised test patterns.
         
         Note that arrays are omitted for arrays which are just interleavings of
@@ -525,8 +528,8 @@ def optimise_synthesis_test_patterns(
     # Strip out all arrays which are simply interleavings of others (and
     # therefore don't need optimising several times)
     test_patterns_to_optimise = [
-        (level, array_name, x, y, ts)
-        for (level, array_name, x, y), ts in synthesis_test_patterns.items()
+        (level, array_name, x, y, tp)
+        for (level, array_name, x, y), tp in synthesis_test_patterns.items()
         if not synthesis_pyexps[(level, array_name)].nop
     ]
     
@@ -534,14 +537,14 @@ def optimise_synthesis_test_patterns(
     
     optimised_test_patterns = OrderedDict()
     
-    for signal_no, (level, array_name, x, y, ts) in enumerate(test_patterns_to_optimise):
-        synthesis_pyexp = synthesis_pyexps[(level, array_name)][ts.target]
+    for signal_no, (level, array_name, x, y, tp) in enumerate(test_patterns_to_optimise):
+        synthesis_pyexp = synthesis_pyexps[(level, array_name)][tp.target]
         
         added_corruptions_per_iteration = int(np.ceil(
-            len(ts.pattern) * added_corruption_rate
+            len(tp.pattern) * added_corruption_rate
         ))
         removed_corruptions_per_iteration = int(np.ceil(
-            len(ts.pattern) * removed_corruption_rate
+            len(tp.pattern) * removed_corruption_rate
         ))
         
         logger.info(
@@ -557,21 +560,16 @@ def optimise_synthesis_test_patterns(
         best_ts = None
         
         for flip_polarity, log_message in [
-            (+1, "Maximising..."),
-            (-1, "Minimising..."),
+            (False, "Maximising..."),
+            (True, "Minimising..."),
         ]:
             logger.info(log_message)
             
             # Run the search starting from the maximising and minimising signal
-            flipped_ts = TestPatternSpecification(
-                target=ts.target,
-                pattern={
-                    (x, y): polarity * flip_polarity
-                    for (x, y), polarity in ts.pattern.items()
-                },
-                pattern_translation_multiple=ts.pattern_translation_multiple,
-                target_translation_multiple=ts.target_translation_multiple,
-            )
+            if flip_polarity:
+                flipped_tp = invert_test_pattern_specification(tp)
+            else:
+                flipped_tp = tp
             
             new_ts = optimise_synthesis_maximising_test_pattern(
                 h_filter_params=h_filter_params,
@@ -580,7 +578,7 @@ def optimise_synthesis_test_patterns(
                 dwt_depth_ho=dwt_depth_ho,
                 quantisation_matrix=quantisation_matrix,
                 synthesis_pyexp=synthesis_pyexp,
-                test_pattern=flipped_ts,
+                test_pattern_specification=flipped_tp,
                 input_min=input_min,
                 input_max=input_max,
                 max_quantisation_index=max_quantisation_index,
@@ -650,8 +648,8 @@ def evaluate_test_pattern_outputs(
         be quantised with every quantisation index up to (and inclusing) this
         limit and the worst-case value for any quantisation index will be
         reported.
-    analysis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    analysis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
+    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
         The test patterns to assess, e.g. from
         :py:func:`static_filter_analysis` or
         :py:func:`optimise_synthesis_test_patterns`.
@@ -696,7 +694,7 @@ def evaluate_test_pattern_outputs(
             dwt_depth_ho=dwt_depth_ho,
             level=level,
             array_name=array_name,
-            test_pattern=test_pattern,
+            test_pattern_specification=test_pattern,
             input_min=input_min,
             input_max=input_max,
         )
@@ -738,7 +736,7 @@ def evaluate_test_pattern_outputs(
             dwt_depth_ho=dwt_depth_ho,
             quantisation_matrix=quantisation_matrix,
             synthesis_pyexp=synthesis_pyexps[(level, array_name)][test_pattern.target],
-            test_pattern=test_pattern,
+            test_pattern_specification=test_pattern,
             input_min=input_min,
             input_max=input_max,
             max_quantisation_index=max_quantisation_index,
@@ -846,8 +844,8 @@ def generate_test_pictures(
         The dimensions of the pictures to generate.
     picture_bit_width : int
         The number of bits in the input pictures.
-    analysis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
-    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`, ...}
+    analysis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
+    synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
         The individual analysis and synthesis test patterns to be combined. A
         maximising and minimising variant of each pattern will be included in
         the output. See :py:func:`static_filter_analysis` and

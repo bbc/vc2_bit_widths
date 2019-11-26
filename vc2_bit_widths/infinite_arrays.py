@@ -384,7 +384,6 @@ class InfiniteArray(object):
         """The number of dimensions in the array."""
         return self._ndim
     
-    
     @property
     def period(self):
         """

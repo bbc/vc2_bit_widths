@@ -26,70 +26,15 @@ from vc2_bit_widths.signal_bounds import (
 )
 
 # NB: Can't have any class names starting with 'Test' in a Pytest test file!
-from vc2_bit_widths.pattern_generation import TestPatternSpecification as TPS
-from vc2_bit_widths.pattern_optimisation import OptimisedTestPatternSpecification as OTPS
+from vc2_bit_widths.patterns import TestPattern as TP
+from vc2_bit_widths.patterns import TestPatternSpecification as TPS
+from vc2_bit_widths.patterns import OptimisedTestPatternSpecification as OTPS
 
 from vc2_bit_widths.pattern_generation import (
-    invert_test_pattern_specification,
     get_maximising_inputs,
     make_analysis_maximising_pattern,
     make_synthesis_maximising_pattern,
 )
-
-
-class TestInvertTestPatternSpecification(object):
-    
-    def test_test_pattern(self):
-        ts = TPS(
-            target=(1, 2),
-            pattern={
-                (3, 4): +1,
-                (5, 6): -1,
-            },
-            pattern_translation_multiple=(7, 8),
-            target_translation_multiple=(9, 10),
-        )
-        
-        its = invert_test_pattern_specification(ts)
-        
-        assert its == TPS(
-            target=(1, 2),
-            pattern={
-                (3, 4): -1,
-                (5, 6): +1,
-            },
-            pattern_translation_multiple=(7, 8),
-            target_translation_multiple=(9, 10),
-        )
-    
-    def test_optimised_test_pattern(self):
-        ts = OTPS(
-            target=(1, 2),
-            pattern={
-                (3, 4): +1,
-                (5, 6): -1,
-            },
-            pattern_translation_multiple=(7, 8),
-            target_translation_multiple=(9, 10),
-            quantisation_index=11,
-            decoded_value=12,
-            num_search_iterations=13,
-        )
-        
-        its = invert_test_pattern_specification(ts)
-        
-        assert its == OTPS(
-            target=(1, 2),
-            pattern={
-                (3, 4): -1,
-                (5, 6): +1,
-            },
-            pattern_translation_multiple=(7, 8),
-            target_translation_multiple=(9, 10),
-            quantisation_index=11,
-            decoded_value=12,
-            num_search_iterations=13,
-        )
 
 
 @pytest.mark.parametrize("expression,exp", [
@@ -173,14 +118,15 @@ class TestMakeAnalysisMaximisingSignal(object):
                     
                     # Ensure that, as promised, the returned test patterns
                     # don't use any negative pixel coordinates
-                    assert all(x >= 0 and y >= 0 for (x, y) in ts.pattern)
+                    assert ts.pattern.origin[0] >= 0
+                    assert ts.pattern.origin[1] >= 0
                     
                     # Also ensure that the returned test pattern is as close to
                     # the edge of the picture as possible (that is, moving one
                     # multiple left or up moves us off the edge of the picture)
                     mx, my = ts.pattern_translation_multiple
-                    assert any(x < mx for (x, y) in ts.pattern)
-                    assert any(y < my for (x, y) in ts.pattern)
+                    assert ts.pattern.origin[0] < my
+                    assert ts.pattern.origin[1] < mx
     
     def test_translation_is_valid(self, input_array, intermediate_arrays):
         for (level, name), target_array in intermediate_arrays.items():
@@ -250,20 +196,9 @@ class TestMakeAnalysisMaximisingSignal(object):
                         
                         # Create a test picture and encode it with the VC-2
                         # pseudocode
-                        xs, ys = zip(*ts.pattern)
-                        width = max(xs) + 1
-                        height = max(ys) + 1
-                        test_pattern_picture = [
-                            [
-                                0
-                                if (x, y) not in ts.pattern else
-                                value_max
-                                if ts.pattern[(x, y)] > 0 else
-                                value_min
-                                for x in range(width)
-                            ]
-                            for y in range(height)
-                        ]
+                        test_pattern_picture, _ = ts.pattern.as_picture_and_slice(value_min, value_max)
+                        height, width = test_pattern_picture.shape
+                        test_pattern_picture = test_pattern_picture.tolist()
                         
                         value_maximised = encode_with_vc2(
                             test_pattern_picture,
@@ -360,7 +295,8 @@ class TestMakeSynthesisMaximisingSignal(object):
                     
                     # Ensure that, as promised, the returned test patterns
                     # don't use any negative pixel coordinates
-                    assert all(x >= 0 and y >= 0 for (x, y) in ts.pattern)
+                    assert ts.pattern.origin[0] >= 0
+                    assert ts.pattern.origin[1] >= 0
                     
                     # Also ensure that the returned test pattern is as close to
                     # the edge of the picture as possible (that is, moving one
@@ -369,8 +305,8 @@ class TestMakeSynthesisMaximisingSignal(object):
                     # to the edge in that dimension.
                     mx, my = ts.pattern_translation_multiple
                     tmx, tmy = ts.target_translation_multiple
-                    assert any(x < mx or new_tx < tmx for (x, y) in ts.pattern)
-                    assert any(y < my or new_ty < tmy for (x, y) in ts.pattern)
+                    assert ts.pattern.origin[0] < my or new_tx < my
+                    assert ts.pattern.origin[1] < mx or new_ty < mx
     
     def test_translation_is_valid(
         self, analysis_input_array, analysis_transform_coeff_arrays,
@@ -452,20 +388,9 @@ class TestMakeSynthesisMaximisingSignal(object):
                 
                 # Create a test picture and encode/decode it with the VC-2
                 # pseudocode (with no quantisaton)
-                xs, ys = zip(*ts.pattern)
-                width = max(xs) + 1
-                height = max(ys) + 1
-                test_pattern_picture = [
-                    [
-                        0
-                        if (x, y) not in ts.pattern else
-                        value_max
-                        if ts.pattern[(x, y)] > 0 else
-                        value_min
-                        for x in range(width)
-                    ]
-                    for y in range(height)
-                ]
+                test_pattern_picture, _ = ts.pattern.as_picture_and_slice(value_min, value_max)
+                height, width = test_pattern_picture.shape
+                test_pattern_picture = test_pattern_picture.tolist()
                 
                 new_tx, new_ty = ts.target
                 kwargs = {
@@ -508,22 +433,9 @@ class TestMakeSynthesisMaximisingSignal(object):
                     tx, ty,
                 )
                 
-                xs, ys = zip(*ts.pattern)
-                width = max(xs) + 1
-                height = max(ys) + 1
-                
-                # Create test pattern picture
-                test_pattern_picture = [
-                    [
-                        0
-                        if (x, y) not in ts.pattern else
-                        value_max
-                        if ts.pattern[(x, y)] > 0 else
-                        value_min
-                        for x in range(width)
-                    ]
-                    for y in range(height)
-                ]
+                test_pattern_picture, _ = ts.pattern.as_picture_and_slice(value_min, value_max)
+                height, width = test_pattern_picture.shape
+                test_pattern_picture = test_pattern_picture.tolist()
                 
                 # Create picture where just the target pixel is set
                 new_tx, new_ty = ts.target

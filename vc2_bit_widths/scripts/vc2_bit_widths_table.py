@@ -121,11 +121,8 @@ from vc2_bit_widths.signal_bounds import (
     twos_compliment_bits,
 )
 
-from vc2_bit_widths.pattern_generation import (
+from vc2_bit_widths.patterns import (
     TestPatternSpecification,
-)
-
-from vc2_bit_widths.pattern_optimisation import (
     OptimisedTestPatternSpecification,
 )
 
@@ -137,7 +134,7 @@ from vc2_bit_widths.helpers import (
 
 from vc2_bit_widths.json_serialisations import (
     deserialise_signal_bounds,
-    deserialise_test_patterns,
+    deserialise_test_pattern_specifications,
     deserialise_quantisation_matrix,
 )
 
@@ -292,11 +289,11 @@ def main(args=None):
     )
     
     # Load precomputed test patterns
-    analysis_test_patterns = deserialise_test_patterns(
+    analysis_test_patterns = deserialise_test_pattern_specifications(
         TestPatternSpecification,
         static_filter_analysis["analysis_test_patterns"]
     )
-    synthesis_test_patterns = deserialise_test_patterns(
+    synthesis_test_patterns = deserialise_test_pattern_specifications(
         TestPatternSpecification,
         static_filter_analysis["synthesis_test_patterns"]
     )
@@ -316,7 +313,7 @@ def main(args=None):
             optimised_json["quantisation_matrix"]
         )
         
-        synthesis_test_patterns = deserialise_test_patterns(
+        synthesis_test_patterns = deserialise_test_pattern_specifications(
             OptimisedTestPatternSpecification,
             optimised_json["optimised_synthesis_test_patterns"]
         )

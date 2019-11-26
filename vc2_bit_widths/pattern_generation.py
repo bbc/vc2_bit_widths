@@ -26,17 +26,11 @@ Synthesis
 
 .. autofunction:: make_synthesis_maximising_pattern
 
-:py:class:`TestPatternSpecification`
-------------------------------------
-
-.. autoclass:: TestPatternSpecification
-    :no-members:
-
-.. autofunction:: invert_test_pattern_specification
-
 """
 
 from collections import namedtuple
+
+from vc2_bit_widths.patterns import TestPattern, TestPatternSpecification
 
 from vc2_bit_widths.linexp import (
     LinExp,
@@ -66,80 +60,6 @@ def get_maximising_inputs(expression):
         for sym, coeff in LinExp(expression)
         if sym is not None and not isinstance(sym, AAError)
     }
-
-
-TestPatternSpecification = namedtuple(
-    "TestPatternSpecification",
-    "target,pattern,pattern_translation_multiple,target_translation_multiple",
-)
-"""
-A definition of a test pattern for a VC-2 filter. This test pattern is intended
-to maximise the value of a particular intermediate or output value of a VC-2
-filter.
-
-Test patterns for both for analysis and synthesis filters are defined in terms
-of picture test patterns. For analysis filters, the picture should be fed
-directly to the encoder under test. For synthesis filters, the pattern must
-first be fed to an encoder and the transform coefficients quantised before
-being fed to a decoder.
-
-Test patterns tend to be quite small (tens to low hundreds of pixels square)
-and so it is usually sensible to collect together many test patterns into a
-single picture (see :py:mod:`vc2_bit_widths.picture_packing`). To retain their
-functionality, test patterns must remain correctly aligned with their target
-filter. When relocating a test pattern, the pattern must be moved only by
-multiples of the values in ``pattern_translation_multiple``. For each multiple
-moved, the target value effected by the pattern moves by the same multiple of
-``target_translation_multiple``.
-
-Parameters
-==========
-target : (tx, ty)
-    The target coordinate which is maximised by this test pattern.
-pattern : {(x, y): polarity, ...}
-    The input pattern to be fed into a VC-2 encoder. Only those pixels defined
-    in this dictionary need be set -- all other pixels may be set to arbitrary
-    values and have no effect.
-    
-    The 'polarity' value will be either +1 or -1. When +1, the corresponding
-    pixel should be set to its maximum signal value. When -1, the pixel should
-    be set to its minimum value.
-    
-    To produce a test pattern which minimises, rather than maximises the target
-    value, the meaning of the polarity should be inverted (see
-    :py:func:`invert_test_pattern_specification`).
-    
-    The test pattern is specified such that the pattern is as close to the
-    top-left corner as possible given ``pattern_translation_multiple``, without
-    any negative pixel coordinates. That is, ``0 <= min(x) < mx`` and ``0 <=
-    min(y) < my``.
-pattern_translation_multiple : (mx, my)
-target_translation_multiple : (tmx, tmy)
-    The multiples by which pattern pixel coordinates and target array
-    coordinates may be translated when relocating the test pattern. Both the
-    pattern and target must be translated by the same multiple of these two
-    factors.
-    
-    For example, if the pattern is translated by (2*mx, 3*my), the target must
-    be translated by (2*tmx, 3*tmy).
-"""
-
-
-def invert_test_pattern_specification(test_pattern):
-    """
-    Given a :py:class:`TestPatternSpecification` or
-    :py:class:`~vc2_bit_widths.pattern_optimisation.OptimisedTestPatternSpecification`,
-    return a copy with the signal polarity inverted.
-    """
-    tuple_type = type(test_pattern)
-    
-    values = test_pattern._asdict()
-    values["pattern"] = {
-        (x, y): polarity * -1
-        for (x, y), polarity in values["pattern"].items()
-    }
-    
-    return tuple_type(**values)
 
 
 def make_analysis_maximising_pattern(input_array, target_array, tx, ty):
@@ -174,16 +94,16 @@ def make_analysis_maximising_pattern(input_array, target_array, tx, ty):
     
     Returns
     =======
-    test_pattern : :py:class:`TestPatternSpecification`
+    test_pattern_specification : :py:class:`TestPatternSpecification`
     """
-    test_pattern = {
+    test_pattern_dict = {
         (x, y): polarity
         for (prefix, x, y), polarity in get_maximising_inputs(
             target_array[tx, ty]
         ).items()
     }
     
-    xs, ys = zip(*test_pattern)
+    xs, ys = zip(*test_pattern_dict)
     min_x = min(xs)
     min_y = min(ys)
     
@@ -198,9 +118,9 @@ def make_analysis_maximising_pattern(input_array, target_array, tx, ty):
     translate_steps_x = min_x // mx
     translate_steps_y = min_y // my
     
-    test_pattern = {
+    test_pattern_dict = {
         (x - (translate_steps_x * mx), y - (translate_steps_y * my)): polarity
-        for (x, y), polarity in test_pattern.items()
+        for (x, y), polarity in test_pattern_dict.items()
     }
     
     tx -= translate_steps_x * tmx
@@ -208,7 +128,7 @@ def make_analysis_maximising_pattern(input_array, target_array, tx, ty):
     
     return TestPatternSpecification(
         target=(tx, ty),
-        pattern=test_pattern,
+        pattern=TestPattern(test_pattern_dict),
         pattern_translation_multiple=(mx, my),
         target_translation_multiple=(tmx, tmy),
     )
@@ -254,7 +174,7 @@ def make_synthesis_maximising_pattern(
     
     Returns
     =======
-    test_pattern : :py:class:`TestPatternSpecification`
+    test_pattern_specification : :py:class:`TestPatternSpecification`
     """
     # Enumerate the transform coefficients which maximise the target value
     # {(level, orient, x, y): coeff, ...}
@@ -288,7 +208,7 @@ def make_synthesis_maximising_pattern(
     # assigned to each input pixel and is set starting with the lowest weighted
     # transform coefficients which may be partially overwritten by higher
     # priority coefficients later on.
-    test_pattern = {}
+    test_pattern_dict = {}
     
     for (level, orient, cx, cy), transform_coeff in sorted(
         target_transform_coeffs.items(),
@@ -301,7 +221,7 @@ def make_synthesis_maximising_pattern(
         directly_contributing_input_expr += coeff_expr * transform_coeff
         
         for (prefix, px, py), pixel_coeff in get_maximising_inputs(coeff_expr).items():
-            test_pattern[px, py] = pixel_coeff * (1 if transform_coeff > 0 else -1)
+            test_pattern_dict[px, py] = pixel_coeff * (1 if transform_coeff > 0 else -1)
     
     # To ensure the generated test pattern definately produces near worst-case
     # results under no-quantisation, we give the greatest priority to pixels
@@ -312,7 +232,7 @@ def make_synthesis_maximising_pattern(
             directly_contributing_input_expr
         ).items()
     }
-    test_pattern.update(directly_contributing_input_pixels)
+    test_pattern_dict.update(directly_contributing_input_pixels)
     
     # The test pattern may contain negative pixel coordinates. To be useful, it
     # must be translated to a position implementing the same filter but which
@@ -329,16 +249,16 @@ def make_synthesis_maximising_pattern(
     my = int(my)
     
     # Translate the test pattern accordingly
-    xs, ys = zip(*test_pattern)
+    xs, ys = zip(*test_pattern_dict)
     min_x = min(xs)
     min_y = min(ys)
     
     translate_steps_x = min_x // mx
     translate_steps_y = min_y // my
     
-    test_pattern = {
+    test_pattern_dict = {
         (x - (translate_steps_x * mx), y - (translate_steps_y * my)): polarity
-        for (x, y), polarity in test_pattern.items()
+        for (x, y), polarity in test_pattern_dict.items()
     }
     
     tx -= translate_steps_x * tmx
@@ -346,7 +266,7 @@ def make_synthesis_maximising_pattern(
     
     return TestPatternSpecification(
         target=(tx, ty),
-        pattern=test_pattern,
+        pattern=TestPattern(test_pattern_dict),
         pattern_translation_multiple=(mx, my),
         target_translation_multiple=(tmx, tmy),
     )

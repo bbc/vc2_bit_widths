@@ -14,6 +14,7 @@ from vc2_conformance.picture_decoding import idwt
 from vc2_bit_widths.quantisation import forward_quant, inverse_quant
 
 from vc2_bit_widths.pattern_evaluation import (
+    convert_test_pattern_to_padded_picture_and_slice,
     evaluate_analysis_test_pattern_output,
     evaluate_synthesis_test_pattern_output,
 )
@@ -110,25 +111,20 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         
         exp_lower, exp_upper = concrete_analysis_signal_bounds[(level or 1, array_name, 0, 0)]
         
-        xs, ys = zip(*ts.pattern)
-        
-        # NB: Pad the width/height to the appropriate picture size for this
-        # transform
-        x_multiple = 2**(dwt_depth + dwt_depth_ho)
-        y_multiple = 2**(dwt_depth)
-        width = (((max(xs) + 1) + x_multiple - 1) // x_multiple) * x_multiple
-        height = (((max(ys) + 1) + y_multiple - 1) // y_multiple) * y_multiple
-        
-        picture = np.zeros((height, width), dtype=int)
-        picture[(ys, xs)] = list(ts.pattern.values())
-        
-        min_picture = picture.copy()
-        min_picture[picture==+1] = input_min
-        min_picture[picture==-1] = input_max
-        
-        max_picture = picture.copy()
-        max_picture[picture==+1] = input_max
-        max_picture[picture==-1] = input_min
+        min_picture, _ = convert_test_pattern_to_padded_picture_and_slice(
+            ts.pattern,
+            input_max,
+            input_min,
+            dwt_depth,
+            dwt_depth_ho,
+        )
+        max_picture, _ = convert_test_pattern_to_padded_picture_and_slice(
+            ts.pattern,
+            input_min,
+            input_max,
+            dwt_depth,
+            dwt_depth_ho,
+        )
         
         # NB: Target is in L'' or H'' so must modify ty to coordinates in LL,
         # LH, HL and HH.
@@ -152,25 +148,20 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         
         ts = synthesis_test_patterns[(level, array_name, x, y)]
         
-        xs, ys = zip(*ts.pattern)
-        
-        # NB: Pad the width/height to the appropriate picture size for this
-        # transform
-        x_multiple = 2**(dwt_depth + dwt_depth_ho)
-        y_multiple = 2**(dwt_depth)
-        width = (((max(xs) + 1) + x_multiple - 1) // x_multiple) * x_multiple
-        height = (((max(ys) + 1) + y_multiple - 1) // y_multiple) * y_multiple
-        
-        picture = np.zeros((height, width), dtype=int)
-        picture[(ys, xs)] = list(ts.pattern.values())
-        
-        min_picture = picture.copy()
-        min_picture[picture==+1] = input_min
-        min_picture[picture==-1] = input_max
-        
-        max_picture = picture.copy()
-        max_picture[picture==+1] = input_max
-        max_picture[picture==-1] = input_min
+        min_picture, _ = convert_test_pattern_to_padded_picture_and_slice(
+            ts.pattern,
+            input_max,
+            input_min,
+            dwt_depth,
+            dwt_depth_ho,
+        )
+        max_picture, _ = convert_test_pattern_to_padded_picture_and_slice(
+            ts.pattern,
+            input_min,
+            input_max,
+            dwt_depth,
+            dwt_depth_ho,
+        )
         
         tx, ty = ts.target
         actual_lower = idwt(state, dwt(state, min_picture.tolist()))[ty][tx]
@@ -319,19 +310,13 @@ def test_optimise_synthesis_test_patterns():
         
         ts = optimised_synthesis_test_patterns[(level, array_name, x, y)]
         
-        xs, ys = zip(*ts.pattern)
-        
-        # NB: Pad the width/height to the appropriate picture size for this
-        # transform
-        x_multiple = 2**(dwt_depth + dwt_depth_ho)
-        y_multiple = 2**(dwt_depth)
-        width = (((max(xs) + 1) + x_multiple - 1) // x_multiple) * x_multiple
-        height = (((max(ys) + 1) + y_multiple - 1) // y_multiple) * y_multiple
-        
-        picture = np.zeros((height, width), dtype=int)
-        picture[(ys, xs)] = list(ts.pattern.values())
-        picture[picture==+1] = input_max
-        picture[picture==-1] = input_min
+        picture, _ = convert_test_pattern_to_padded_picture_and_slice(
+            ts.pattern,
+            input_min,
+            input_max,
+            dwt_depth,
+            dwt_depth_ho,
+        )
         
         tx, ty = ts.target
         coeffs = dwt(state, picture.tolist())

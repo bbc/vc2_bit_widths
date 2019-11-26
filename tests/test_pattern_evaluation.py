@@ -19,6 +19,8 @@ from vc2_bit_widths.signal_bounds import (
     signed_integer_range,
 )
 
+from vc2_bit_widths.patterns import TestPattern as TP
+
 from vc2_bit_widths.pattern_optimisation import (
     optimise_synthesis_maximising_test_pattern,
 )
@@ -29,7 +31,7 @@ from vc2_bit_widths.pattern_generation import (
 )
 
 from vc2_bit_widths.pattern_evaluation import (
-    convert_test_pattern_to_array_and_slice,
+    convert_test_pattern_to_padded_picture_and_slice,
     evaluate_analysis_test_pattern_output,
     evaluate_synthesis_test_pattern_output,
 )
@@ -38,12 +40,12 @@ from vc2_bit_widths.pattern_evaluation import (
 class TestConvertTestPatternToArrayAndSlice(object):
     
     def test_conversion_to_array(self):
-        test_pattern, search_slice = convert_test_pattern_to_array_and_slice(
+        test_pattern, search_slice = convert_test_pattern_to_padded_picture_and_slice(
             # NB: Coordinates are (x, y) here
-            test_pattern={
+            test_pattern=TP({
                 (2, 3): +1,
                 (4, 5): -1,
-            },
+            }),
             input_min=-512,
             input_max=511,
             dwt_depth=3,
@@ -77,11 +79,11 @@ class TestConvertTestPatternToArrayAndSlice(object):
         (1, 3, (8, 16)),
     ])
     def test_rounding_up_sizes(self, dwt_depth, dwt_depth_ho, exp_shape):
-        test_pattern, search_slice = convert_test_pattern_to_array_and_slice(
+        test_pattern, search_slice = convert_test_pattern_to_padded_picture_and_slice(
             # NB: Coordinates are (x, y) here
-            test_pattern={
+            test_pattern=TP({
                 (6, 6): +1,
-            },
+            }),
             input_min=-512,
             input_max=511,
             dwt_depth=dwt_depth,

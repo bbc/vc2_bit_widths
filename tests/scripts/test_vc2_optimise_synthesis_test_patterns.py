@@ -6,12 +6,12 @@ import shlex
 
 from vc2_data_tables import WaveletFilters
 
-from vc2_bit_widths.pattern_optimisation import (
+from vc2_bit_widths.patterns import (
     OptimisedTestPatternSpecification,
 )
 
 from vc2_bit_widths.json_serialisations import (
-    deserialise_test_patterns,
+    deserialise_test_pattern_specifications,
     deserialise_quantisation_matrix,
 )
 
@@ -71,11 +71,11 @@ def test_sanity(tmpdir, capsys):
     
     # Check optimised version does achieve some benefit over non-optimised
     # version
-    optimised_test_patterns = deserialise_test_patterns(
+    optimised_test_patterns = deserialise_test_pattern_specifications(
         OptimisedTestPatternSpecification,
         optimised["optimised_synthesis_test_patterns"],
     )
-    unoptimised_test_patterns = deserialise_test_patterns(
+    unoptimised_test_patterns = deserialise_test_pattern_specifications(
         OptimisedTestPatternSpecification,
         unoptimised["optimised_synthesis_test_patterns"],
     )

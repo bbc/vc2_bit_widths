@@ -142,7 +142,7 @@ test patterns for each analysis and synthesis filter phase like so::
 .. note::
 
     The
-    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_test_patterns`
+    :py:func:`~vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications`
     Python utility function is provided for unpacking this structure.
 
 Test patterns are defined in terms of a collection of pixel polarity values
@@ -153,7 +153,7 @@ polarities themselves, see
 :py:class:`~vc2_bit_widths.json_serialisations.serialise_test_pattern`.
 
 Test patterns must be carefully aligned within a test picture when used. See
-:py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification` for the
+:py:class:`~vc2_bit_widths.patterns.TestPatternSpecification` for the
 meaning of the relevant fields of ``<test-pattern-specification>``.  .
 
 
@@ -195,13 +195,13 @@ from argparse import ArgumentParser, FileType
 
 from vc2_data_tables import WaveletFilters
 
-from vc2_bit_widths.pattern_generation import TestPatternSpecification
+from vc2_bit_widths.patterns import TestPatternSpecification
 
 from vc2_bit_widths.helpers import static_filter_analysis
 
 from vc2_bit_widths.json_serialisations import (
     serialise_signal_bounds,
-    serialise_test_patterns,
+    serialise_test_pattern_specifications,
 )
 
 from vc2_bit_widths.scripts.argument_parsers import wavelet_index_or_name
@@ -303,9 +303,9 @@ def main(args=None):
         "synthesis_signal_bounds":
             serialise_signal_bounds(synthesis_signal_bounds),
         "analysis_test_patterns":
-            serialise_test_patterns(TestPatternSpecification, analysis_test_patterns),
+            serialise_test_pattern_specifications(TestPatternSpecification, analysis_test_patterns),
         "synthesis_test_patterns":
-            serialise_test_patterns(TestPatternSpecification, synthesis_test_patterns),
+            serialise_test_pattern_specifications(TestPatternSpecification, synthesis_test_patterns),
     }
     
     json.dump(out, args.output)

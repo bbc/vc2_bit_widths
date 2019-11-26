@@ -15,7 +15,7 @@ Evaluation functions
 Utility functions
 -----------------
 
-.. autofunction:: convert_test_pattern_to_array_and_slice
+.. autofunction:: convert_test_pattern_to_padded_picture_and_slice
 
 """
 
@@ -30,7 +30,7 @@ from vc2_bit_widths.fast_partial_analyse_quantise_synthesise import (
 )
 
 
-def convert_test_pattern_to_array_and_slice(
+def convert_test_pattern_to_padded_picture_and_slice(
     test_pattern,
     input_min,
     input_max,
@@ -44,7 +44,7 @@ def convert_test_pattern_to_array_and_slice(
     
     Parameters
     ==========
-    test_pattern : {(x, y): polarity, ...}
+    test_pattern : :py:class:`~vc2_bit_widths.patterns.TestPattern`
     input_min : int
     input_max : int
         The full signal range to expand the test pattern to.
@@ -54,39 +54,28 @@ def convert_test_pattern_to_array_and_slice(
     
     Returns
     =======
-    pattern : :py:class:`numpy.array`
-        A 2D array containing the test pattern (with all undefined pixels set
+    picture : :py:class:`numpy.array`
+        A 2D array containing the test picture (with all undefined pixels set
         to 0.
-    search_slice : (:py:class:`slice`, :py:class:`slice`)
+    picture_slice : (:py:class:`slice`, :py:class:`slice`)
         A 2D slice out of ``test_pattern`` which contains the active pixels in
         ``test_pattern`` (i.e. excluding any padding).
     """
-    xs, ys = zip(*test_pattern)
-    x0 = min(xs)
-    y0 = min(ys)
-    x1 = max(xs)
-    y1 = max(ys)
-    search_slice = (slice(y0, y1+1), slice(x0, x1+1))
+    
+    picture, picture_slice = test_pattern.as_picture_and_slice(input_min, input_max)
+    
+    orig_height, orig_width = picture.shape
     
     # Round width/height up to be compatible with the lifting filter
     x_multiple = 2**(dwt_depth + dwt_depth_ho)
     y_multiple = 2**(dwt_depth)
-    width = (((x1 + 1) + x_multiple - 1) // x_multiple) * x_multiple
-    height = (((y1 + 1) + y_multiple - 1) // y_multiple) * y_multiple
+    width = ((orig_width + x_multiple - 1) // x_multiple) * x_multiple
+    height = ((orig_height + y_multiple - 1) // y_multiple) * y_multiple
     
-    pattern = np.array([
-        [
-            0
-            if test_pattern.get((x, y), 0) == 0 else
-            input_min
-            if test_pattern.get((x, y), 0) < 0 else
-            input_max
-            for x in range(width)
-        ]
-        for y in range(height)
-    ], dtype=int)
+    padded_picture = np.zeros((height, width), dtype=int)
+    padded_picture[:orig_height, :orig_width] = picture
     
-    return pattern, search_slice
+    return padded_picture, picture_slice
 
 
 
@@ -98,7 +87,7 @@ def evaluate_analysis_test_pattern_output(
     dwt_depth_ho,
     level,
     array_name,
-    test_pattern,
+    test_pattern_specification,
     input_min,
     input_max,
 ):
@@ -120,7 +109,7 @@ def evaluate_analysis_test_pattern_output(
     level : int
     array_name : str
         The intermediate value in the encoder the test pattern targets.
-    test_pattern : :py:class:`TestPatternSpecification`
+    test_pattern_specification : :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`
         The test pattern to evaluate.
     input_min : int
     input_max : int
@@ -133,7 +122,7 @@ def evaluate_analysis_test_pattern_output(
         The target encoder value when the test pattern encoded with minimising
         and maximising signal levels respectively.
     """
-    tx, ty = test_pattern.target
+    tx, ty = test_pattern_specification.target
     
     # NB: Casting to native int from numpy for JSON serialisability etc.
     return tuple(
@@ -142,8 +131,8 @@ def evaluate_analysis_test_pattern_output(
             v_filter_params,
             dwt_depth,
             dwt_depth_ho,
-            convert_test_pattern_to_array_and_slice(
-                test_pattern.pattern,
+            convert_test_pattern_to_padded_picture_and_slice(
+                test_pattern_specification.pattern,
                 cur_min,
                 cur_max,
                 dwt_depth,
@@ -167,7 +156,7 @@ def evaluate_synthesis_test_pattern_output(
     dwt_depth_ho,
     quantisation_matrix,
     synthesis_pyexp,
-    test_pattern,
+    test_pattern_specification,
     input_min,
     input_max,
     max_quantisation_index,
@@ -196,7 +185,7 @@ def evaluate_synthesis_test_pattern_output(
         maximising/minimising. Such an expression is usually obtained from the
         use of :py:func:`~vc2_bit_widths.vc2_filters.synthesis_transform` and
         :py:func:`~vc2_bit_widths.vc2_filters.make_variable_coeff_arrays`.
-    test_pattern : :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`
+    test_pattern_specification : :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`
         The test pattern to evaluate.
     input_min : int
     input_max : int
@@ -234,8 +223,8 @@ def evaluate_synthesis_test_pattern_output(
         # Maximise encoder output
         (input_min, input_max),
     ]:
-        pattern_array, _ = convert_test_pattern_to_array_and_slice(
-            test_pattern.pattern,
+        pattern_array, _ = convert_test_pattern_to_padded_picture_and_slice(
+            test_pattern_specification.pattern,
             cur_min,
             cur_max,
             dwt_depth,

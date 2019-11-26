@@ -1,6 +1,6 @@
 """
-JSON Data File Serialisation/Deserialisation
-============================================
+:py:mod:`vc2_bit_widths.json_serialisations`: JSON Data File Serialisation/Deserialisation
+==========================================================================================
 
 The :py:mod:`vc2_bit_widths.json_serialisations` module provides functions for
 serialising and deserialising parts of the JSON files produced by the various
@@ -27,9 +27,9 @@ Signal bounds
 Test patterns
 -------------
 
-.. autofunction:: serialise_test_patterns
+.. autofunction:: serialise_test_pattern_specifications
 
-.. autofunction:: deserialise_test_patterns
+.. autofunction:: deserialise_test_pattern_specifications
 
 .. autofunction:: serialise_test_pattern
 
@@ -53,6 +53,8 @@ from collections import OrderedDict
 from vc2_bit_widths.linexp import LinExp
 
 from vc2_bit_widths.fast_fractions import Fraction
+
+from vc2_bit_widths.patterns import TestPattern
 
 
 def serialise_intermediate_value_dictionary(dictionary):
@@ -282,18 +284,17 @@ def deserialise_namedtuple(namedtuple_type, dictionary):
     ))
 
 
-def serialise_test_pattern(picture):
+def serialise_test_pattern(test_pattern):
     """
-    Convert a test pattern (a dictionary {(x, y): polarity, ...}) into a
-    compact JSON-serialisable form.
+    Convert a :py:class:`TestPattern` into a compact JSON-serialisable form.
     
     For example::
-        >>> before = {
+        >>> before = TestPattern({
         ...     (4, 10): +1, (5, 10): -1, (6, 10): +1, (7, 10): -1,
         ...     (4, 11): -1, (5, 11): +1, (6, 11): -1, (7, 11): +1,
         ...     (4, 12): +1, (5, 12): -1, (6, 12): +1, (7, 12): -1,
         ...     (4, 13): -1, (5, 13): +1, (6, 13): -1, (7, 13): +1,
-        ... }
+        ... })
         >>> serialise_test_pattern(before)
         {
             'dx': 4,
@@ -324,23 +325,15 @@ def serialise_test_pattern(picture):
     The byte-packed bit arrays are finally Base64 (RFC 3548) encoded into the
     'positive' and 'mask' fields.
     """
-    xs, ys = map(np.array, zip(*picture))
-    
     # Bottom-left corner of the sparse matrix
-    dx = np.min(xs)
-    dy = np.min(ys)
+    dy, dx = test_pattern.origin
     
     # Active area of the sparse matrix
-    width = np.max(xs) - dx + 1
-    height = np.max(ys) - dy + 1
-    
-    # Convert to numpy array with bottom left at (dx, dy)
-    polarities = np.zeros((height, width))
-    polarities[(ys-dy, xs-dx)] = np.array(list(picture.values()))
+    height, width = test_pattern.polarities.shape
     
     # Convert into positive + mask representation
-    positive = polarities > 0
-    mask = polarities != 0
+    positive = test_pattern.polarities > 0
+    mask = test_pattern.polarities != 0
     
     packed_positive = np.packbits(positive, bitorder="big").tobytes()
     packed_mask = np.packbits(mask, bitorder="big").tobytes()
@@ -361,8 +354,7 @@ def deserialise_test_pattern(dictionary):
     """
     Inverse of :py:func:`serialise_namedtuple`.
     """
-    dx = dictionary["dx"]
-    dy = dictionary["dy"]
+    origin = (dictionary["dy"], dictionary["dx"])
     width = dictionary["width"]
     height = dictionary["height"]
     
@@ -381,23 +373,24 @@ def deserialise_test_pattern(dictionary):
         packed_positive,
         count=count,
         bitorder="big",
-    ).reshape((height, width))
+    ).reshape((height, width)).astype(bool)
     
     mask = np.unpackbits(
         packed_mask,
         count=count,
         bitorder="big",
-    ).reshape((height, width))
+    ).reshape((height, width)).astype(bool)
     
-    return {
-        (x + dx, y + dy): +1 if positive[y, x] else -1
-        for y, x in np.argwhere(mask)
-    }
+    polarities = np.full((height, width), -1, dtype=np.int8)
+    polarities[positive] = +1
+    polarities[~mask] = 0
+    
+    return TestPattern(origin, polarities)
 
 
-def serialise_test_patterns(spec_namedtuple_type, test_patterns):
+def serialise_test_pattern_specifications(spec_namedtuple_type, test_patterns):
     """
-    Convert a dictionary of analysis or synthesis test patterns into a
+    Convert a dictionary of analysis or synthesis test pattern specifications into a
     JSON-serialisable form.
     
     See :py:func:`serialise_test_pattern` for the serialisation used for the
@@ -408,27 +401,20 @@ def serialise_test_patterns(spec_namedtuple_type, test_patterns):
         >>> before = {
         ...     (1, "LH", 2, 3): TestPatternSpecification(
         ...         target=(4, 5),
-        ...         pattern={(x, y): polarity, ...},
+        ...         pattern=TestPattern({(x, y): polarity, ...}),
         ...         pattern_translation_multiple=(6, 7),
         ...         target_translation_multiple=(8, 9),
         ...     ),
         ...     ...
         ... }
-        >>> serialise_test_patterns(TestPatternSpecification, before)
+        >>> serialise_test_pattern_specifications(TestPatternSpecification, before)
         [
             {
                 "level": 1,
                 "array_name": "LH",
                 "phase": [2, 3],
                 "target": [4, 5],
-                "pattern": {
-                    "dx": ...,
-                    "dy": ...,
-                    "width": ...,
-                    "height": ...,
-                    "positive": ...,
-                    "mask": ...,
-                },
+                "pattern": {...},
                 "pattern_translation_multiple": [6, 7],
                 "target_translation_multiple": [8, 9],
             },
@@ -439,9 +425,9 @@ def serialise_test_patterns(spec_namedtuple_type, test_patterns):
     ==========
     spec_namedtuple_type : :py:func:`~collections.namedtuple` class
         The namedtuple used to hold the test pattern specification. One of
-        :py:class:`~vc2_bit_widths.pattern_generation.TestPatternSpecification`
+        :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`
         or
-        :py:class:`~vc2_bit_widths.pattern_optimisation.OptimisedTestPatternSpecification`.
+        :py:class:`~vc2_bit_widths.patterns.OptimisedTestPatternSpecification`.
     test_patterns : {(level, array_name, x, y): (...), ...}
     """
     out = serialise_intermediate_value_dictionary({
@@ -455,9 +441,9 @@ def serialise_test_patterns(spec_namedtuple_type, test_patterns):
     return out
 
 
-def deserialise_test_patterns(spec_namedtuple_type, test_patterns):
+def deserialise_test_pattern_specifications(spec_namedtuple_type, test_patterns):
     """
-    Inverse of :py:func:`serialise_test_patterns`.
+    Inverse of :py:func:`serialise_test_pattern_specifications`.
     """
     for d in test_patterns:
         d["pattern"] = deserialise_test_pattern(d["pattern"])
