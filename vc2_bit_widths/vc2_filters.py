@@ -227,8 +227,6 @@ import math
 
 from collections import defaultdict, OrderedDict
 
-from vc2_conformance.decoder.transform_data_syntax import quant_factor
-
 from vc2_data_tables import (
     LiftingFilterParameters,
     LiftingStage,
