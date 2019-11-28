@@ -913,6 +913,13 @@ def generate_test_pictures(
         picture_height,
         analysis_test_patterns_bipolar,
     )
+    if len(locations) < len(analysis_test_patterns_bipolar):
+        logger.warning(
+            "%d analysis test patterns were too large to fit in a "
+            "%d x %d picture and were omitted.",
+            len(analysis_test_patterns_bipolar) - len(locations),
+            picture_width, picture_height,
+        )
     analysis_pictures = [
         AnalysisPicture(
             make_saturated_picture(picture, input_min, input_max),
@@ -952,12 +959,14 @@ def generate_test_pictures(
     
     # Pack the synthesis the test patterns, grouped by QI
     synthesis_pictures = []
+    num_too_large = 0
     for qi in sorted(synthesis_test_patterns_grouped):
         pictures, locations = pack_test_patterns(
             picture_width,
             picture_height,
             synthesis_test_patterns_grouped[qi],
         )
+        num_too_large += len(synthesis_test_patterns_grouped[qi]) - len(locations)
         
         this_synthesis_pictures = [
             SynthesisPicture(
@@ -976,6 +985,13 @@ def generate_test_pictures(
             ))
         
         synthesis_pictures += this_synthesis_pictures
+    if len(locations) < len(synthesis_test_patterns_grouped[qi]):
+        logger.warning(
+            "%d synthesis test patterns were too large to fit in a "
+            "%d x %d picture and were omitted.",
+            num_too_large,
+            picture_width, picture_height,
+        )
     logger.info(
         "Packed synthesis test patterns into %d pictures.",
         len(synthesis_pictures),

@@ -101,8 +101,6 @@ bits
 
 import sys
 
-import json
-
 import csv
 
 import logging
@@ -111,31 +109,16 @@ from collections import OrderedDict
 
 from argparse import ArgumentParser, FileType
 
-from vc2_bit_widths.scripts.argument_parsers import (
-    parse_quantisation_matrix_argument,
+from vc2_bit_widths.scripts.loader_utils import (
+    load_filter_analysis,
 )
-
-from vc2_bit_widths.linexp import LinExp
 
 from vc2_bit_widths.signal_bounds import (
     twos_compliment_bits,
 )
 
-from vc2_bit_widths.patterns import (
-    TestPatternSpecification,
-    OptimisedTestPatternSpecification,
-)
-
 from vc2_bit_widths.helpers import (
-    evaluate_filter_bounds,
-    quantisation_index_bound,
     evaluate_test_pattern_outputs,
-)
-
-from vc2_bit_widths.json_serialisations import (
-    deserialise_signal_bounds,
-    deserialise_test_pattern_specifications,
-    deserialise_quantisation_matrix,
 )
 
 
@@ -279,80 +262,33 @@ def main(args=None):
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
     
-    # Load precomputed signal bounds
-    static_filter_analysis = json.load(args.static_filter_analysis)
-    analysis_signal_bounds = deserialise_signal_bounds(
-        static_filter_analysis["analysis_signal_bounds"]
-    )
-    synthesis_signal_bounds = deserialise_signal_bounds(
-        static_filter_analysis["synthesis_signal_bounds"]
-    )
-    
-    # Load precomputed test patterns
-    analysis_test_patterns = deserialise_test_pattern_specifications(
-        TestPatternSpecification,
-        static_filter_analysis["analysis_test_patterns"]
-    )
-    synthesis_test_patterns = deserialise_test_pattern_specifications(
-        TestPatternSpecification,
-        static_filter_analysis["synthesis_test_patterns"]
-    )
-    
-    # Load optimised synthesis signal
-    if args.optimised_synthesis_test_patterns is not None:
-        optimised_json = json.load(args.optimised_synthesis_test_patterns)
-        
-        assert static_filter_analysis["wavelet_index"] == optimised_json["wavelet_index"]
-        assert static_filter_analysis["wavelet_index_ho"] == optimised_json["wavelet_index_ho"]
-        assert static_filter_analysis["dwt_depth"] == optimised_json["dwt_depth"]
-        assert static_filter_analysis["dwt_depth_ho"] == optimised_json["dwt_depth_ho"]
-        
-        args.picture_bit_width = optimised_json["picture_bit_width"]
-        
-        quantisation_matrix = deserialise_quantisation_matrix(
-            optimised_json["quantisation_matrix"]
-        )
-        
-        synthesis_test_patterns = deserialise_test_pattern_specifications(
-            OptimisedTestPatternSpecification,
-            optimised_json["optimised_synthesis_test_patterns"]
-        )
-    else:
-        quantisation_matrix = parse_quantisation_matrix_argument(
-            args.custom_quantisation_matrix,
-            static_filter_analysis["wavelet_index"],
-            static_filter_analysis["wavelet_index_ho"],
-            static_filter_analysis["dwt_depth"],
-            static_filter_analysis["dwt_depth_ho"],
-        )
-    
-    # Compute signal bounds for all specified bit widths
-    #
-    # analysis_bounds_dicts = [{(level, array_name, x, y): (lower_bound, upper_bound), ...}, ...]
-    # synthesis_bounds_dicts = same as above
-    concrete_analysis_bounds, concrete_synthesis_bounds = evaluate_filter_bounds(
-        static_filter_analysis["wavelet_index"],
-        static_filter_analysis["wavelet_index_ho"],
-        static_filter_analysis["dwt_depth"],
-        static_filter_analysis["dwt_depth_ho"],
-        analysis_signal_bounds,
-        synthesis_signal_bounds,
+    (
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        quantisation_matrix,
+        picture_bit_width,
+        max_quantisation_index,
+        concrete_analysis_bounds,
+        concrete_synthesis_bounds,
+        analysis_test_patterns,
+        synthesis_test_patterns,
+    ) = load_filter_analysis(
+        args.static_filter_analysis,
+        args.optimised_synthesis_test_patterns,
+        args.custom_quantisation_matrix,
         args.picture_bit_width,
     )
     
-    # Find the maximum quantisation index for each bit width
-    max_quantisation_index = quantisation_index_bound(
-        concrete_analysis_bounds,
-        quantisation_matrix,
-    )
     
     # Find test pattern output values for each bit width
     analysis_outputs, synthesis_outputs = evaluate_test_pattern_outputs(
-        static_filter_analysis["wavelet_index"],
-        static_filter_analysis["wavelet_index_ho"],
-        static_filter_analysis["dwt_depth"],
-        static_filter_analysis["dwt_depth_ho"],
-        args.picture_bit_width,
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+        picture_bit_width,
         quantisation_matrix,
         max_quantisation_index,
         analysis_test_patterns,

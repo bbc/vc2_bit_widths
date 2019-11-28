@@ -27,11 +27,12 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     keywords="smpte-RP-2042-3 vc2 dirac dirac-pro quantisation-matrix bit-width",
-    install_requires=["vc2_data_tables", "enum34", "numpy", "six"],
+    install_requires=["vc2_data_tables", "enum34", "numpy", "six", "pillow"],
     entry_points = {
         "console_scripts": [
             "vc2-static-filter-analysis=vc2_bit_widths.scripts.vc2_static_filter_analysis:main",
             "vc2-bit-widths-table=vc2_bit_widths.scripts.vc2_bit_widths_table:main",
+            "vc2-bit-width-test-pictures=vc2_bit_widths.scripts.vc2_bit_width_test_pictures:main",
             "vc2-maximum-quantisation-index=vc2_bit_widths.scripts.vc2_maximum_quantisation_index:main",
             "vc2-optimise-synthesis-test-patterns=vc2_bit_widths.scripts.vc2_optimise_synthesis_test_patterns:main",
         ],
