@@ -896,6 +896,10 @@ def generate_test_pictures(
     ))
     
     # Pack analysis signals
+    logger.info(
+        "Packing %d analysis test patterns...",
+        len(analysis_test_patterns)*2,
+    )
     analysis_test_patterns_bipolar = OrderedDict(
         (
             (level, array_name, x, y, maximise),
@@ -922,9 +926,16 @@ def generate_test_pictures(
             maximise,
             tx, ty,
         ))
+    logger.info(
+        "Packed analysis test patterns into %d pictures.",
+        len(analysis_pictures),
+    )
     
     # Group synthesis test patterns by required quantisation index
-    #
+    logger.info(
+        "Packing %d synthesis test patterns...",
+        len(synthesis_test_patterns)*2,
+    )
     # {quantisation_index: {(level, array_name, x, y, maximise): spec, ...}, ...}
     synthesis_test_patterns_grouped = defaultdict(OrderedDict)
     for (level, array_name, x, y), spec in synthesis_test_patterns.items():
@@ -965,6 +976,10 @@ def generate_test_pictures(
             ))
         
         synthesis_pictures += this_synthesis_pictures
+    logger.info(
+        "Packed synthesis test patterns into %d pictures.",
+        len(synthesis_pictures),
+    )
     
     return (
         analysis_pictures,
