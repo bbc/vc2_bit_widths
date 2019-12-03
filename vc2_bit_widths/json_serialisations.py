@@ -335,8 +335,8 @@ def serialise_test_pattern(test_pattern):
     positive = test_pattern.polarities > 0
     mask = test_pattern.polarities != 0
     
-    packed_positive = np.packbits(positive, bitorder="big").tobytes()
-    packed_mask = np.packbits(mask, bitorder="big").tobytes()
+    packed_positive = np.packbits(positive).tobytes()
+    packed_mask = np.packbits(mask).tobytes()
     
     out = {
         "dx": int(dx),
@@ -371,15 +371,11 @@ def deserialise_test_pattern(dictionary):
     
     positive = np.unpackbits(
         packed_positive,
-        count=count,
-        bitorder="big",
-    ).reshape((height, width)).astype(bool)
+    )[:count].reshape((height, width)).astype(bool)
     
     mask = np.unpackbits(
         packed_mask,
-        count=count,
-        bitorder="big",
-    ).reshape((height, width)).astype(bool)
+    )[:count].reshape((height, width)).astype(bool)
     
     polarities = np.full((height, width), -1, dtype=np.int8)
     polarities[positive] = +1
