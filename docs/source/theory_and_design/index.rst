@@ -58,3 +58,4 @@ in :ref:`theory-results`.
     aa_quantisation
     quantisation_proof
     test_patterns
+    results
