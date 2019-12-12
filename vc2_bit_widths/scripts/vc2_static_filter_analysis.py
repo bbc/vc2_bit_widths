@@ -180,8 +180,76 @@ wavelet will require around 16 GB of RAM and several weeks to complete.
 The ``--verbose`` option provides useful progress information as the static
 analysis process proceeds. As a guide, the vast majority of the runtime will be
 spent on the synthesis filters due to their far greater number. RAM usage grows
-rapidly during the processing of the analysis filters and then grow far more
-slowly during synthesis filter analysis.
+rapidly during the processing of the analysis filters and then only grow very
+slightly during synthesis filter analysis.
+
+Batched/parallel execution
+--------------------------
+
+When analysing extremely large filters, it might be useful to split the
+analysis process into multiple batches to be executed simultaneously on several
+cores or computers.
+
+To run the analysis process in batched mode, the ``--num-batches`` argument
+must be given specifying the total number of batches the execution will be
+split into. Each batch must also be given a ``--batch-num`` argument specifying
+which batch is to be executed. For example, the following commands might be run
+on four machines to parallelise the analysis of a 3-level Fidelity filter.
+
+::
+
+    $ vc2-static-filter-analysis \
+        --wavelet-index fidelity \
+        --depth 3 \
+        --num-batches 4 \
+        --batch-num 0 \
+        --output static_analysis_batch_0.json
+    
+    $ vc2-static-filter-analysis \
+        --wavelet-index fidelity \
+        --depth 3 \
+        --num-batches 4 \
+        --batch-num 1 \
+        --output static_analysis_batch_1.json
+    
+    $ vc2-static-filter-analysis \
+        --wavelet-index fidelity \
+        --depth 3 \
+        --num-batches 4 \
+        --batch-num 2 \
+        --output static_analysis_batch_2.json
+    
+    $ vc2-static-filter-analysis \
+        --wavelet-index fidelity \
+        --depth 3 \
+        --num-batches 4 \
+        --batch-num 3 \
+        --output static_analysis_batch_3.json
+
+Once all four analyses have finished, the results are then combined together
+using the :ref:`vc2-static-filter-analysis-combine` utility::
+
+    $ vc2-static-filter-analysis-combine \
+        static_analysis_batch_0.json \
+        static_analysis_batch_1.json \
+        static_analysis_batch_2.json \
+        static_analysis_batch_3.json \
+        --output static_analysis.json
+
+.. warning::
+
+    Each batch may still require the same amount of RAM as a complete analysis.
+
+.. warning::
+
+    The batching process requires some duplicated processing in each batch.
+    Consequently more total CPU time may be required than non-batched
+    execution.
+
+.. warning::
+
+    Though batches are intended to take similar amounts of time to execute,
+    this is not guaranteed.
 
 """
 
@@ -248,6 +316,21 @@ def parse_args(args=None):
             specified.
         """
     )
+    parser.add_argument(
+        "--num-batches", "-B",
+        type=int, default=1,
+        help="""
+            If the analysis is to be performed in a series of smaller batches,
+            the number of batches to split it into.
+        """
+    )
+    parser.add_argument(
+        "--batch-num", "-b",
+        type=int, default=None,
+        help="""
+            When --num-batches is used, the specific the batch to run.
+        """
+    )
     
     parser.add_argument(
         "--output", "-o",
@@ -270,6 +353,14 @@ def parse_args(args=None):
     if args.wavelet_index_ho is None:
         args.wavelet_index_ho = args.wavelet_index
     
+    if args.batch_num is None:
+        if args.num_batches != 1:
+            parser.error("--batch-num/-b must be given when --num-batches/-B is used")
+        else:
+            args.batch_num = 0
+    if args.batch_num >= args.num_batches:
+        parser.error("--batch-num/-b must be less than --num-batches/-B")
+    
     return args
 
 
@@ -290,6 +381,8 @@ def main(args=None):
         wavelet_index_ho=args.wavelet_index_ho,
         dwt_depth=args.dwt_depth,
         dwt_depth_ho=args.dwt_depth_ho,
+        num_batches=args.num_batches,
+        batch_num=args.batch_num,
     )
     
     # Serialise
@@ -307,6 +400,11 @@ def main(args=None):
         "synthesis_test_patterns":
             serialise_test_pattern_specifications(TestPatternSpecification, synthesis_test_patterns),
     }
+    
+    # Mark batched results files
+    if args.num_batches > 1:
+        out["num_batches"] = args.num_batches
+        out["batch_num"] = args.batch_num
     
     json.dump(out, args.output)
     args.output.write("\n")

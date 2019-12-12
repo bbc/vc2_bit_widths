@@ -116,7 +116,14 @@ from vc2_bit_widths.picture_packing import pack_test_patterns
 logger = logging.getLogger(__name__)
 
 
-def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth_ho):
+def static_filter_analysis(
+    wavelet_index,
+    wavelet_index_ho,
+    dwt_depth,
+    dwt_depth_ho,
+    num_batches=1,
+    batch_num=0,
+):
     r"""
     Performs a complete static analysis of a VC-2 filter configuration,
     computing theoretical upper- and lower-bounds for signal values (see
@@ -131,6 +138,23 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
     dwt_depth : int
     dwt_depth_ho : int
         The filter parameters.
+    
+    num_batches : int
+    batch_num : int
+        Though for most filters this function runs either instantaneously or at
+        worst in the space of a couple of hours, unusually large filters can
+        take an extremely long time to run. For example, a 4-level Fidelity
+        transform may take around a month to evaluate.
+        
+        These arguments may be used to split this job into separate batches
+        which may be computed separately (and in parallel) and later combined.
+        For example, setting ``num_batches`` to 3 results in only analysing
+        every third filter phase. The ``batch_num`` parameter should then be
+        set to either 0, 1 or 2 to specify which third.
+        
+        The skipped phases are simply omitted from the returned dictionaries.
+        The dictionaries returned for each batch should be unified to produce
+        the complete analysis.
     
     Returns
     =======
@@ -209,6 +233,9 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         for x in range(target_array.period[0]):
             for y in range(target_array.period[1]):
                 array_num += 1
+                if (array_num-1) % num_batches != batch_num:
+                    continue
+                
                 logger.info(
                     "Analysing analysis filter %d of %d (level %d, %s[%d, %d])",
                     array_num,
@@ -271,6 +298,9 @@ def static_filter_analysis(wavelet_index, wavelet_index_ho, dwt_depth, dwt_depth
         for x in range(target_array.period[0]):
             for y in range(target_array.period[1]):
                 array_num += 1
+                if (array_num-1) % num_batches != batch_num:
+                    continue
+                
                 logger.info(
                     "Analysing synthesis filter %d of %d (level %d, %s[%d, %d])",
                     array_num,

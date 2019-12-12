@@ -16,6 +16,25 @@ from vc2_bit_widths.json_serialisations import (
 from vc2_bit_widths.scripts.vc2_static_filter_analysis import main
 
 
+@pytest.mark.parametrize("batch_args", [
+    # Missing batch number
+    "--num-batches 2",
+    # Batch number too large
+    "--num-batches 2 --batch-num 2",
+])
+def test_disallow_bad_batch_arguments(tmpdir, batch_args):
+    # Just a simple sanity check that the correct options are passed through
+    # and processed as expected
+    
+    filename = str(tmpdir.join("file.json"))
+    
+    with pytest.raises(SystemExit):
+        main(shlex.split("-w 4 -d 1 -o {} {}".format(
+            filename,
+            batch_args,
+        )))
+
+
 def test_sanity(tmpdir):
     # Just a simple sanity check that the correct options are passed through
     # and processed as expected

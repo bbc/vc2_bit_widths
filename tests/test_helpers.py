@@ -170,6 +170,59 @@ def test_static_filter_analysis_and_evaluate_filter_bounds():
         assert actual_lower == input_min
         assert actual_upper == input_max
 
+def test_static_filter_analysis_batching():
+    wavelet_index = WaveletFilters.le_gall_5_3
+    wavelet_index_ho = WaveletFilters.le_gall_5_3
+    dwt_depth = 1
+    dwt_depth_ho = 0
+    
+    (
+        full_analysis_signal_bounds,
+        full_synthesis_signal_bounds,
+        full_analysis_test_patterns,
+        full_synthesis_test_patterns,
+    ) = static_filter_analysis(
+        wavelet_index,
+        wavelet_index_ho,
+        dwt_depth,
+        dwt_depth_ho,
+    )
+    
+    num_batches = 3
+    combined_analysis_signal_bounds = {}
+    combined_synthesis_signal_bounds = {}
+    combined_analysis_test_patterns = {}
+    combined_synthesis_test_patterns = {}
+    for batch_num in range(num_batches):
+        static_filter_analysis
+        (
+            batch_analysis_signal_bounds,
+            batch_synthesis_signal_bounds,
+            batch_analysis_test_patterns,
+            batch_synthesis_test_patterns,
+        ) = static_filter_analysis(
+            wavelet_index,
+            wavelet_index_ho,
+            dwt_depth,
+            dwt_depth_ho,
+            num_batches,
+            batch_num,
+        )
+        for combined, batch in [
+            (combined_analysis_signal_bounds, batch_analysis_signal_bounds),
+            (combined_synthesis_signal_bounds, batch_synthesis_signal_bounds),
+            (combined_analysis_test_patterns, batch_analysis_test_patterns),
+            (combined_synthesis_test_patterns, batch_synthesis_test_patterns),
+        ]:
+            assert len(batch) > 0
+            assert set(combined).isdisjoint(set(batch))
+            combined.update(batch)
+    
+    assert full_analysis_signal_bounds == combined_analysis_signal_bounds
+    assert full_synthesis_signal_bounds == combined_synthesis_signal_bounds
+    assert full_analysis_test_patterns == combined_analysis_test_patterns
+    assert full_synthesis_test_patterns == combined_synthesis_test_patterns
+
 
 def test_quantisation_index_bound():
     wavelet_index = WaveletFilters.haar_with_shift

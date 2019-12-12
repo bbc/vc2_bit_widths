@@ -14,6 +14,7 @@ instructions are provided below.
     :caption: Contents:
     
     vc2_static_filter_analysis
+    vc2_static_filter_analysis_combine
     vc2_bit_widths_table
     vc2_bit_width_test_pictures
     vc2_maximum_quantisation_index
