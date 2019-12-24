@@ -13,6 +13,7 @@ many bits are used, however, the implementation will consume more resources
 than necessary.
 
 .. image:: /_static/bit_width_artefacts.png
+    :alt: Example of the effects of an insufficient number of bits on decoded pictures.
 
 ..
     The examples above were produced when encoding 10-bit, YCbCr, HD pictures
