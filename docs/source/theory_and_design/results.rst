@@ -13,6 +13,11 @@ that:
 * The generated test patterns produce more extreme signal levels than real
   pictures or noise signals in practice.
 
+The software used to run these experiments `can be found on GitHub
+<https://github.com/bbc/vc2-signal-width-experiments/>`_\ . The source of this
+documentation page includes comments showing the exact command used to produce
+each of the plots shown.
+
 
 Heuristic vs naive synthesis test patterns
 ------------------------------------------
@@ -45,39 +50,68 @@ Results
 ```````
 
 The plot below shows the relative performance of the naive and heuristic test
-patterns across all arrays and filter phases (see :ref:`terminology`), broken
-down by transform depth and wavelet. Each dot shows the relative performance of
-the test pattern for a particular filter phase.
+patterns across all arrays and filter phases, broken down by transform depth
+and wavelet. Each dot shows the relative performance of the test pattern for a
+particular filter phase.
 
-.. image:: /_static/heuristic_improvement_all_phases.svg
+.. image:: /_static/heuristic_improvement_all_phases.png
 
-In general, the heuristic test patterns produce signal levels roughly twice as
-large as the naive test patterns, only rarely producing lower signal levels.
-For certain filter arrays/phases, signal level increases of 3-4\ :math:`\times`
-over the naive test patterns are possible.
+..
+    $ python analysis/plot_heuristic_vs_naive_test_patterns.py \
+        heuristic_vs_naive_test_patterns/10bit/deslauriers_dubuc_9_7_deslauriers_dubuc_9_7_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/le_gall_5_3_le_gall_5_3_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/deslauriers_dubuc_13_7_deslauriers_dubuc_13_7_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/haar_with_shift_haar_with_shift_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/fidelity_fidelity_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/daubechies_9_7_daubechies_9_7_*_0.csv \
+        --output heuristic_improvement_all_phases.png
 
-.. note::
+In general, the heuristic test patterns produce signal levels at least one bit
+larger than the naive test patterns, only rarely producing lower signal levels.
+Occasional under-performance is to be expected since the heuristic is, well, a
+heuristic.
 
-    The figure above treats each filter phase independently. In practice, most
-    VC-2 implementations will choose a fixed number of bits for each array
-    rather than assigning each filter phase a different number of bits. As the
-    figure below illustrates, the signal ranges for a given array can vary
-    substantially between filter phases:
+The figure above treats each filter phase independently. In practice, most VC-2
+implementations will choose a number of bits for each array as a whole rather
+than using different numbers of bits for different phases. As the figure below
+illustrates, the signal ranges for a given array can vary substantially between
+filter phases:
 
-    .. image:: /_static/filter_phase_test_pattern_variations.svg
-    
-    Because of this, it may make more sense to present the effect the heuristic
-    test patterns have on the worst-case signal levels within each array. The
-    plot is redrawn below but this time each dot represents the relative
-    improvement of going from the most extreme value produced by the naive
-    filter to the most extreme value for the heuristic filter..
-    
-    .. image:: /_static/heuristic_improvement_worst_case.svg
-    
-    This alternative perspective tells us that the heuristic test patterns have
-    a less significant in general but that for some arrays the heuristic test
-    patterns can still produce values 2-3\ :math:`\times` larger than naive
-    patterns.
+.. image:: /_static/filter_phase_test_pattern_variations.png
+
+..
+    $ python analysis/plot_heuristic_vs_naive_test_pattern_phase_heatmap.py \
+        heuristic_vs_naive_test_patterns/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --level 3 \
+        --array-name Output \
+        --output filter_phase_test_pattern_variations.png
+
+Because of this, it may make more sense to present the effect the heuristic
+test patterns have on the worst-case signal levels within each array. The
+plot is redrawn below but this time each dot represents the relative
+improvement of going from the most extreme value produced by the naive
+filter to the most extreme value for the heuristic filter for any phase.
+
+.. image:: /_static/heuristic_improvement_worst_case.png
+
+..
+    $ python analysis/plot_heuristic_vs_naive_test_patterns.py \
+        heuristic_vs_naive_test_patterns/10bit/deslauriers_dubuc_9_7_deslauriers_dubuc_9_7_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/le_gall_5_3_le_gall_5_3_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/deslauriers_dubuc_13_7_deslauriers_dubuc_13_7_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/haar_with_shift_haar_with_shift_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/fidelity_fidelity_*_0.csv \
+        heuristic_vs_naive_test_patterns/10bit/daubechies_9_7_daubechies_9_7_*_0.csv \
+        --worst-phase-only \
+        --output heuristic_improvement_worst_case.png
+
+Overall, this tells us that for some filter arrays the test patterns produce
+signal values one or more bits larger than the naive test patterns. Again, the
+heuristic occasionally produces lower signal levels than the naive test pattern
+though the effect is lessened when only worst-case phases are considered.
+
+In summary we can conclude that the heuristic test patterns produce larger
+signal levels than the naive test patterns in most cases.
 
 
 Comparison with natural images and noise
@@ -85,9 +119,10 @@ Comparison with natural images and noise
 
 As noted in :ref:`theory-related-work`, a common approach to picking signal
 widths in wavelet transforms is to pass images or noise through the filter and
-observe signal levels in practice. To test the effectiveness of this approach,
-an instrumented VC-2 encoder/decoder was used to log the signal levels produced
-by such experiments as compared with those produced by the test patterns.
+observe signal levels in practice. To measure the effectiveness of this
+approach, an instrumented VC-2 encoder/decoder was used to log the signal
+levels produced by noise signals, real pictures and the test patterns generated
+by this software.
 
 
 Method
@@ -160,18 +195,20 @@ General trends
 The plot below shows the worst-case signal levels in each array of a 4-level Le
 Gall (5, 3) transform acting on 10 bit pictures.
 
-.. image:: /_static/bit_widths_noise_vs_pictures.svg
+.. image:: /_static/bit_widths_noise_vs_pictures.png
 
 ..
-    python ../signal-width-experiments/plot_signal_ranges.py \
+    python analysis/plot_signal_ranges.py \
         --title "4-level Le Gall (5, 3), 10-bit pictures" \
-        --plot-upper-bound "Theoretical upper bound" le_gall_4_10bits.csv \
-        --plot-test-pattern "Test pattern" le_gall_4_10bits.csv \
+        --plot-upper-bound "Theoretical upper bound" \
+            bit_widths_tables/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --plot-test-pattern "Test pattern" \
+            bit_widths_tables/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Saturated noise" 2.5 \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
-        --output docs/source/_static/bit_widths_noise_vs_pictures.svg 297 110
+            picture_signal_range_results/saturated_noise/*/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --output bit_widths_noise_vs_pictures.png 297 110
 
 The 'Theoretical upper bound' line gives the upper-bound computed according to
 affine arithmetic (see :ref:`theory-affine-arithmetic`). The 'Test pattern'
@@ -229,22 +266,22 @@ below compares the signal levels produced for 4:1 compressed pictures and noise
 and 'worst-case' quantisations of those same pictures.  The 'worst-case' values
 report the most extreme signal value produced at *any* quantisation index.
 
-.. image:: /_static/bit_widths_4to1_vs_worst_case_quantisation.svg
+.. image:: /_static/bit_widths_4to1_vs_worst_case_quantisation.png
 
 ..
-    python ../signal-width-experiments/plot_signal_ranges.py \
+    python analysis/plot_signal_ranges.py \
         --title "4-level Le Gall (5, 3), 10-bit pictures" \
-        --plot-test-pattern "Test pattern" le_gall_4_10bits.csv \
+        --plot-test-pattern "Test pattern" \
+            bit_widths_tables/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (4:1 compressed)" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture-worst-case "Real pictures (worst-case quantisation)" \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Saturated noise (4:1 compressed)" 2.5 \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/saturated_noise/*/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture-worst-case "Saturated noise (worst-case quantisation)" \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
-        --output docs/source/_static/bit_widths_4to1_vs_worst_case_quantisation.svg 297 110
-
+            picture_signal_range_results/saturated_noise/*/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --output bit_widths_4to1_vs_worst_case_quantisation.png 297 110
 
 As the plots show, worst-case quantisation produces consistently higher signal
 levels than those found under 4:1 compression. Nevertheless, these signal
@@ -261,15 +298,24 @@ configurations as is discussed in greater detail later.
     illustrate the distributions of quantisation indices which are used in
     practice.
 
-    .. image:: /_static/quantisation_index_distributions.svg
+    .. image:: /_static/quantisation_index_distributions.png
+    
+    ..
+        python analysis/plot_quantisation_indices.py \
+            test_pattern_quantisation_indices.csv \
+            picture_and_noise_quantisation_indices.csv \
+            --wavelet-index le_gall_5_3 \
+            --dwt-depth 4 \
+            --bit-width 10 \
+            --output quantisation_index_distributions.png
 
     The 'Test patterns' boxplot shows the distribution of quantisation indices
     used by the heuristic synthesis test patterns. The other box plots show the
     actual distributions of quantisation indices used to encode the test
-    pictures and noise samples.
+    pictures and noise samples at various compression ratios.
 
     The plots show that the quantisation levels used for real pictures at
-    typical (i.e. 4:1) or even larger compression ratios (i.e. 6:1) are
+    typical (i.e. 4:1) or larger (6:1 and 8:1) compression ratios are
     significantly lower than worst-case quantisation levels, and those levels
     used by the test patterns. Even in the case of noise signals, the
     quantisation levels used still fall short of these worst-case levels.
@@ -291,17 +337,18 @@ The plot below compares the signal levels achieved by non-saturated and
 saturated noise signals, shown for worst-case quantisation indices. Again, a
 4-level Le Gall (5, 3) transform is shown acting on 10 bit inputs.
 
-.. image:: /_static/bit_widths_saturated_vs_non_saturated_noise.svg
+.. image:: /_static/bit_widths_saturated_vs_non_saturated_noise.png
 
 ..
-    python ../signal-width-experiments/plot_signal_ranges.py \
+    python analysis/plot_signal_ranges.py \
         --title "4-level Le Gall (5, 3), 10-bit pictures" \
-        --plot-test-pattern "Test pattern" le_gall_4_10bits.csv \
+        --plot-test-pattern "Test pattern" \
+            bit_widths_tables/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture-worst-case "Saturated noise" \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/saturated_noise/*/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture-worst-case "Non-saturated noise" \
-            ../signal-width-experiments/results/noise_hd_seed*_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
-        --output docs/source/_static/bit_widths_saturated_vs_non_saturated_noise.svg 297 110
+            picture_signal_range_results/noise/*/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --output bit_widths_saturated_vs_non_saturated_noise.png 297 110
 
 As might be expected, saturated noise results in higher worst-case signal
 levels, a pattern found to be consistent across all arrays and all noise
@@ -326,25 +373,26 @@ The plot below compares the signal levels produced by different colour
 components of the real picture signals. Again, a 4-level Le Gall (5, 3)
 transform is shown acting on 10 bit inputs and 4:1 compression.
 
-.. image:: /_static/bit_widths_colour_components.svg
+.. image:: /_static/bit_widths_colour_components.png
 
 ..
-    python ../signal-width-experiments/plot_signal_ranges.py \
+    python analysis/plot_signal_ranges.py \
         --title "4-level Le Gall (5, 3), 10-bit pictures" \
-        --plot-test-pattern "Test pattern" le_gall_4_10bits.csv \
+        --plot-test-pattern "Test pattern" \
+            bit_widths_tables/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (Y)" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (Cb)" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel1_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/1/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (Cr)" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel2_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/2/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (R)" 2.5 \
-            ../signal-width-experiments/results/images_rgb_16_hd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/rgb/hd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (G)" 2.5 \
-            ../signal-width-experiments/results/images_rgb_16_hd_DSC_*_channel1_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/rgb/hd/DSC_*/1/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (B)" 2.5 \
-            ../signal-width-experiments/results/images_rgb_16_hd_DSC_*_channel2_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
-        --output docs/source/_static/bit_widths_colour_components.svg 297 110
+            picture_signal_range_results/real_pictures/rgb/hd/DSC_*/2/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --output bit_widths_colour_components.png 297 110
 
 As might be expected, the signal levels from the luma component (Y) in a YCbCr
 picture and the components of an RGB picture are extremely similar. Likewise,
@@ -361,17 +409,18 @@ The plot below compares the signal levels produced by HD and UHD real
 picture signals. Again, a 4-level Le Gall (5, 3) transform is shown acting on
 10 bit inputs and 4:1 compression.
 
-.. image:: /_static/bit_widths_picture_size.svg
+.. image:: /_static/bit_widths_picture_size.png
 
 ..
-    python ../signal-width-experiments/plot_signal_ranges.py \
+    python analysis/plot_signal_ranges.py \
         --title "4-level Le Gall (5, 3), 10-bit pictures" \
-        --plot-test-pattern "Test pattern" le_gall_4_10bits.csv \
+        --plot-test-pattern "Test pattern" \
+            bit_widths_tables/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (HD)" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (UHD)" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_uhd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
-        --output docs/source/_static/bit_widths_picture_size.svg 297 110
+            picture_signal_range_results/real_pictures/ycbcr/uhd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --output bit_widths_picture_size.png 297 110
 
 The signal levels encountered at the different resolutions are broadly similar
 with UHD signals producing slightly larger signal levels deeper in the
@@ -386,33 +435,37 @@ The plot below compares the signal levels produced by different picture bit
 depths (on a relative scale). Again, a 4-level Le Gall (5, 3) transform is
 shown with 4:1 compression.
 
-.. image:: /_static/bit_widths_bit_depth.svg
+.. image:: /_static/bit_widths_bit_depth.png
 
 ..
-    python ../signal-width-experiments/plot_signal_ranges.py \
+    python analysis/plot_signal_ranges.py \
         --title "4-level Le Gall (5, 3)" \
         --relative \
-        --plot-test-pattern "Test pattern (8 bits)" le_gall_4_8bits.csv \
-        --plot-test-pattern "Test pattern (10 bits)" le_gall_4_10bits.csv \
-        --plot-test-pattern "Test pattern (12 bits)" le_gall_4_12bits.csv \
-        --plot-test-pattern "Test pattern (16 bits)" le_gall_4_16bits.csv \
+        --plot-test-pattern "Test pattern (8 bits)" \
+            bit_widths_tables/8bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --plot-test-pattern "Test pattern (10 bits)" \
+            bit_widths_tables/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --plot-test-pattern "Test pattern (12 bits)" \
+            bit_widths_tables/12bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --plot-test-pattern "Test pattern (16 bits)" \
+            bit_widths_tables/16bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (8 bits)" 2 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_8bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/8bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (10 bits)" 2.5 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (12 bits)" 3 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_12bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/12bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Real pictures (16 bits)" 4 \
-            ../signal-width-experiments/results/images_ycbcr_16_hd_DSC_*_channel0_16bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/real_pictures/ycbcr/hd/DSC_*/0/16bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Saturated noise (8 bits)" 2 \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_8bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/saturated_noise/*/8bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Saturated noise (10 bits)" 2.5 \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_10bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/saturated_noise/*/10bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Saturated noise (12 bits)" 3 \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_12bit_le_gall_5_3_le_gall_5_3_4_0.csv \
+            picture_signal_range_results/saturated_noise/*/12bit/le_gall_5_3_le_gall_5_3_4_0.csv \
         --plot-picture "Saturated noise (16 bits)" 4 \
-            ../signal-width-experiments/results/saturated_noise_hd_seed*_16bit_le_gall_5_3_le_gall_5_3_4_0.csv \
-        --output docs/source/_static/bit_widths_bit_depth.svg 297 110
+            picture_signal_range_results/saturated_noise/*/16bit/le_gall_5_3_le_gall_5_3_4_0.csv \
+        --output bit_widths_bit_depth.png 297 110
 
 As shown, the results are essentially indistinguishable at every bit width,
 though there are some occasional (small) differences which are assumed to be
