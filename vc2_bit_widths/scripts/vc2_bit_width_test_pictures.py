@@ -67,6 +67,7 @@ Where picture components have different resolutions (as in this example) the
 The two generated directories containing test pictures suitable for testing the
 luminance and colour-difference picture components.
 
+.. _vc2-bit-width-test-pictures-format:
 
 Test picture format and usage
 -----------------------------

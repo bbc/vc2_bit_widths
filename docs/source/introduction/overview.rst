@@ -186,7 +186,37 @@ by the optimised test signal::
         optimised_patterns.json \
         --output optimised_bit_widths_table.csv
 
+
 Generating test pictures
 ------------------------
 
-TODO...
+The :ref:`vc2-bit-width-test-pictures` command may be used to generate a series
+of test pictures containing test patterns suitable for passing through a VC-2
+encoder or decoder.
+
+As a simple example, set of test patterns generated as above may be turned into
+a collection of HD test pictures like so::
+
+    $ mkdir test_pictures
+    $ vc2-bit-width-test-pictures \
+        static_analysis.json \
+        1920 1080 \
+        --picture-bit-width 10 \
+        --output-directory test_pictures
+
+The generated test pictures contain test patterns packed together as
+illustrated in the example below:
+
+.. image:: /_static/example_test_picture.png
+
+The test pictures are split into analysis and synthesis test pictures.
+
+The analysis test pictures may be fed directly to an encoder.
+
+The synthesis test pictures are further split up into groups which should be
+quantised to different levels. These pictures should be individually encoded
+such that every picture slice is quantised with the specified quantisation
+index. These encoded pictures may then be fed to a decoder implementation.
+
+See :ref:`vc2-bit-width-test-pictures-format` for a more detailed explanation
+of how these test pictures should be used.
