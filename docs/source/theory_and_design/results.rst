@@ -124,6 +124,138 @@ approach, an instrumented VC-2 encoder/decoder was used to log the signal
 levels produced by noise signals, real pictures and the test patterns generated
 by this software.
 
+The plots below result from 4-level symmetric transforms using the VC-2 default
+quantisation matrices.
+
+Real pictures, 4:1 compression ratio
+````````````````````````````````````
+
+This first plot shows the peak signal levels produced by a collection of 48
+natrual, 10-bit, luma-only, HD images, compressed at a ratio of 4:1, compared
+with those produced by the heuristic test patterns.
+
+.. image:: /_static/luma_41_vs_test_patterns.png
+
+..
+    python analysis/plot_picture_vs_test_pattern_performance.py \
+        aggregated_picture_signal_range_results.csv \
+        --picture-title "Luma" \
+        --compression-ratio 4:1 \
+        --dwt-depth 4 \
+        --dwt-depth-ho 0 \
+        --exclude-wavelet haar_no_shift \
+        --output luma_41_vs_test_patterns.png
+
+The plot above is broken up into several subplots which show the results for
+different wavelet transform types.
+
+Within a subplot, each column shows a histogram of the distribution of relative
+signal values. From this plot we can immediately see that no picture ever
+produces a signal level larger than the heuristic test patterns. In fact, in
+the majority of pictures, real pictures produce peak signal levels one or more
+bits lower than those produced by the test patterns. Some pictures produce
+peaks over four bits lower than the test patterns for certain filter arrays.
+
+From this plot we can conclude that bit-width requirements are likely to be
+under-estimated by at least 1 bit for most wavelets if only real pictures are
+used to determine bit-widths.
+
+
+Saturated noise, 4:1 compression ratio
+``````````````````````````````````````
+
+The other common test source for chosing bit widths is noise. The plot below
+shows the peak signal levels achieved by 300 10-bit, HD, saturated, uniform
+random noise pictures, compressed at a 4:1 ratio.
+
+.. image:: /_static/saturated_noise_41_vs_test_patterns.png
+
+..
+    python analysis/plot_picture_vs_test_pattern_performance.py \
+        aggregated_picture_signal_range_results.csv \
+        --picture-title "Saturated Noise" \
+        --compression-ratio 4:1 \
+        --dwt-depth 4 \
+        --dwt-depth-ho 0 \
+        --exclude-wavelet haar_no_shift \
+        --output saturated_noise_41_vs_test_patterns.png
+
+This time, the peak signal levels of the noise signals more closely matches
+that of the test patterns for early synthesis filter arrays. Deeper within the
+transform, however, the test patterns begin to produce larger signal levels by
+as many as two bits or more at the deepest parts of the transforms.
+
+Under the two Deslauriers Dubuc wavelets, however, some noise signals peak
+slightly above the test patterns in a small number of filter arrays. In
+practice, however, the bit widths required to support the test patterns are
+also sufficient for these peaks in this case. This is visualised by the
+'drawing pins' in the plot.
+
+The body of each 'drawing pin' shows the range of values which would be rounded
+up to the same number of bits as the test pattern. In this case, we can see
+that most of the noise overshoots are comfortably within this range. In the
+more ambiguous cases, the colour of the pin head indicates whether any picture
+actually exceeded the number of bits used by the test pattern. In this case all
+of the pins are cyan indicating the test patterns indicated the correct number
+of bits, even if the absolute signal range was a slight underestimate.
+
+The main conclusions to be drawn from this graph is that the heuristic test
+patterns also produce significantly higher signal levels than noise signals. In
+particular, in deep parts of most transforms the signal levels are
+under-estimated by over two bits -- a worse under-estimate than produced by
+real pictures.
+
+Worst-case quantisation
+```````````````````````
+
+Both of the plots above show pictures compressed by a typical 4:1 compression
+ratio. In practice, the most extreme signal levels are produced under larger
+quantisation levels -- and indeed the test patterns use much larger
+quantisation levels.
+
+The two plots below instead show the picture and noise signal levels at
+whatever quantisation index makes them largest -- i.e. worst-case quantisation.
+
+.. image:: /_static/luma_wc_vs_test_patterns.png
+
+..
+    python analysis/plot_picture_vs_test_pattern_performance.py \
+        aggregated_picture_signal_range_results.csv \
+        --picture-title "Luma" \
+        --dwt-depth 4 \
+        --dwt-depth-ho 0 \
+        --exclude-wavelet haar_no_shift \
+        --output luma_wc_vs_test_patterns.png
+
+
+
+.. image:: /_static/saturated_noise_wc_vs_test_patterns.png
+
+..
+    python analysis/plot_picture_vs_test_pattern_performance.py \
+        aggregated_picture_signal_range_results.csv \
+        --picture-title "Saturated Noise" \
+        --dwt-depth 4 \
+        --dwt-depth-ho 0 \
+        --exclude-wavelet haar_no_shift \
+        --output saturated_noise_wc_vs_test_patterns.png
+
+In general the trends are essentially the same with both real pictures and
+noise being likely to under estimate signal levels, particularly deeper in the
+transform.
+
+The most significant difference is that the Haar transform test patterns are
+out-performed by both real pictures and noise in the final stages of the
+synthesis filters. This shortcoming presents a possible motivation for using
+:ref:`vc2-optimise-synthesis-test-patterns` to optimise test patterns for the
+Haar transform.
+
+
+Impact of other filter/image parameters
+---------------------------------------
+
+TODO: Introduce motivation of clearing up other parameter choices as
+insignificant.
 
 Method
 ``````
@@ -472,27 +604,6 @@ though there are some occasional (small) differences which are assumed to be
 due to differences in where quantisation boundaries fall. Since the impact on
 bit widths on the overall trends in the results is extremely small, only 10 bit
 examples are shown.
-
-
-Distinctions between wavelets
-`````````````````````````````
-
-Though the trends outlined above apply broadly to all wavelets and transform
-depths, some slight differences in test pattern performance between wavelets
-can be discerned.
-
-In the following plots, the distribution of test-pattern-vs-picture-or-noise
-measurement is shown, broken down by wavelet transform and picture type.
-
-.. image:: /_static/bit_width_under_estimates.svg
-
-The key insight from this plot is that for all wavelet types and both shallow
-(2-level) and deep (4-level) transforms, real picture and noise signals may
-lead to an under-estimate of the bit widths required of up-to almost 4 bits
-compared with the heuristic test patterns.
-
-In almost every case, the test patterns produce larger signals than any test
-picture or noise plate tested, though some exceptions exist.
 
 
 
