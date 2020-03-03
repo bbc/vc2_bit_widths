@@ -6,11 +6,6 @@ from collections import namedtuple
 
 import vc2_data_tables as tables
 
-from vc2_conformance.decoder.transform_data_syntax import (
-    quant_factor,
-    inverse_quant,
-)
-
 from vc2_conformance.state import State
 
 from vc2_conformance.picture_encoding import dwt
