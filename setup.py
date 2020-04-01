@@ -36,6 +36,7 @@ setup(
             "vc2-bit-width-test-pictures=vc2_bit_widths.scripts.vc2_bit_width_test_pictures:main",
             "vc2-maximum-quantisation-index=vc2_bit_widths.scripts.vc2_maximum_quantisation_index:main",
             "vc2-optimise-synthesis-test-patterns=vc2_bit_widths.scripts.vc2_optimise_synthesis_test_patterns:main",
+            "vc2-bundle=vc2_bit_widths.scripts.vc2_bundle:main",
         ],
     },
 )

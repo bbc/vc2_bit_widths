@@ -19,3 +19,4 @@ instructions are provided below.
     vc2_bit_width_test_pictures
     vc2_maximum_quantisation_index
     vc2_optimise_synthesis_test_patterns
+    vc2_bundle

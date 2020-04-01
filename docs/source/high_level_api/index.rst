@@ -17,3 +17,4 @@ and deserialisation of the file formats used by the command-line utilities.
     helpers
     patterns
     json_serialisations
+    bundle

@@ -220,3 +220,44 @@ index. These encoded pictures may then be fed to a decoder implementation.
 
 See :ref:`vc2-bit-width-test-pictures-format` for a more detailed explanation
 of how these test pictures should be used.
+
+
+Bundling analyses and test pattern data files
+---------------------------------------------
+
+When a large number of analyses have been performed (using, e.g.
+:ref:`vc2-static-filter-analysis`), a correspondingly large set of analysis
+JSON files will also accumulate. These can be bundled together, along with any
+optimised synthesis test patterns test (from
+:ref:`vc2-optimise-synthesis-test-patterns`) into a compressed bundle file.
+
+As well as substantially reducing the diskspace required to store the analysis
+files, specific analyses and optimised test patterns may be extracted on demand
+using a built-in index.
+
+The :ref:`vc2-bundle` command may be used to create and query bundle files. For
+example, if you have a number of static filter analyses with filenames like
+``static_filter_analysis_*.json`` and optimised synthesis test patterns with
+filenames like ``optimised_synthesis_test_patterns_*.json``, a bundle can be
+produced using ``vc2-bundle create`` like so::
+
+    $ vc2-bundle create bundle.zip \
+        --static-filter-analyses static_filter_analysis_*.json \
+        --optimised-synthesis-test-patterns optimised_synthesis_test_patterns_*.json
+
+Individual analyses may be extracted like so::
+
+    $ vc2-bundle extract-static-filter-analyses \
+        bundle.zip \
+        --wavelet-index haar_with_shift \
+        --dwt-depth 1 \
+        --output extracted.json
+
+And so too can optimised synthesis test patterns::
+
+    $ vc2-bundle extract-optimised-static-synthesis-test-patterns \
+        bundle.zip \
+        --wavelet-index haar_with_shift \
+        --dwt-depth 1 \
+        --picture-bit-width 10 \
+        --output extracted.json
