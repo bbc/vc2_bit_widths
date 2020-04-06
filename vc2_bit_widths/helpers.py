@@ -53,6 +53,8 @@ Generating test pictures
 .. autoclass:: TestPoint
     :no-members:
 
+.. autofunction:: make_saturated_picture
+
 """
 
 from collections import OrderedDict, defaultdict, namedtuple
@@ -823,7 +825,7 @@ assess an analysis filter.
 Parameters
 ==========
 picture : :py:class:`numpy.array`
-    The test picture.
+    The test picture, given as pixel polarities, -1, 0 and +1.
 test_points : [:py:class:`TestPoint`, ...]
     A list of locations within the analysis filter being tested by this
     picture.
@@ -837,8 +839,7 @@ assess an synthesis filter.
 Parameters
 ==========
 picture : :py:class:`numpy.array`
-    The test picture. Values are given as +1, 0 and -1 which must be enlarged
-    to the full signal range before use.
+    The test picture, given as pixel polarities, -1, 0 and +1.
 quantisation_index : int
     The quantisation index to use for all picture slices when encoding the test
     picture.
@@ -848,24 +849,23 @@ test_points : [:py:class:`TestPoint`, ...]
 """
 
 
-def make_saturated_picture(polarities, input_min, input_max):
+def make_saturated_picture(polarities, input_min, input_max, zero=0):
     """
-    (Internal utility.) Convert an array of -1, 0, +1 polarity values into an
-    array of saturated values.
+    Utility. Convert an array of -1, 0, +1 polarity values into an array of
+    saturated values.
     """
     # NB: dtype=object used to allow unlimited precision Python integers
     # (though I can only hope that this is never actually required -- 128-bit
     # per pixel video, anybody?)
-    out = np.zeros(polarities.shape, dtype=object)
-    out[polarities==+1] = input_max
-    out[polarities==-1] = input_min
+    out = np.full(polarities.shape, zero, dtype=object)
+    out[polarities>0] = input_max
+    out[polarities<0] = input_min
     return out
 
 
 def generate_test_pictures(
     picture_width,
     picture_height,
-    picture_bit_width,
     analysis_test_patterns,
     synthesis_test_patterns,
     synthesis_test_pattern_outputs,
@@ -879,8 +879,6 @@ def generate_test_pictures(
     picture_width : int
     picture_height : int
         The dimensions of the pictures to generate.
-    picture_bit_width : int
-        The number of bits in the input pictures.
     analysis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
     synthesis_test_patterns : {(level, array_name, x, y): :py:class:`~vc2_bit_widths.patterns.TestPatternSpecification`, ...}
         The individual analysis and synthesis test patterns to be combined. A
@@ -910,8 +908,6 @@ def generate_test_pictures(
         quantised transform coefficients should then be passed through the
         synthesis filter.
     """
-    input_min, input_max = signed_integer_range(picture_bit_width)
-    
     # For better packing, the test patterns will be packed in size order,
     # largest first.
     analysis_test_patterns = OrderedDict(sorted(
@@ -952,7 +948,7 @@ def generate_test_pictures(
         )
     analysis_pictures = [
         AnalysisPicture(
-            make_saturated_picture(picture, input_min, input_max),
+            picture,
             [],
         )
         for picture in pictures
@@ -1000,7 +996,7 @@ def generate_test_pictures(
         
         this_synthesis_pictures = [
             SynthesisPicture(
-                make_saturated_picture(picture, input_min, input_max),
+                picture,
                 qi,
                 [],
             )

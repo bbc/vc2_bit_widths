@@ -331,7 +331,6 @@ def main(args=None):
     analysis_pictures, synthesis_pictures = generate_test_pictures(
         args.width,
         args.height,
-        picture_bit_width,
         analysis_test_patterns,
         synthesis_test_patterns,
         synthesis_test_pattern_outputs,
