@@ -13,10 +13,6 @@ from vc2_conformance.picture_decoding import idwt
 
 from vc2_bit_widths.quantisation import forward_quant, inverse_quant
 
-from vc2_bit_widths.signal_bounds import (
-    signed_integer_range,
-)
-
 from vc2_bit_widths.pattern_evaluation import (
     convert_test_pattern_to_padded_picture_and_slice,
     evaluate_analysis_test_pattern_output,
@@ -515,15 +511,10 @@ def test_make_saturated_picture():
     minv = -(1<<128)
     maxv = (1<<128)-1
     out = make_saturated_picture(polarities, minv, maxv)
+    
     assert np.array_equal(out, [
         [maxv, 0, minv],
         [minv, 0, maxv],
-    ])
-    
-    out = make_saturated_picture(polarities, minv, maxv, 10)
-    assert np.array_equal(out, [
-        [maxv, 10, minv],
-        [minv, 10, maxv],
     ])
 
 
@@ -544,7 +535,6 @@ def test_generate_test_pictures():
     picture_width = 16
     picture_height = 8
     picture_bit_width = 10
-    input_min, input_max = signed_integer_range(picture_bit_width)
     
     (
         analysis_signal_bounds,
@@ -597,6 +587,7 @@ def test_generate_test_pictures():
     ) = generate_test_pictures(
         picture_width,
         picture_height,
+        picture_bit_width,
         analysis_test_patterns,
         synthesis_test_patterns,
         synthesis_test_pattern_outputs,
@@ -632,13 +623,7 @@ def test_generate_test_pictures():
                 v_filter_params,
                 dwt_depth,
                 dwt_depth_ho,
-                # NB: Argument is mutated, but make_saturated_picture returns a
-                # copy
-                make_saturated_picture(
-                    analysis_picture.picture,
-                    input_min,
-                    input_max
-                ),
+                analysis_picture.picture.copy(),  # NB: Argument is mutated
                 (
                     test_point.level,
                     test_point.array_name,
@@ -689,13 +674,7 @@ def test_generate_test_pictures():
             )
             # NB: Argument is mutated
             target_value = codec.analyse_quantise_synthesise(
-                # NB: Argument is mutated, but make_saturated_picture returns a
-                # copy
-                make_saturated_picture(
-                    synthesis_picture.picture,
-                    input_min,
-                    input_max
-                ),
+                synthesis_picture.picture.copy(),
             )[0]
             
             # Compare with expected output level for that test pattern
