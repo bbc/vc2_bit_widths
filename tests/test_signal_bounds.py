@@ -29,6 +29,7 @@ from vc2_bit_widths.vc2_filters import (
 from vc2_bit_widths.signal_bounds import (
     round_away_from_zero,
     signed_integer_range,
+    unsigned_integer_range,
     twos_compliment_bits,
     analysis_filter_bounds,
     evaluate_analysis_filter_bounds,
@@ -151,6 +152,10 @@ def test_round_away_from_zero():
 
 def test_signed_integer_range():
     assert signed_integer_range(8) == (-128, 127)
+
+
+def test_unsigned_integer_range():
+    assert unsigned_integer_range(8) == (0, 255)
 
 
 def test_twos_compliment_bits():

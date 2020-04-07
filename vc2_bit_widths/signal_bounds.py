@@ -46,6 +46,8 @@ numerical range.
 
 .. autofunction:: signed_integer_range
 
+.. autofunction:: unsigned_integer_range
+
 The following function may be used to pessimistically round values to integers:
 
 .. autofunction:: round_away_from_zero
@@ -80,6 +82,17 @@ def signed_integer_range(num_bits):
     return (
         -1 << (num_bits - 1),
         (1 << (num_bits - 1)) - 1,
+    )
+
+
+def unsigned_integer_range(num_bits):
+    """
+    Return the lower- and upper-bound values for an unsigned integer with the
+    specified number of bits.
+    """
+    return (
+        0,
+        (1 << num_bits) - 1,
     )
 
 

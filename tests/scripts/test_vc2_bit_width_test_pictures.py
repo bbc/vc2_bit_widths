@@ -34,11 +34,11 @@ def test_save_picture_as_png(tmpdir):
     filename = str(tmpdir.join("test.png"))
     
     picture = np.array([
-        [1024, -1024, 0],
-        [-1024, 0, 1024],
+        [1023, 0, 512],
+        [0, 512, 1023],
     ], dtype=object)
     
-    save_picture_as_png(filename, picture)
+    save_picture_as_png(filename, picture, 10)
     
     im = PIL.Image.open(filename)
     assert im.width == 3

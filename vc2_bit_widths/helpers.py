@@ -83,6 +83,7 @@ from vc2_bit_widths.signal_bounds import (
     evaluate_analysis_filter_bounds,
     evaluate_synthesis_filter_bounds,
     signed_integer_range,
+    unsigned_integer_range,
 )
 
 from vc2_bit_widths.patterns import (
@@ -837,8 +838,7 @@ assess an synthesis filter.
 Parameters
 ==========
 picture : :py:class:`numpy.array`
-    The test picture. Values are given as +1, 0 and -1 which must be enlarged
-    to the full signal range before use.
+    The test picture.
 quantisation_index : int
     The quantisation index to use for all picture slices when encoding the test
     picture.
@@ -848,7 +848,7 @@ test_points : [:py:class:`TestPoint`, ...]
 """
 
 
-def make_saturated_picture(polarities, input_min, input_max):
+def make_saturated_picture(polarities, input_min, input_max, zero=0):
     """
     (Internal utility.) Convert an array of -1, 0, +1 polarity values into an
     array of saturated values.
@@ -856,7 +856,7 @@ def make_saturated_picture(polarities, input_min, input_max):
     # NB: dtype=object used to allow unlimited precision Python integers
     # (though I can only hope that this is never actually required -- 128-bit
     # per pixel video, anybody?)
-    out = np.zeros(polarities.shape, dtype=object)
+    out = np.full(polarities.shape, zero, dtype=object)
     out[polarities==+1] = input_max
     out[polarities==-1] = input_min
     return out
@@ -898,6 +898,9 @@ def generate_test_pictures(
         A series of test pictures containing correctly aligned instances of
         each supplied test pattern.
         
+        Pictures are returned with values in the range 0 to
+        (2**picture_bit_width)-1, as expected by a VC-2 encoder.
+        
         Each analysis picture includes a subset of the test patterns supplied
         (see :py:class:`AnalysisPicture`). The analysis test pictures are
         intended to be passed to an analysis filter as-is.
@@ -910,7 +913,8 @@ def generate_test_pictures(
         quantised transform coefficients should then be passed through the
         synthesis filter.
     """
-    input_min, input_max = signed_integer_range(picture_bit_width)
+    input_min, input_max = unsigned_integer_range(picture_bit_width)
+    input_mid = (input_max - input_min + 1) // 2
     
     # For better packing, the test patterns will be packed in size order,
     # largest first.
@@ -952,7 +956,7 @@ def generate_test_pictures(
         )
     analysis_pictures = [
         AnalysisPicture(
-            make_saturated_picture(picture, input_min, input_max),
+            make_saturated_picture(picture, input_min, input_max, input_mid),
             [],
         )
         for picture in pictures
@@ -1000,7 +1004,7 @@ def generate_test_pictures(
         
         this_synthesis_pictures = [
             SynthesisPicture(
-                make_saturated_picture(picture, input_min, input_max),
+                make_saturated_picture(picture, input_min, input_max, input_mid),
                 qi,
                 [],
             )

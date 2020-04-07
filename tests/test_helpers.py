@@ -510,11 +510,11 @@ def test_make_saturated_picture():
     
     minv = -(1<<128)
     maxv = (1<<128)-1
-    out = make_saturated_picture(polarities, minv, maxv)
+    out = make_saturated_picture(polarities, minv, maxv, 10)
     
     assert np.array_equal(out, [
-        [maxv, 0, minv],
-        [minv, 0, maxv],
+        [maxv, 10, minv],
+        [minv, 10, maxv],
     ])
 
 
@@ -535,6 +535,7 @@ def test_generate_test_pictures():
     picture_width = 16
     picture_height = 8
     picture_bit_width = 10
+    value_offset = 1<<(picture_bit_width-1)
     
     (
         analysis_signal_bounds,
@@ -623,7 +624,7 @@ def test_generate_test_pictures():
                 v_filter_params,
                 dwt_depth,
                 dwt_depth_ho,
-                analysis_picture.picture.copy(),  # NB: Argument is mutated
+                analysis_picture.picture.copy() - value_offset,  # NB: Argument is mutated
                 (
                     test_point.level,
                     test_point.array_name,
@@ -674,7 +675,7 @@ def test_generate_test_pictures():
             )
             # NB: Argument is mutated
             target_value = codec.analyse_quantise_synthesise(
-                synthesis_picture.picture.copy(),
+                synthesis_picture.picture.copy() - value_offset,
             )[0]
             
             # Compare with expected output level for that test pattern

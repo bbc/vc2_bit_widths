@@ -264,13 +264,13 @@ def parse_args(arg_strings=None):
     return args
 
 
-def save_picture_as_png(filename, picture):
+def save_picture_as_png(filename, picture, picture_bit_width):
     """
     Write a test picture as a saturated 8-bit PNG.
     """
     array = np.full(picture.shape, 128, dtype=np.uint8)
-    array[picture > 0] = 255
-    array[picture < 0] = 0
+    array[picture == ((1<<picture_bit_width) - 1)] = 255
+    array[picture == 0] = 0
     
     image = PIL.Image.fromarray(array, "L")
     image.save(filename)
@@ -343,7 +343,11 @@ def main(args=None):
             args.output_directory,
             "analysis_{}".format(i),
         )
-        save_picture_as_png(filename + ".png", test_picture.picture)
+        save_picture_as_png(
+            filename + ".png",
+            test_picture.picture,
+            picture_bit_width,
+        )
         save_test_points_as_json(filename + ".json", test_picture.test_points)
     
     for i, test_picture in enumerate(synthesis_pictures):
@@ -351,7 +355,11 @@ def main(args=None):
             args.output_directory,
             "synthesis_{}_qi{}".format(i, test_picture.quantisation_index),
         )
-        save_picture_as_png(filename + ".png", test_picture.picture)
+        save_picture_as_png(
+            filename + ".png",
+            test_picture.picture,
+            picture_bit_width,
+        )
         save_test_points_as_json(filename + ".json", test_picture.test_points)
     
     return 0
