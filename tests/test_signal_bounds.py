@@ -148,6 +148,8 @@ def test_round_away_from_zero():
     
     assert round_away_from_zero(Fraction(-20, 10)) == -2
     assert round_away_from_zero(Fraction(-21, 10)) == -3
+    
+    assert type(round_away_from_zero(Fraction(0, 1))) is int
 
 
 def test_signed_integer_range():

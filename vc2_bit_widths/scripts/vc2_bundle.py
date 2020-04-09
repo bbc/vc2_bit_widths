@@ -150,7 +150,6 @@ def parse_args(args=None):
     
     create_parser = subparsers.add_parser(
         "create",
-        aliases=["c"],
         help="""
             Create a bundle file.
         """,
@@ -188,7 +187,6 @@ def parse_args(args=None):
     
     ls_parser = subparsers.add_parser(
         "list",
-        aliases=["ls"],
         help="""
             List the contents of a bundle file.
         """,
@@ -205,7 +203,6 @@ def parse_args(args=None):
     
     extract_sfa_parser = subparsers.add_parser(
         "extract-static-filter-analysis",
-        aliases=["extract-sfa", "extract", "e"],
         help="""
             Extract a static filter analysis from the bundle.
         """,
@@ -214,7 +211,6 @@ def parse_args(args=None):
     
     extract_ostp_parser = subparsers.add_parser(
         "extract-optimised-synthesis-test-patterns",
-        aliases=["extract-ostp", "eo"],
         help="""
             Extract a set of optimised synthesis test patterns from the bundle.
         """,
@@ -394,7 +390,13 @@ def main_list(args):
             ))
             print("    * quantisation_matrix: {")
             for level, orients in sorted(entry["quantisation_matrix"].items()):
-                print("          {}: {},".format(level, orients))
+                print("          {}: {{{}}},".format(
+                    level,
+                    ", ".join(
+                        "'{}': {}".format(orient, value)
+                        for orient, value in sorted(orients.items())
+                    ),
+                ))
             print("      }")
         
         printed_something = True

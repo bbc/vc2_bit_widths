@@ -608,9 +608,9 @@ def add_missing_analysis_values(
                         src_array_name = "Input"
                     elif array_name in ("L", "H"):
                         src_array_name = [
-                            array_name
-                            for level, array_name in intermediate_arrays
-                            if level == src_level and array_name.startswith("DC'")
+                            int_array_name
+                            for int_level, int_array_name in intermediate_arrays
+                            if int_level == src_level and int_array_name.startswith("DC'")
                         ][-1]
                         if array_name == "L":
                             src_x = x * 2
@@ -618,9 +618,9 @@ def add_missing_analysis_values(
                             src_x = (x * 2) + 1
                     elif array_name in ("LL", "LH"):
                         src_array_name = [
-                            array_name
-                            for level, array_name in intermediate_arrays
-                            if level == src_level and array_name.startswith("L'")
+                            int_array_name
+                            for int_level, int_array_name in intermediate_arrays
+                            if int_level == src_level and int_array_name.startswith("L'")
                         ][-1]
                         if array_name == "LL":
                             src_y = y * 2
@@ -628,9 +628,9 @@ def add_missing_analysis_values(
                             src_y = (y * 2) + 1
                     elif array_name in ("HL", "HH"):
                         src_array_name = [
-                            array_name
-                            for level, array_name in intermediate_arrays
-                            if level == src_level and array_name.startswith("H'")
+                            int_array_name
+                            for int_level, int_array_name in intermediate_arrays
+                            if int_level == src_level and int_array_name.startswith("H'")
                         ][-1]
                         if array_name == "HL":
                             src_y = y * 2

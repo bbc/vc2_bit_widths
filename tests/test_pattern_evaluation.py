@@ -124,7 +124,7 @@ def test_evaluate_analysis_test_pattern_output():
                 # Compute the expected bounds for this value
                 lower_bound, upper_bound = evaluate_analysis_filter_bounds(
                     *analysis_filter_bounds(target_array[x, y]),
-                    num_bits=picture_bit_width,
+                    num_bits=picture_bit_width
                 )
                 
                 # Create a test pattern

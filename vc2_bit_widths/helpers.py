@@ -406,17 +406,20 @@ def evaluate_filter_bounds(
     # NB: Intermediate arrays use (1, "L")/(1, "LL") for the DC band while the
     # general VC-2 convention is to use (0, "L")/(0, "LL") and so the level
     # number is tweaked in the dictionary below.
-    coeff_bounds = {
+    coeff_bounds = OrderedDict(
         (
-            level if orient not in ("L", "LL") else 0,
-            orient,
-        ): (
-            maximum_dequantised_magnitude(lower_bound),
-            maximum_dequantised_magnitude(upper_bound),
+            (
+                level if orient not in ("L", "LL") else 0,
+                orient,
+            ),
+            (
+                maximum_dequantised_magnitude(lower_bound),
+                maximum_dequantised_magnitude(upper_bound),
+            ),
         )
         for (level, orient, _, _), (lower_bound, upper_bound)
         in concrete_analysis_signal_bounds.items()
-    }
+    )
     
     # Evaluate synthesis bounds
     concrete_synthesis_signal_bounds = OrderedDict(

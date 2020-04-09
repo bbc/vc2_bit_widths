@@ -65,14 +65,15 @@ def test_bundle_get_static_filter_analysis(tmpdir):
         "-D", "2",
         "-o", analysis_1_filename,
     ])
-    analysis_1_json = json.load(open(analysis_1_filename, "rb"))
+    print(analysis_1_filename)
+    analysis_1_json = json.load(open(analysis_1_filename))
     
     vc2_static_filter_analysis.main([
         "-w", "haar_no_shift",
         "-d", "1",
         "-o", analysis_2_filename,
     ])
-    analysis_2_json = json.load(open(analysis_2_filename, "rb"))
+    analysis_2_json = json.load(open(analysis_2_filename))
     
     bundle_create_from_serialised_dicts(
         bundle_filename,

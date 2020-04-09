@@ -189,26 +189,32 @@ def serialise_signal_bounds(signal_bounds):
             ...
         ]
     """
-    return serialise_intermediate_value_dictionary({
-        key: {
-            "lower_bound": serialise_linexp(LinExp(lower_bound)),
-            "upper_bound": serialise_linexp(LinExp(upper_bound)),
-        }
+    return serialise_intermediate_value_dictionary(OrderedDict(
+        (
+            key,
+            {
+                "lower_bound": serialise_linexp(LinExp(lower_bound)),
+                "upper_bound": serialise_linexp(LinExp(upper_bound)),
+            },
+        )
         for key, (lower_bound, upper_bound) in signal_bounds.items()
-    })
+    ))
 
 
 def deserialise_signal_bounds(signal_bounds):
     """
     Inverse of :py:func:`serialise_signal_bounds`.
     """
-    return {
-        key: (
-            deserialise_linexp(d["lower_bound"]),
-            deserialise_linexp(d["upper_bound"]),
+    return OrderedDict(
+        (
+            key,
+            (
+                deserialise_linexp(d["lower_bound"]),
+                deserialise_linexp(d["upper_bound"]),
+            )
         )
         for key, d in deserialise_intermediate_value_dictionary(signal_bounds).items()
-    }
+    )
 
 
 def serialise_concrete_signal_bounds(signal_bounds):
@@ -233,23 +239,29 @@ def serialise_concrete_signal_bounds(signal_bounds):
             ...
         ]
     """
-    return serialise_intermediate_value_dictionary({
-        key: {
-            "lower_bound": lower_bound,
-            "upper_bound": upper_bound,
-        }
+    return serialise_intermediate_value_dictionary(OrderedDict(
+        (
+            key,
+            {
+                "lower_bound": lower_bound,
+                "upper_bound": upper_bound,
+            },
+        )
         for key, (lower_bound, upper_bound) in signal_bounds.items()
-    })
+    ))
 
 
 def deserialise_concrete_signal_bounds(signal_bounds):
     """
     Inverse of :py:func:`serialise_concrete_signal_bounds`.
     """
-    return {
-        key: (d["lower_bound"], d["upper_bound"])
+    return OrderedDict(
+        (
+            key,
+            (d["lower_bound"], d["upper_bound"]),
+        )
         for key, d in deserialise_intermediate_value_dictionary(signal_bounds).items()
-    }
+    )
 
 
 def serialise_namedtuple(namedtuple_type, value):
@@ -426,10 +438,13 @@ def serialise_test_pattern_specifications(spec_namedtuple_type, test_patterns):
         :py:class:`~vc2_bit_widths.patterns.OptimisedTestPatternSpecification`.
     test_patterns : {(level, array_name, x, y): (...), ...}
     """
-    out = serialise_intermediate_value_dictionary({
-        key: serialise_namedtuple(spec_namedtuple_type, value)
+    out = serialise_intermediate_value_dictionary(OrderedDict(
+        (
+            key,
+            serialise_namedtuple(spec_namedtuple_type, value),
+        )
         for key, value in test_patterns.items()
-    })
+    ))
     
     for d in out:
         d["pattern"] = serialise_test_pattern(d["pattern"])
@@ -447,10 +462,13 @@ def deserialise_test_pattern_specifications(spec_namedtuple_type, test_patterns)
         d["pattern_translation_multiple"] = tuple(d["pattern_translation_multiple"])
         d["target_translation_multiple"] = tuple(d["target_translation_multiple"])
     
-    return {
-        key: deserialise_namedtuple(spec_namedtuple_type, value)
+    return OrderedDict(
+        (
+            key,
+            deserialise_namedtuple(spec_namedtuple_type, value),
+        )
         for key, value in deserialise_intermediate_value_dictionary(test_patterns).items()
-    }
+    )
 
 
 def serialise_quantisation_matrix(quantisation_matrix):

@@ -2,7 +2,7 @@ import pytest
 
 import json
 
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 from vc2_bit_widths.linexp import LinExp
 
@@ -34,10 +34,10 @@ def json_roundtrip(value):
 
 
 def test_serialise_intermediate_value_dictionary():
-    before = {
-        (3, "HL", 2, 1): {"foo": "bar"},
-        (6, "LH", 5, 4): {"baz": "quz"},
-    }
+    before = OrderedDict([
+        ((3, "HL", 2, 1), {"foo": "bar"}),
+        ((6, "LH", 5, 4), {"baz": "quz"}),
+    ])
     after = serialise_intermediate_value_dictionary(before)
     after = json_roundtrip(after)
     
@@ -73,12 +73,16 @@ def test_serialise_linexp():
 
 
 def test_serialise_signal_bounds():
-    before = {
-        (1, "LH", 2, 3): (
-            LinExp("foo")/2 + 1,
-            LinExp("bar")/4 + 2,
-        ),
-    }
+    before = OrderedDict([
+        ((1, "LH", 2, 3), (
+            LinExp("foo")/2,
+            LinExp("bar")/4,
+        )),
+        ((2, "HL", 3, 2), (
+            LinExp("qux")/8,
+            LinExp("quo")/16,
+        )),
+    ])
     after = serialise_signal_bounds(before)
     after = json_roundtrip(after)
     
@@ -89,11 +93,20 @@ def test_serialise_signal_bounds():
             "phase": [2, 3],
             "lower_bound": [
                 {"symbol": "foo", "numer": "1", "denom": "2"},
-                {"symbol": None, "numer": "1", "denom": "1"},
             ],
             "upper_bound": [
                 {"symbol": "bar", "numer": "1", "denom": "4"},
-                {"symbol": None, "numer": "2", "denom": "1"},
+            ],
+        },
+        {
+            "level": 2,
+            "array_name": "HL",
+            "phase": [3, 2],
+            "lower_bound": [
+                {"symbol": "qux", "numer": "1", "denom": "8"},
+            ],
+            "upper_bound": [
+                {"symbol": "quo", "numer": "1", "denom": "16"},
             ],
         },
     ]
@@ -102,9 +115,10 @@ def test_serialise_signal_bounds():
 
 
 def test_serialise_concrete_signal_bounds():
-    before = {
-        (1, "LH", 2, 3): (-512, 511),
-    }
+    before = OrderedDict([
+        ((1, "LH", 2, 3), (-512, 511)),
+        ((2, "HL", 3, 2), (-1024, 1023)),
+    ])
     after = serialise_concrete_signal_bounds(before)
     after = json_roundtrip(after)
     
@@ -115,6 +129,13 @@ def test_serialise_concrete_signal_bounds():
             "phase": [2, 3],
             "lower_bound": -512,
             "upper_bound": 511,
+        },
+        {
+            "level": 2,
+            "array_name": "HL",
+            "phase": [3, 2],
+            "lower_bound": -1024,
+            "upper_bound": 1023,
         },
     ]
     
@@ -174,8 +195,8 @@ def test_serialise_picture():
 
 
 def test_serialise_test_pattern_specifications():
-    before = {
-        (1, "LH", 2, 3): OTPS(
+    before = OrderedDict([
+        ((1, "LH", 2, 3), OTPS(
             target=(4, 5),
             pattern=TP({(10, 20): 1}),
             pattern_translation_multiple=(6, 7),
@@ -183,8 +204,17 @@ def test_serialise_test_pattern_specifications():
             quantisation_index=30,
             decoded_value=40,
             num_search_iterations=50,
-        ),
-    }
+        )),
+        ((2, "HL", 3, 2), OTPS(
+            target=(1, 0),
+            pattern=TP({(10, 20): 1}),
+            pattern_translation_multiple=(6, 7),
+            target_translation_multiple=(8, 9),
+            quantisation_index=30,
+            decoded_value=40,
+            num_search_iterations=50,
+        )),
+    ])
     after = serialise_test_pattern_specifications(OTPS, before)
     after = json_roundtrip(after)
     
@@ -194,6 +224,18 @@ def test_serialise_test_pattern_specifications():
             "array_name": "LH",
             "phase": [2, 3],
             "target": [4, 5],
+            "pattern": serialise_test_pattern(TP({(10, 20): 1})),
+            "pattern_translation_multiple": [6, 7],
+            "target_translation_multiple": [8, 9],
+            "quantisation_index": 30,
+            "decoded_value": 40,
+            "num_search_iterations": 50,
+        },
+        {
+            "level": 2,
+            "array_name": "HL",
+            "phase": [3, 2],
+            "target": [1, 0],
             "pattern": serialise_test_pattern(TP({(10, 20): 1})),
             "pattern_translation_multiple": [6, 7],
             "target_translation_multiple": [8, 9],

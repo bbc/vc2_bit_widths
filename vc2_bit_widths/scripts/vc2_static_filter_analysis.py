@@ -387,8 +387,8 @@ def main(args=None):
     
     # Serialise
     out = {
-        "wavelet_index": args.wavelet_index,
-        "wavelet_index_ho": args.wavelet_index_ho,
+        "wavelet_index": int(args.wavelet_index),
+        "wavelet_index_ho": int(args.wavelet_index_ho),
         "dwt_depth": args.dwt_depth,
         "dwt_depth_ho": args.dwt_depth_ho,
         "analysis_signal_bounds":

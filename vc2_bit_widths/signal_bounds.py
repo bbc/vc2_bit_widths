@@ -69,9 +69,9 @@ from vc2_bit_widths.quantisation import maximum_useful_quantisation_index
 def round_away_from_zero(value):
     """Round a number away from zero."""
     if value < 0:
-        return math.floor(value)
+        return int(math.floor(value))
     else:
-        return math.ceil(value)
+        return int(math.ceil(value))
 
 
 def signed_integer_range(num_bits):

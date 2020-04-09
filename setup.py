@@ -1,7 +1,23 @@
+import sys
+
 from setuptools import setup, find_packages
 
 with open("vc2_bit_widths/version.py", "r") as f:
     exec(f.read())
+
+install_requires = [
+    "vc2_data_tables",
+    "enum34",
+    "six",
+]
+
+# Use old versions of libraries which have deprecated Python 2.7 support
+if sys.version[0] == "2":
+    install_requires.append("pillow<7")
+    install_requires.append("numpy<1.17")
+else:
+    install_requires.append("pillow")
+    install_requires.append("numpy")
 
 setup(
     name="vc2_bit_widths",
@@ -27,7 +43,7 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     keywords="smpte-RP-2042-3 vc2 dirac dirac-pro quantisation-matrix bit-width",
-    install_requires=["vc2_data_tables", "enum34", "numpy", "six", "pillow"],
+    install_requires=install_requires,
     entry_points = {
         "console_scripts": [
             "vc2-static-filter-analysis=vc2_bit_widths.scripts.vc2_static_filter_analysis:main",
