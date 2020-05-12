@@ -148,6 +148,8 @@ def parse_args(args=None):
         """,
     )
     
+    parser.set_defaults(action=None)
+    
     create_parser = subparsers.add_parser(
         "create",
         help="""
@@ -289,6 +291,9 @@ def parse_args(args=None):
     )
     
     args = parser.parse_args(args)
+    
+    if args.action is None:
+        parser.error("Expected a command.")
     
     # Flatten create arguments
     if args.action == "create":
