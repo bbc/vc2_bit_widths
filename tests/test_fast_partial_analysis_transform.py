@@ -4,11 +4,11 @@ import numpy as np
 
 import vc2_data_tables as tables
 
-from vc2_conformance.state import State
+from vc2_conformance.pseudocode.state import State
 
-from vc2_conformance.picture_encoding import dwt
+from vc2_conformance.pseudocode.picture_encoding import dwt
 
-from vc2_conformance.picture_decoding import SYNTHESIS_LIFTING_FUNCTION_TYPES
+from vc2_conformance.pseudocode.picture_decoding import SYNTHESIS_LIFTING_FUNCTION_TYPES
 
 from vc2_bit_widths.linexp import strip_affine_errors
 

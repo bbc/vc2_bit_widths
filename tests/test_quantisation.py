@@ -4,7 +4,7 @@ import pytest
 # quantisation scheme machine verified against the VC-2 specification's
 # pseudocode. Here we'll simply check the local implementation finds the same
 # values.
-import vc2_conformance.quantization as pseudocode
+import vc2_conformance.pseudocode.quantization as pseudocode
 
 from vc2_bit_widths.quantisation import (
     forward_quant,

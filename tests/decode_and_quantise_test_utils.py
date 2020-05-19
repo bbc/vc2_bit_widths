@@ -1,8 +1,8 @@
-from vc2_conformance.state import State
+from vc2_conformance.pseudocode.state import State
 
-from vc2_conformance.picture_encoding import forward_wavelet_transform
+from vc2_conformance.pseudocode.picture_encoding import forward_wavelet_transform
 
-from vc2_conformance.picture_decoding import inverse_wavelet_transform
+from vc2_conformance.pseudocode.picture_decoding import inverse_wavelet_transform
 
 from vc2_bit_widths.quantisation import forward_quant, inverse_quant
 
