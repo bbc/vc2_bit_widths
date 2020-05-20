@@ -1,8 +1,15 @@
+import os
+
 import sys
 
 from setuptools import setup, find_packages
 
-with open("vc2_bit_widths/version.py", "r") as f:
+version_file = os.path.join(
+    os.path.dirname(__file__),
+    "vc2_bit_widths",
+    "version.py",
+)
+with open(version_file, "r") as f:
     exec(f.read())
 
 install_requires = [
