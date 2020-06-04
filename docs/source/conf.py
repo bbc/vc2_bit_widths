@@ -30,6 +30,7 @@ extensions = [
     "numpydoc",
     "sphinxcontrib.programoutput",
     "sphinxcontrib.inkscapeconverter",
+    "sphinxcontrib.intertex",
 ]
 
 # -- Options for numpydoc/autodoc --------------------------------------------
@@ -54,6 +55,17 @@ intersphinx_mapping = {
 }
 
 
+# -- Options for intertex ----------------------------------------------------
+
+intertex_mapping = {
+    "vc2_data_tables": "{vc2_data_tables}/../docs/build/latex/*.aux",
+}
+
+# While the other modules' documentation is not published publicly online,
+# we'll use Intersphinx in the HTML too.
+intertex_formats = ["html", "latex"]
+
+
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "nature"
@@ -65,4 +77,15 @@ html_static_path = ["_static"]
 
 latex_elements = {
     "papersize": "a4paper",
+    # Make index entries smaller since some are quite long
+    "printindex": r"\footnotesize\raggedright\printindex",
 }
+
+# Show page numbers in references
+latex_show_pagerefs = True
+
+# Show hyperlink URLs in footnotes
+latex_show_urls = "footnote"
+
+# Don't include a module index (the main index should be sufficient)
+latex_domain_indices = False

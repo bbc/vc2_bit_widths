@@ -12,13 +12,18 @@ To get started, you should read the :ref:`introduction` which explains the
 purpose and terminology used by this tool and gives an overview of how the tool
 should be used.
 
+.. toctree::
+   :hidden:
+
+   bibliography.rst
+
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
     :caption: Contents:
     
-    introduction/index
-    cli/index
-    high_level_api/index
-    theory_and_design/index
-    low_level_api/index
+    introduction/index.rst
+    cli/index.rst
+    high_level_api/index.rst
+    theory_and_design/index.rst
+    low_level_api/index.rst
