@@ -113,25 +113,23 @@ ranges:
 
 .. math::
 
-    \begin{align}
-        \text{maximum value} &=
-            \frac{100+1}{2} + \frac{e_1 - 1}{2} - \left(\frac{-100+4}{8} + \frac{e_2 - 1}{2}\right) + 1 \\
-        &=
-            50.5 + \frac{e_1 - 1}{2} - \left(-12 + \frac{e_2 - 1}{2}\right) + 1 \\
-        &=
-            63.5 + \frac{e_1 - 1}{2} - \frac{e_2 - 1}{2} \\
-        &=
-            [62.5, 64.5] \\
+    \text{maximum value} &=
+        \frac{100+1}{2} + \frac{e_1 - 1}{2} - \left(\frac{-100+4}{8} + \frac{e_2 - 1}{2}\right) + 1 \\
+    &=
+        50.5 + \frac{e_1 - 1}{2} - \left(-12 + \frac{e_2 - 1}{2}\right) + 1 \\
+    &=
+        63.5 + \frac{e_1 - 1}{2} - \frac{e_2 - 1}{2} \\
+    &=
+        [62.5, 64.5] \\
     \\
-        \text{minimum value} &=
-            \frac{-100+1}{2} + \frac{e_1 - 1}{2} - \left(\frac{100+4}{8} + \frac{e_2 - 1}{2}\right) + 1 \\
-        &=
-            -49.5 + \frac{e_1 - 1}{2} - \left(13 + \frac{e_2 - 1}{2}\right) + 1 \\
-        &=
-            -61.5 + \frac{e_1 - 1}{2} - \frac{e_2 - 1}{2} \\
-        &=
-            [-62.5, -60.5] \\
-      \end{align}
+    \text{minimum value} &=
+        \frac{-100+1}{2} + \frac{e_1 - 1}{2} - \left(\frac{100+4}{8} + \frac{e_2 - 1}{2}\right) + 1 \\
+    &=
+        -49.5 + \frac{e_1 - 1}{2} - \left(13 + \frac{e_2 - 1}{2}\right) + 1 \\
+    &=
+        -61.5 + \frac{e_1 - 1}{2} - \frac{e_2 - 1}{2} \\
+    &=
+        [-62.5, -60.5] \\
 
 From this we can therefore say that the output of our integer approximation of
 the filter is bounded by the range :math:`[-62.5, 64.5]`.

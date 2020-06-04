@@ -11,33 +11,27 @@ dequantiser:
 
 .. math::
 
-    \begin{align}
-        \text{quantise}(x, qf) &= x//qf \\
-        \text{dequantise}(X, qf) &= X \times qf + \frac{qf}{2}
-    \end{align}
+    \text{quantise}(x, qf) &= x//qf \\
+    \text{dequantise}(X, qf) &= X \times qf + \frac{qf}{2}
 
 In affine arithmetic this becomes:
 
 .. math::
 
-    \begin{align}
-        \text{quantise}(x, qf) &= \frac{x}{qf} + \frac{e_1 - 1}{2}\\
-        \text{dequantise}(X, qf) &= X \times qf + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
-    \end{align}
+    \text{quantise}(x, qf) &= \frac{x}{qf} + \frac{e_1 - 1}{2}\\
+    \text{dequantise}(X, qf) &= X \times qf + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
 
 So the effect of quantising and dequantising a value, as modelled by affine
 arithmetic is:
 
 .. math::
 
-    \begin{align}
-        \text{dequantise}(\text{quantise}(x, qf), qf) &=
-            \left(\frac{x}{qf} + \frac{e_1 - 1}{2}\right) \times qf + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
-        &=
-            x + qf \frac{e_1 - 1}{2} + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
-        &=
-            \left[x - \frac{qf}{2} - 1, x + \frac{qf}{2}\right]\\
-    \end{align}
+    \text{dequantise}(\text{quantise}(x, qf), qf) &=
+        \left(\frac{x}{qf} + \frac{e_1 - 1}{2}\right) \times qf + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
+    &=
+        x + qf \frac{e_1 - 1}{2} + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
+    &=
+        \left[x - \frac{qf}{2} - 1, x + \frac{qf}{2}\right]\\
 
 This tells us that for large quantisation factors (where :math:`qf \approx x`),
 quantisation produces a range:

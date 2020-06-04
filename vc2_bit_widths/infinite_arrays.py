@@ -702,9 +702,9 @@ class RightShiftedArray(InfiniteArray):
     Apply a right bit shift to every value in an input array.
     
     The right-shift operation is based on the description in the VC-2
-    specification (15.4.3). Specifically, :math:`2^\textrm{shift_bits-1}`
-    is added to the input values prior to the right-shift operation (which
-    is used to implement rounding behaviour in integer arithmetic).
+    specification (15.4.3). Specifically, :math:`2^{\text{shiftbits}-1}` is
+    added to the input values prior to the right-shift operation (which is used
+    to implement rounding behaviour in integer arithmetic).
     
     Parameters
     ==========
