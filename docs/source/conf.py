@@ -77,8 +77,16 @@ html_static_path = ["_static"]
 
 latex_elements = {
     "papersize": "a4paper",
+    # Add an 'Preface' chapter heading to the content which appears before all
+    # of the main chapters.
+    "tableofcontents": r"""
+        \sphinxtableofcontents
+        \chapter{Preface}
+    """,
     # Make index entries smaller since some are quite long
     "printindex": r"\footnotesize\raggedright\printindex",
+    # Override ToC depth to include sections
+    "preamble": r"\setcounter{tocdepth}{1}",
 }
 
 # Show page numbers in references
@@ -86,6 +94,9 @@ latex_show_pagerefs = True
 
 # Show hyperlink URLs in footnotes
 latex_show_urls = "footnote"
+
+# Divide the document into parts, then chapters, then sections
+latex_toplevel_sectioning = "part"
 
 # Don't include a module index (the main index should be sufficient)
 latex_domain_indices = False

@@ -1,10 +1,11 @@
-Low-level Python API
-====================
+Low-level API Overview
+======================
 
-The following documentation defines the low-level APIs which are used
-internally to implement the high-level APIs (see :ref:`high-level-api`). These
-sections are intended for developers of :py:mod:`vc2_bit_widths` and for
-researchers requiring unusual or low-level functionality.
+The remaining documentation defines the low-level APIs which are used
+internally to implement the high-level APIs (see :ref:`high-level-api`). This
+documentation is primarily intended for developers of :py:mod:`vc2_bit_widths`
+but also potentially also researchers requiring unusual or low-level
+functionality.
 
 The sections below are arranged in approximately reverse-dependency order with
 higher-level utilities listed first.
@@ -18,45 +19,40 @@ evaluated, these test patterns may then be grouped together (according to e.g.
 required quantisation index) and packed into full-sized pictures using
 :py:mod:`~vc2_bit_widths.picture_packing`.
 
-.. toctree::
-    :maxdepth: 2
-    
-    pattern_evaluation
-    picture_packing
-
 Calculating signal bounds and test patterns
 -------------------------------------------
 
-These modules perform static analysis on VC-2 filters to calculate theoretical
-worst-case signal bounds and test patterns for given filter combinations.
+The :py:mod:`~vc2_bit_widths.signal_bounds` module performs static analysis on
+VC-2 filters to calculate theoretical worst-case signal bounds. These analyses
+may then be converted into test patterns using the components in the
+:py:mod:`~vc2_bit_widths.pattern_generation` module and optionally further
+optimised using algorithms in the
+:py:mod:`~vc2_bit_widths.pattern_optimisation` module.
 
-.. toctree::
-    :maxdepth: 2
-    
-    signal_bounds
-    pattern_generation
-    pattern_optimisation
 
 Specialised partial evaluation functions for VC-2 filters
 ---------------------------------------------------------
 
-These modules provide specialised implementations of VC-2's analysis and
-synthesis transforms which compute individual intermediate and final filter
-outputs in isolation. As well as providing access to intermediate values not
-exposed by the VC-2 pseudocode, these implementations generally perform the
-minimum possible work and so execute much more quickly.
+The :py:mod:`~vc2_bit_widths.fast_partial_analysis_transform` and
+:py:mod:`~vc2_bit_widths.fast_partial_analyse_quantise_synthesise` modules
+provide specialised implementations of VC-2's analysis and synthesis transforms
+(respectively).
+
+These implementations compute 'partial' analyses and syntheses meaning they
+only calculate one analysis or synthesis output value. Since this is often all
+that is required by this software, ths can save a significant amount of
+computation.
+
+These implementations are also able to directly compute intermediate results
+which would ordinarily be accessible in ordinary analysis or synthesis
+implementations.
 
 .. note::
     
     These implementations are still Python based (albeit with some
-    :py:mod:`numpy` acceleration) and so are only 'fast' when compared with the
-    VC-2 pseudocode implemented in Python.
+    :py:mod:`numpy` acceleration) and so are so the 'fast' monicer only truly
+    applies when compared with the VC-2 pseudocode implemented in Python.
 
-.. toctree::
-    :maxdepth: 2
-    
-    fast_partial_analysis_transform
-    fast_partial_analyse_quantise_synthesise
 
 Implementations of VC-2's quantiser and wavelet filters
 -------------------------------------------------------
@@ -72,17 +68,12 @@ construct test patterns and signal bounds. They are also used to derive
 efficient partial implementations of these filters in
 :py:mod:`~vc2_bit_widths.fast_partial_analyse_quantise_synthesise`.
 
-.. toctree::
-    :maxdepth: 2
-    
-    quantisation
-    vc2_filters
 
 Utilities for representing and implementing filter behaviour
 ------------------------------------------------------------
 
-These final modules implement the tools with which much of the
-:py:mod:`vc2_bit_widths` software is built.
+Finally :py:mod:`vc2_bit_widths` contains a number of low-level mathematical
+modules which provide the foundations upon which the others are built.
 
 The :py:mod:`~vc2_bit_widths.linexp` module implements a specialised `Computer
 Algebra System <https://en.wikipedia.org/wiki/Computer_algebra_system>`_
@@ -100,11 +91,3 @@ describing the operation of VC-2's filters in terms of array operations. As
 well as being suited to building the algebraic descriptions used in this
 module, this form of description itself directly provides several useful
 metrics about a filter and its outputs.
-
-.. toctree::
-    :maxdepth: 2
-    
-    linexp
-    pyexp
-    infinite_arrays
-

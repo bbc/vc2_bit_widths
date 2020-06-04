@@ -1,7 +1,7 @@
 .. _cli:
 
-Command-line utilities
-======================
+Command-line utilities reference
+================================
 
 This package provides a suite of command line utilities which may be used to
 perform all of the essential tasks involved in computing bit width requirements

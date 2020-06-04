@@ -1,7 +1,7 @@
 .. _introduction:
 
-Introduction and overview
-=========================
+Introduction
+============
 
 The VC-2 standard defines the video decoding process using infinite precision
 integer arithmetic. For practical implementations, however, fixed-width
@@ -34,6 +34,6 @@ before the command line and Python library interfaces of
     :maxdepth: 2
     :caption: Contents:
     
-    caveats
-    terminology
-    overview
+    caveats.rst
+    terminology.rst
+    overview.rst

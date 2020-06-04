@@ -1,7 +1,7 @@
 .. _usage-overview:
 
-Usage overview
-==============
+Tutorial
+========
 
 Use of this software is generally divided into two steps:
 
@@ -69,28 +69,29 @@ the default quantisation matrix are used. (Custom quantisation matrices may be
 specified using the ``--custom-quantisation-matrix`` argument.)
 
 The ``bit_widths_table.csv`` file produced may be opened using any spreadsheet
-package (e.g. Microsoft Excel) or displayed in the terminal using the UNIX
-``column`` command like so::
+package (e.g. Microsoft Excel) and contains a table as illustrated below:
 
-    $ column -t -s, bit_widths_table.csv
-    type       level  array_name  lower_bound  test_pattern_min  test_pattern_max  upper_bound  bits
-    analysis   2      Input       -512         -512              511               511          10
-    analysis   2      DC          -1024        -1024             1022              1022         11
-    analysis   2      DC'         -2047        -2046             2046              2047         12
-    analysis   2      DC''        -2047        -2046             2046              2047         12
-    analysis   2      L           -1537        -1535             1534              1535         12
-    analysis   2      H           -2047        -2046             2046              2047         12
-    analysis   2      L'          -3071        -3069             3069              3071         13
-    analysis   2      H'          -4094        -4092             4092              4094         13
-    <...snip...>
-    synthesis  2      L'          -26806       -4888             4888              26806        14-16
-    synthesis  2      H'          -6929        -5167             5167              6929         14
-    synthesis  2      L           -26806       -4888             4888              26806        14-16
-    synthesis  2      H           -9513        -4345             4345              9513         14-15
-    synthesis  2      DC''        -26806       -4888             4888              26806        14-16
-    synthesis  2      DC'         -30271       -4888             4888              30271        14-16
-    synthesis  2      DC          -30271       -4888             4888              30271        14-16
-    synthesis  2      Output      -15136       -2444             2444              15136        13-15
+========== ====== =========== ============ ================= ================= ============ =====
+type       level  array_name  lower_bound  test_pattern_min  test_pattern_max  upper_bound  bits
+========== ====== =========== ============ ================= ================= ============ =====
+analysis   2      Input       -512         -512              511               511          10
+analysis   2      DC          -1024        -1024             1022              1022         11
+analysis   2      DC'         -2047        -2046             2046              2047         12
+analysis   2      DC''        -2047        -2046             2046              2047         12
+analysis   2      L           -1537        -1535             1534              1535         12
+analysis   2      H           -2047        -2046             2046              2047         12
+analysis   2      L'          -3071        -3069             3069              3071         13
+analysis   2      H'          -4094        -4092             4092              4094         13
+...        ...    ...         ...          ...               ...               ...          ...
+synthesis  2      L'          -26806       -4888             4888              26806        14-16
+synthesis  2      H'          -6929        -5167             5167              6929         14
+synthesis  2      L           -26806       -4888             4888              26806        14-16
+synthesis  2      H           -9513        -4345             4345              9513         14-15
+synthesis  2      DC''        -26806       -4888             4888              26806        14-16
+synthesis  2      DC'         -30271       -4888             4888              30271        14-16
+synthesis  2      DC          -30271       -4888             4888              30271        14-16
+synthesis  2      Output      -15136       -2444             2444              15136        13-15
+========== ====== =========== ============ ================= ================= ============ =====
 
 Each row in the table describes a different intermediate value array within a
 VC-2 analysis or synthesis filter, as identified by the 'type', 'level' and

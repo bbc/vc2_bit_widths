@@ -2,8 +2,8 @@
 
 .. _high-level-api:
 
-High-level Python API
-=====================
+High-level Python API Reference
+===============================
 
 The :py:mod:`vc2_bit_widths` Python module exposes the underlying functionality
 provided by the command-line utilities (see :ref:`cli`) via a Python interface.

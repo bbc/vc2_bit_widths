@@ -27,7 +27,7 @@ integer-overflow bugs in C and C++ code [MoBj10]_.
 Video filters unfortunately represent considerably larger problems than SMT
 solvers can tackle effectively, requiring hundreds or thousands of variables.
 
-Kinsman and Nicolici ([KiNi10]_) demonstrated an approach to applying SMT
+Kinsman and Nicolici [KiNi10]_ demonstrated an approach to applying SMT
 solvers to larger problems by terminating the SMT solver's search process after
 a fixed timeout. The incomplete state of the SMT solver is then used to give an
 (guaranteed over-estimated) upper-bound on signal values. Unfortunately, the
@@ -48,8 +48,9 @@ these bounds, with AA giving the tighter bounds. Nevertheless, these approaches
 are deterministic and easy to compute.
 
 
+.. only:: not latex
 
-.. rubric:: References
+    .. rubric:: References
 
 .. [BaFT11] Eric J. Balster; Benjamin T. Fortener; William F. Turri: "Integer
     Computation of Lossy JPEG2000 Compression". In: IEEE Transactions on Image
