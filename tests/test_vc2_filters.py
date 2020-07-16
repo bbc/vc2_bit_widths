@@ -181,7 +181,7 @@ class TestAnalysisAndSynthesisTransforms(object):
         # support (x, y) indexing.
         ia_coeffs_data = {
             level: {
-                orient: np.array(array, dtype=int).T
+                orient: np.array(array, dtype=np.int64).T
                 for orient, array in orients.items()
             }
             for level, orients in pseudocode_coeffs.items()

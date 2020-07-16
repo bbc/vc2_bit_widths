@@ -118,7 +118,7 @@ class TestPattern(object):
             for y, x in zip(*np.nonzero(self._polarities))
         }
     
-    def as_picture_and_slice(self, signal_min=-1, signal_max=+1, dtype=np.int):
+    def as_picture_and_slice(self, signal_min=-1, signal_max=+1, dtype=np.int64):
         """
         Convert this test pattern into a picture array with its origin at (0,
         0).
