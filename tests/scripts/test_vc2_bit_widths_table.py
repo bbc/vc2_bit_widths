@@ -85,10 +85,10 @@ def test_bit_widths(tmpdir, capsys):
     f = str(tmpdir.join("file.json"))
     
     # vc2-static-filter-analysis
-    assert sfa(shlex.split("-w haar_with_shift -d 1 -o {}".format(f))) == 0
+    assert sfa(shlex.split("-w haar_with_shift -d 1 -o") + [f]) == 0
     
     # vc2-bit-widths-table
-    assert bwt(shlex.split("{} -b 10".format(f))) == 0
+    assert bwt([f] + shlex.split("-b 10")) == 0
     
     csv_rows = list(csv.reader(capsys.readouterr().out.splitlines()))
     
@@ -115,10 +115,10 @@ def test_aggregation_flag(tmpdir, capsys, arg, exp_phases):
     f = str(tmpdir.join("file.json"))
     
     # vc2-static-filter-analysis
-    assert sfa(shlex.split("-w haar_with_shift -d 1 -o {}".format(f))) == 0
+    assert sfa(shlex.split("-w haar_with_shift -d 1 -o") + [f]) == 0
     
     # vc2-bit-widths-table
-    assert bwt(shlex.split("{} -b 10 {}".format(f, arg))) == 0
+    assert bwt([f] + shlex.split("-b 10 {}".format(arg))) == 0
     
     csv_rows = list(csv.reader(capsys.readouterr().out.splitlines()))
     
@@ -185,14 +185,14 @@ def test_aggregation_correct(tmpdir, capsys):
     f = str(tmpdir.join("file.json"))
     
     # vc2-static-filter-analysis
-    assert sfa(shlex.split("-w haar_with_shift -d 1 -o {}".format(f))) == 0
+    assert sfa(shlex.split("-w haar_with_shift -d 1 -o") + [f]) == 0
     
     # vc2-bit-widths-table
-    assert bwt(shlex.split("{} -b 10".format(f))) == 0
+    assert bwt([f] + shlex.split("-b 10")) == 0
     csv_aggregated = list(csv.reader(capsys.readouterr().out.splitlines()))
     
     # vc2-bit-widths-table
-    assert bwt(shlex.split("{} -b 10 -p".format(f))) == 0
+    assert bwt([f] + shlex.split("-b 10 -p")) == 0
     csv_raw = list(csv.reader(capsys.readouterr().out.splitlines()))
     
     aggregated_values = {

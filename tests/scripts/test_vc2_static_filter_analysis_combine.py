@@ -67,10 +67,7 @@ def deserialise_static_analysis(data):
 def model_answer(tmpdir, wavelet_args):
     filename = str(tmpdir.join("file_model.json"))
     
-    assert analysis_main(shlex.split("{} -o {}".format(
-        wavelet_args,
-        filename,
-    ))) == 0
+    assert analysis_main(shlex.split(wavelet_args) + ["-o", filename]) == 0
     
     return deserialise_static_analysis(json.load(open(filename)))
 
@@ -82,12 +79,17 @@ def batched_filenames(tmpdir, wavelet_args):
     for batch_num in range(num_batches):
         filename = str(tmpdir.join("file_{}.json".format(batch_num)))
         
-        assert analysis_main(shlex.split("{} -o {} -B {} -b {}".format(
-            wavelet_args,
-            filename,
-            num_batches,
-            batch_num,
-        ))) == 0
+        assert analysis_main(
+            shlex.split(wavelet_args) +
+            [
+                "-o",
+                filename,
+                "-B",
+                str(num_batches),
+                "-b",
+                str(batch_num),
+            ]
+        ) == 0
         
         filenames.append(filename)
     
@@ -124,9 +126,6 @@ def test_combine_duplicate_batches(batched_filenames):
 ])
 def test_combine_unrelated_batches(tmpdir, batched_filenames, unrelated_batch_args):
     filename = str(tmpdir.join("file_unrelated.json"))
-    assert analysis_main(shlex.split("{} -o {}".format(
-        unrelated_batch_args,
-        filename,
-    ))) == 0
+    assert analysis_main(shlex.split(unrelated_batch_args) + ["-o", filename]) == 0
     
     assert combine_main(batched_filenames[1:] + [filename]) != 0

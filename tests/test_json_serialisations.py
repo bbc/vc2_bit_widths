@@ -64,10 +64,12 @@ def test_serialise_linexp():
     after = serialise_linexp(before)
     after = json_roundtrip(after)
     
-    assert after == [
+    exp = [
         {"symbol": "foo", "numer": "1", "denom": "2"},
         {"symbol": None, "numer": "1", "denom": "1"},
     ]
+    
+    assert after == exp or after == exp[::-1]
     
     assert deserialise_linexp(after) == before
 
