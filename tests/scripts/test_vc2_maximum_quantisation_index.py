@@ -12,9 +12,9 @@ def test_sanity(tmpdir, capsys):
     f = str(tmpdir.join("file.json"))
     
     # vc2-static-filter-analysis
-    assert sfa(shlex.split("-w haar_with_shift -d 1 -o {}".format(f))) == 0
+    assert sfa(shlex.split("-w haar_with_shift -d 1 -o") + [f]) == 0
     
     # vc2-maximum-quantisation-index
-    assert mqi(shlex.split("{} -b 10".format(f))) == 0
+    assert mqi([f, "-b", "10"]) == 0
     
     assert int(capsys.readouterr().out.strip()) == 49

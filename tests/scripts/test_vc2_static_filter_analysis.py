@@ -29,10 +29,9 @@ def test_disallow_bad_batch_arguments(tmpdir, batch_args):
     filename = str(tmpdir.join("file.json"))
     
     with pytest.raises(SystemExit):
-        main(shlex.split("-w 4 -d 1 -o {} {}".format(
-            filename,
+        main(shlex.split("-w 4 -d 1 {} -o".format(
             batch_args,
-        )))
+        )) + [filename])
 
 
 def test_sanity(tmpdir):
@@ -41,9 +40,7 @@ def test_sanity(tmpdir):
     
     filename = str(tmpdir.join("file.json"))
     
-    assert main(shlex.split("-w 4 -W daubechies_9_7 -d 1 -D 0 -o {}".format(
-        filename,
-    ))) == 0
+    assert main(shlex.split("-w 4 -W daubechies_9_7 -d 1 -D 0 -o") + [filename]) == 0
     
     with open(filename, "r") as f:
         d = json.load(f)

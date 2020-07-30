@@ -2,7 +2,13 @@ import pytest
 
 import json
 
-from tempfile import NamedTemporaryFile
+import os
+
+import shutil
+
+from tempfile import mkdtemp
+
+from contextlib import contextmanager
 
 from vc2_bit_widths.scripts import (
     vc2_static_filter_analysis,
@@ -11,63 +17,74 @@ from vc2_bit_widths.scripts import (
 )
 
 
+@contextmanager
+def temporary_unused_filename():
+    # NB: This utility has been used because the tempdir fixture is not
+    # available at the module scope
+    dirname = mkdtemp()
+    try:
+        yield os.path.join(dirname, "tempfile")
+    finally:
+        shutil.rmtree(dirname)
+
+
 @pytest.yield_fixture(scope="module")
 def analysis_1():
-    with NamedTemporaryFile() as f:
+    with temporary_unused_filename() as f:
         vc2_static_filter_analysis.main([
             "-w", "haar_with_shift",
             "-D", "1",
-            "-o", f.name,
+            "-o", f,
         ])
-        yield f.name
+        yield f
 
 
 @pytest.yield_fixture(scope="module")
 def analysis_2():
-    with NamedTemporaryFile() as f:
+    with temporary_unused_filename() as f:
         vc2_static_filter_analysis.main([
             "-w", "le_gall_5_3",
             "-D", "1",
-            "-o", f.name,
+            "-o", f,
         ])
-        yield f.name
+        yield f
 
 
 @pytest.yield_fixture(scope="module")
 def optimised_1(analysis_1):
-    with NamedTemporaryFile() as f:
+    with temporary_unused_filename() as f:
         vc2_optimise_synthesis_test_patterns.main([
             analysis_1,
             "-b", "10",
             "-a", 0,
             "-i", 0,
-            "-o", f.name,
+            "-o", f,
         ])
-        yield f.name
+        yield f
 
 
 @pytest.yield_fixture(scope="module")
 def optimised_2(analysis_2):
-    with NamedTemporaryFile() as f:
+    with temporary_unused_filename() as f:
         vc2_optimise_synthesis_test_patterns.main([
             analysis_2,
             "-b", "10",
             "-a", 0,
             "-i", 0,
-            "-o", f.name,
+            "-o", f,
         ])
-        yield f.name
+        yield f
 
 @pytest.yield_fixture(scope="module")
 def bundle(analysis_1, analysis_2, optimised_1, optimised_2):
-    with NamedTemporaryFile() as f:
+    with temporary_unused_filename() as f:
         assert vc2_bundle.main([
             "create",
-            f.name,
+            f,
             "-s", analysis_1, analysis_2,
             "-o", optimised_1, optimised_2,
         ]) == 0
-        yield f.name
+        yield f
 
 
 def test_list_empty(tmpdir, capsys):

@@ -27,21 +27,23 @@ def test_sanity(tmpdir, capsys):
     optimised_file = str(tmpdir.join("optimised_file.json"))
     
     # vc2-static-filter-analysis
-    assert sfa(shlex.split("-w le_gall_5_3 -D 1 -o {}".format(static_file))) == 0
+    assert sfa(shlex.split("-w le_gall_5_3 -D 1 -o") + [static_file]) == 0
     
     # Run with no iterations of random search
     # vc2-optimise-synthesis-filter-test-patterns
-    assert osfts(shlex.split("{} -b 10 -i 0 -o {}".format(
-        static_file,
-        unoptimised_file,
-    ))) == 0
+    assert osfts(
+        [static_file]
+        + shlex.split("-b 10 -i 0 -o")
+        + [unoptimised_file]
+    ) == 0
     
     # Run with 100 iterations of random search
     # vc2-optimise-synthesis-filter-test-patterns
-    assert osfts(shlex.split("{} -b 10 -N 1 -a 0.05 -r 0.0 -i 100 -I 0 -o {}".format(
-        static_file,
-        optimised_file,
-    ))) == 0
+    assert osfts(
+        [static_file]
+        + shlex.split("-b 10 -N 1 -a 0.05 -r 0.0 -i 100 -I 0 -o")
+        + [optimised_file]
+    ) == 0
     
     with open(optimised_file, "r") as f:
         optimised = json.load(f)
