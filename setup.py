@@ -33,7 +33,7 @@ setup(
     include_package_data=True,
     url="https://github.com/bbc/vc2_bit_widths",
     author="BBC R&D",
-    description="Software for computing required bit widths for implementations of the SMPTE ST 2042-2 VC-2 professional video codec.",
+    description="Software for computing required bit widths for implementations of the SMPTE ST 2042-1 VC-2 professional video codec.",
     license="GPLv2",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -49,7 +49,7 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
     ],
-    keywords="smpte-RP-2042-3 vc2 dirac dirac-pro quantisation-matrix bit-width",
+    keywords="vc2 dirac dirac-pro quantisation-matrix bit-width",
     install_requires=install_requires,
     entry_points = {
         "console_scripts": [
