@@ -28,7 +28,7 @@ def temporary_unused_filename():
         shutil.rmtree(dirname)
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 def analysis_1():
     with temporary_unused_filename() as f:
         vc2_static_filter_analysis.main([
@@ -39,7 +39,7 @@ def analysis_1():
         yield f
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 def analysis_2():
     with temporary_unused_filename() as f:
         vc2_static_filter_analysis.main([
@@ -50,7 +50,7 @@ def analysis_2():
         yield f
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 def optimised_1(analysis_1):
     with temporary_unused_filename() as f:
         vc2_optimise_synthesis_test_patterns.main([
@@ -63,7 +63,7 @@ def optimised_1(analysis_1):
         yield f
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 def optimised_2(analysis_2):
     with temporary_unused_filename() as f:
         vc2_optimise_synthesis_test_patterns.main([
@@ -75,7 +75,7 @@ def optimised_2(analysis_2):
         ])
         yield f
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 def bundle(analysis_1, analysis_2, optimised_1, optimised_2):
     with temporary_unused_filename() as f:
         assert vc2_bundle.main([
