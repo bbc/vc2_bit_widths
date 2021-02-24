@@ -1,7 +1,5 @@
 import os
 
-import sys
-
 from setuptools import setup, find_packages
 
 version_file = os.path.join(
@@ -11,20 +9,6 @@ version_file = os.path.join(
 )
 with open(version_file, "r") as f:
     exec(f.read())
-
-install_requires = [
-    "vc2_data_tables",
-    "enum34",
-    "six",
-]
-
-# Use old versions of libraries which have deprecated Python 2.7 support
-if sys.version[0] == "2":
-    install_requires.append("pillow<7")
-    install_requires.append("numpy<1.17")
-else:
-    install_requires.append("pillow")
-    install_requires.append("numpy")
 
 setup(
     name="vc2_bit_widths",
@@ -50,7 +34,18 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     keywords="vc2 dirac dirac-pro quantisation-matrix bit-width",
-    install_requires=install_requires,
+    install_requires=[
+        "vc2_data_tables",
+        # Use old versions/polyfill libraries which have deprecated older Python
+        # version support
+        "six",
+        "enum34; python_version<'3.4'",
+        "pillow<7; python_version<'3.0'",
+        "pillow; python_version>='3.0'",
+        "numpy<1.17; python_version<'3.0'",
+        "numpy<1.20; python_version>='3.0' and python_version<'3.7'",
+        "numpy; python_version>='3.7'",
+    ],
     entry_points = {
         "console_scripts": [
             "vc2-static-filter-analysis=vc2_bit_widths.scripts.vc2_static_filter_analysis:main",
