@@ -38,3 +38,10 @@ See also
 
 * [`vc2_data_tables`](https://github.com/bbc/vc2_data_tables): Data tables and
   constant definitions from the VC-2 standard.
+
+
+License
+=======
+
+This software is distributed under the [GNU General Public License version
+3](./LICENSE.txt), &copy; BBC 2021.

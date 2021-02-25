@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath("../.."))
 # -- Project information -----------------------------------------------------
 
 project = "SMPTE ST 2042-1 (VC-2) Bit Widths"
-copyright = "2019, SMPTE"
-author = "SMPTE"
+copyright = "2021, BBC"
+author = "BBC"
 
 from vc2_bit_widths import __version__ as version
 release = version
