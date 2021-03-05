@@ -10,6 +10,10 @@ version_file = os.path.join(
 with open(version_file, "r") as f:
     exec(f.read())
 
+readme_file = os.path.join(os.path.dirname(__file__), 'README.md')
+with open(readme_file, "r") as f:
+    long_description = f.read()
+
 setup(
     name="vc2_bit_widths",
     version=__version__,
@@ -18,6 +22,8 @@ setup(
     url="https://github.com/bbc/vc2_bit_widths",
     author="BBC R&D",
     description="Software for computing required bit widths for implementations of the SMPTE ST 2042-1 VC-2 professional video codec.",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     license="GPL-3.0-only",
     classifiers=[
         "Development Status :: 3 - Alpha",
