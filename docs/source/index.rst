@@ -2,11 +2,13 @@
 ==================
 
 The :py:mod:`vc2_bit_widths` Python package provides routines for computing how
-many bits of numerical precision are required for implementations of the SMPTE
-ST 2042-1 `VC-2 professional video codec
+many bits of numerical precision are required for implementations of the `SMPTE
+ST 2042-1:2017 <ST2042-1_>`_ `VC-2 professional video codec
 <https://www.bbc.co.uk/rd/projects/vc-2>`_. In addition it also provides
 routines for producing test pictures which produce large signal values in
 actual video codecs.
+
+.. _ST2042-1: https://ieeexplore.ieee.org/document/7967896
 
 This manual is split into three parts. In :ref:`user-manual` a general
 introduction to the purpose, terminology and usage of this module is given. In
