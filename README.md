@@ -6,6 +6,9 @@ bits of numerical precision are required for implementations of the for the
 SMPTE ST 2042-1 [VC-2 professional video
 codec](https://www.bbc.co.uk/rd/projects/vc-2).
 
+To get started, read the [`vc2_bit_widths`
+manual](https://bbc.github.io/vc2_bit_widths/) (also available as a [PDF
+format](https://bbc.github.io/vc2_bit_widths/vc2_bit_widths_manual.pdf)).
 
 
 See also
@@ -13,6 +16,11 @@ See also
 
 This package is part of the [VC-2 conformance
 software](https://github.com/bbc/vc2_conformance) project.
+
+The [`vc2_conformance_data`
+package](https://github.com/bbc/vc2_conformance_data) provides a precomputed
+static filter analysis bundle produced by this software for all VC-2 filters
+with a default quantisation matrix defined.
 
 For further information, please conatact [Jonathan
 Heathcote](mailto:jonathan.heathcote@bbc.co.uk) or [John
