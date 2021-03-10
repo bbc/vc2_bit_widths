@@ -52,18 +52,18 @@ autodoc_default_flags = [
 intersphinx_mapping = {
     "python": ("http://docs.python.org/3", None),
     "numpy": ("http://docs.scipy.org/doc/numpy/", None),
+    "vc2_data_tables": ("https://bbc.github.io/vc2_data_tables/", None),
 }
 
 
 # -- Options for intertex ----------------------------------------------------
 
 intertex_mapping = {
-    "vc2_data_tables": "{vc2_data_tables}/../docs/build/latex/*.aux",
+    "vc2_data_tables": [
+        "{vc2_data_tables}/../docs/build/latex/*.aux",
+        "https://bbc.github.io/vc2_data_tables/vc2_data_tables_manual.aux",
+    ],
 }
-
-# While the other modules' documentation is not published publicly online,
-# we'll use Intersphinx in the HTML too.
-intertex_formats = ["html", "latex"]
 
 
 # -- Options for HTML output -------------------------------------------------

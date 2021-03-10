@@ -25,31 +25,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
     - uses: actions/checkout@v2
-    - name: Fetch private vc2_data_tables repo
-      uses: actions/checkout@v2
-      with:
-        repository: bbc/vc2_data_tables
-        path: vc2_data_tables
-        token: ${{ secrets.PAT }}
-    - name: Fetch private vc2_conformance_data repo
-      uses: actions/checkout@v2
-      with:
-        repository: bbc/vc2_conformance_data
-        path: vc2_conformance_data
-        token: ${{ secrets.PAT }}
-    - name: Fetch private vc2_conformance repo
-      uses: actions/checkout@v2
-      with:
-        repository: bbc/vc2_conformance
-        path: vc2_conformance
-        token: ${{ secrets.PAT }}
     - name: Install with test dependencies
       shell: bash
       run: |
-        (cd vc2_data_tables/ && python setup.py develop)
         python setup.py develop
-        (cd vc2_conformance_data/ && python setup.py develop)
-        (cd vc2_conformance/ && python setup.py develop)
         python -m pip install -r requirements-test.txt
     - name: Run test suite
       run: |

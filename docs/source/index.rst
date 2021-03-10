@@ -17,6 +17,25 @@ described and evaluated. Finally, :ref:`internals-and-low-level-api` gives a
 more detailed overview of the implementation and lower-level features of this
 software.
 
+Finally, you can find the source code for
+:py:mod:`vc2_bit_widths` `on GitHub
+<https://github.com/bbc/vc2_bit_widths/>`_.
+
+.. only:: not latex
+
+    .. note::
+    
+        This documentation is also `available in PDF format
+        <https://bbc.github.io/vc2_bit_widths/vc2_bit_widths_manual.pdf>`_.
+
+.. only:: not html
+
+    .. note::
+    
+        This documentation is also `available to browse online in HTML format
+        <https://bbc.github.io/vc2_bit_widths/>`_.
+
+
 .. toctree::
    :hidden:
 

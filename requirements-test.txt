@@ -1,2 +1,2 @@
 pytest
-vc2_conformance
+vc2_conformance~=1.0.0
