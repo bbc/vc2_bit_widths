@@ -50,7 +50,7 @@ setup(
     ],
     keywords="vc2 dirac dirac-pro quantisation-matrix bit-width",
     install_requires=[
-        "vc2_data_tables~=1.0.0",
+        "vc2_data_tables~=1.0",
         # Use old versions/polyfill libraries which have deprecated older Python
         # version support
         "six",
