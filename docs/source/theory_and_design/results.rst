@@ -250,13 +250,6 @@ synthesis filters. This shortcoming presents a possible motivation for using
 :ref:`vc2-optimise-synthesis-test-patterns` to optimise test patterns for the
 Haar transform.
 
-
-Impact of other filter/image parameters
----------------------------------------
-
-TODO: Introduce motivation of clearing up other parameter choices as
-insignificant.
-
 Method
 ``````
 
@@ -605,9 +598,3 @@ due to differences in where quantisation boundaries fall. Since the impact on
 bit widths on the overall trends in the results is extremely small, only 10 bit
 examples are shown.
 
-
-
-Discussion
-----------
-
-TODO
