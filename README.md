@@ -7,7 +7,7 @@ SMPTE ST 2042-1 [VC-2 professional video
 codec](https://www.bbc.co.uk/rd/projects/vc-2).
 
 To get started, read the [`vc2_bit_widths`
-manual](https://bbc.github.io/vc2_bit_widths/) (also available as a [PDF
+manual](https://bbc.github.io/vc2_bit_widths/) (also available in [PDF
 format](https://bbc.github.io/vc2_bit_widths/vc2_bit_widths_manual.pdf)).
 
 
