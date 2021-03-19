@@ -1,0 +1,392 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2-static-filter-analysis &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2-static-filter-analysis-combine" href="vc2_static_filter_analysis_combine.html" />
+    <link rel="prev" title="Command-line utilities reference" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_static_filter_analysis_combine.html" title="vc2-static-filter-analysis-combine"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Command-line utilities reference"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.scripts.vc2_static_filter_analysis"></span><div class="section" id="vc2-static-filter-analysis">
+<span id="id1"></span><h1><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code><a class="headerlink" href="#vc2-static-filter-analysis" title="Permalink to this headline">¶</a></h1>
+<p>This command statically analyses a VC-2 filter configuration to determine
+mathematical expressions for worst-case signal ranges and generate test
+patterns.</p>
+<div class="section" id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<p>A simple 2-level LeGall (5, 3) transform:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2 \
+    --output static_analysis.json
+</pre></div>
+</div>
+<p>A more complex asymmetric transform:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis \
+    --wavelet-index haar_with_shift \
+    --wavelet-index-ho le_gall_5_3 \
+    --dwt-depth 1 \
+    --dwt-depth-ho 2 \
+    --output static_analysis.json
+</pre></div>
+</div>
+</div>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p>The complete set of arguments can be listed using <code class="docutils literal notranslate"><span class="pre">--help</span></code></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-static-filter-analysis [-h] --wavelet-index WAVELET_INDEX
+                                  [--wavelet-index-ho WAVELET_INDEX_HO]
+                                  [--dwt-depth DWT_DEPTH]
+                                  [--dwt-depth-ho DWT_DEPTH_HO]
+                                  [--num-batches NUM_BATCHES]
+                                  [--batch-num BATCH_NUM] [--output OUTPUT]
+                                  [--verbose]
+
+This command statically analyses a VC-2 filter configuration to determine
+mathematical expressions for worst-case signal ranges and generate test
+patterns. Writes the output to a JSON file.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --wavelet-index WAVELET_INDEX, -w WAVELET_INDEX
+                        The VC-2 wavelet index for the wavelet transform. One
+                        of: 0 or deslauriers_dubuc_9_7, 1 or le_gall_5_3, 2 or
+                        deslauriers_dubuc_13_7, 3 or haar_no_shift, 4 or
+                        haar_with_shift, 5 or fidelity, 6 or daubechies_9_7.
+  --wavelet-index-ho WAVELET_INDEX_HO, -W WAVELET_INDEX_HO
+                        The VC-2 wavelet index for the horizontal parts of the
+                        wavelet transform. If not specified, assumed to be the
+                        same as --wavelet-index/-w.
+  --dwt-depth DWT_DEPTH, -d DWT_DEPTH
+                        The VC-2 transform depth. Defaults to 0 if not
+                        specified.
+  --dwt-depth-ho DWT_DEPTH_HO, -D DWT_DEPTH_HO
+                        The VC-2 horizontal-only transform depth. Defaults to
+                        0 if not specified.
+  --num-batches NUM_BATCHES, -B NUM_BATCHES
+                        If the analysis is to be performed in a series of
+                        smaller batches, the number of batches to split it
+                        into.
+  --batch-num BATCH_NUM, -b BATCH_NUM
+                        When --num-batches is used, the specific the batch to
+                        run.
+  --output OUTPUT, -o OUTPUT
+                        The name of the file to write the computed JSON output
+                        to. Defaults to stdout.
+  --verbose, -v         Show more detailed status information during
+                        execution.
+</pre></div>
+</div>
+</div>
+<div class="section" id="json-file-format">
+<span id="vc2-static-filter-analysis-json-schema"></span><h2>JSON file format<a class="headerlink" href="#json-file-format" title="Permalink to this headline">¶</a></h2>
+<p>The output of <code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code> is a JSON file which has the
+following structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;wavelet_index&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;wavelet_index_ho&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;dwt_depth&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;dwt_depth_ho&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;analysis_signal_bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">signal</span><span class="o">-</span><span class="n">bounds</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="s2">&quot;synthesis_signal_bounds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">signal</span><span class="o">-</span><span class="n">bounds</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="s2">&quot;analysis_test_patterns&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">test</span><span class="o">-</span><span class="n">pattern</span><span class="o">-</span><span class="n">specification</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="s2">&quot;synthesis_test_patterns&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">test</span><span class="o">-</span><span class="n">pattern</span><span class="o">-</span><span class="n">specification</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="section" id="signal-bounds">
+<h3>Signal bounds<a class="headerlink" href="#signal-bounds" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">&quot;analysis_signal_bounds&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;synthesis_signal_bounds&quot;</span></code> lists define
+algebraic expressions for the upper- and lower-bounds for each analysis and
+synthesis filter phase (see <a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>) as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">signal</span><span class="o">-</span><span class="n">bounds</span><span class="o">&gt;</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;array_name&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;phase&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">],</span>
+    <span class="s2">&quot;lower_bound&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">algebraic</span><span class="o">-</span><span class="n">expression</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;upper_bound&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">algebraic</span><span class="o">-</span><span class="n">expression</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="o">&lt;</span><span class="n">algebraic</span><span class="o">-</span><span class="n">expression</span><span class="o">&gt;</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">-</span><span class="ow">or</span><span class="o">-</span><span class="n">null</span><span class="o">&gt;</span><span class="p">,</span>
+        <span class="s2">&quot;numer&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span>
+        <span class="s2">&quot;denom&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The
+<a class="reference internal" href="../high_level_api/json_serialisations.html#vc2_bit_widths.json_serialisations.deserialise_signal_bounds" title="vc2_bit_widths.json_serialisations.deserialise_signal_bounds"><code class="xref py py-func docutils literal notranslate"><span class="pre">deserialise_signal_bounds()</span></code></a>
+Python utility function is provided for unpacking this structure.</p>
+</div>
+<p>Each <code class="docutils literal notranslate"><span class="pre">&lt;algebraic-expression&gt;</span></code> defines an algebraic linear expression. As an
+example, the following expression:</p>
+<div class="math notranslate nohighlight">
+\[\frac{2}{3}a + 5b - 2\]</div>
+<p>Would be represented in JSON form as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;numer&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;denom&quot;</span><span class="p">:</span> <span class="s2">&quot;3&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;numer&quot;</span><span class="p">:</span> <span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;denom&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span> <span class="s2">&quot;numer&quot;</span><span class="p">:</span> <span class="s2">&quot;-2&quot;</span><span class="p">,</span> <span class="s2">&quot;denom&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>In the expressions defining the analysis filter signal levels, the following
+symbols are used:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">signal_min</span></code> – The minimum picture signal value (e.g. -512 for 10 bit signals).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">signal_max</span></code> – The minimum picture signal value (e.g. 511 for 10 bit signals).</p></li>
+</ul>
+</div></blockquote>
+<p>In the expressions defining the synthesis filter signal levels, symbols with
+the form <code class="docutils literal notranslate"><span class="pre">coeff_&lt;level&gt;_&lt;orient&gt;_min</span></code> and <code class="docutils literal notranslate"><span class="pre">coeff_&lt;level&gt;_&lt;orient&gt;_min</span></code> are
+used. For example <code class="docutils literal notranslate"><span class="pre">coeff_1_LL_min</span></code> would mean the minimum value a level-1
+‘LL’ subband value could have.</p>
+</div>
+<div class="section" id="test-patterns">
+<span id="vc2-static-filter-analysis-json-test-patterns"></span><h3>Test patterns<a class="headerlink" href="#test-patterns" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">&quot;analysis_test_patterns</span></code> and  <code class="docutils literal notranslate"><span class="pre">&quot;synthesis_test_patterns</span></code> lists define
+test patterns for each analysis and synthesis filter phase like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">test</span><span class="o">-</span><span class="n">pattern</span><span class="o">-</span><span class="n">specification</span><span class="o">&gt;</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;array_name&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;phase&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">],</span>
+    <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">],</span>
+    <span class="s2">&quot;target_transition_multiple&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">],</span>
+    <span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">test</span><span class="o">-</span><span class="n">pattern</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;pattern_transition_multiple&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="o">&lt;</span><span class="n">test</span><span class="o">-</span><span class="n">pattern</span><span class="o">&gt;</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;dx&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;dy&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;positive&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;mask&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The
+<a class="reference internal" href="../high_level_api/json_serialisations.html#vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications" title="vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications"><code class="xref py py-func docutils literal notranslate"><span class="pre">deserialise_test_pattern_specifications()</span></code></a>
+Python utility function is provided for unpacking this structure.</p>
+</div>
+<p>Test patterns are defined in terms of a collection of pixel polarity values
+which indicate which pixels should be set to their maximum level and which
+should be set to their minimum. All other pixel values may be set arbitrarily.
+For the encoding used by the <code class="docutils literal notranslate"><span class="pre">&lt;test-pattern&gt;</span></code> object to encode the pixel
+polarities themselves, see
+<a class="reference internal" href="../high_level_api/json_serialisations.html#vc2_bit_widths.json_serialisations.serialise_test_pattern" title="vc2_bit_widths.json_serialisations.serialise_test_pattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">serialise_test_pattern</span></code></a>.</p>
+<p>Test patterns must be carefully aligned within a test picture when used. See
+<a class="reference internal" href="../high_level_api/patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a> for the
+meaning of the relevant fields of <code class="docutils literal notranslate"><span class="pre">&lt;test-pattern-specification&gt;</span></code>.  .</p>
+</div>
+<div class="section" id="missing-values">
+<h3>Missing values<a class="headerlink" href="#missing-values" title="Permalink to this headline">¶</a></h3>
+<p>Only intermediate arrays are included which contain novel values. Arrays which
+are just renamings, interleavings and subsamplings of other arrays are omitted.</p>
+</div>
+</div>
+<div class="section" id="runtime-and-memory-consumption">
+<h2>Runtime and memory consumption<a class="headerlink" href="#runtime-and-memory-consumption" title="Permalink to this headline">¶</a></h2>
+<p>For typical ‘real world’ filter configurations, this command should complete
+within a few seconds and use a trivial amount of memory.</p>
+<p>For larger wavelets (e.g. the fidelity filter) and deeper transforms (e.g.
+three or more levels), the runtime and memory requirements can grow
+significantly. For example, a 4-level LeGall (5, 3) transform will take on the
+order of an hour to analyse. As an especially extreme case, a 4-level Fidelity
+wavelet will require around 16 GB of RAM and several weeks to complete.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> option provides useful progress information as the static
+analysis process proceeds. As a guide, the vast majority of the runtime will be
+spent on the synthesis filters due to their far greater number. RAM usage grows
+rapidly during the processing of the analysis filters and then only grow very
+slightly during synthesis filter analysis.</p>
+</div>
+<div class="section" id="batched-parallel-execution">
+<h2>Batched/parallel execution<a class="headerlink" href="#batched-parallel-execution" title="Permalink to this headline">¶</a></h2>
+<p>When analysing extremely large filters, it might be useful to split the
+analysis process into multiple batches to be executed simultaneously on several
+cores or computers.</p>
+<p>To run the analysis process in batched mode, the <code class="docutils literal notranslate"><span class="pre">--num-batches</span></code> argument
+must be given specifying the total number of batches the execution will be
+split into. Each batch must also be given a <code class="docutils literal notranslate"><span class="pre">--batch-num</span></code> argument specifying
+which batch is to be executed. For example, the following commands might be run
+on four machines to parallelise the analysis of a 3-level Fidelity filter.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis \
+    --wavelet-index fidelity \
+    --depth 3 \
+    --num-batches 4 \
+    --batch-num 0 \
+    --output static_analysis_batch_0.json
+
+$ vc2-static-filter-analysis \
+    --wavelet-index fidelity \
+    --depth 3 \
+    --num-batches 4 \
+    --batch-num 1 \
+    --output static_analysis_batch_1.json
+
+$ vc2-static-filter-analysis \
+    --wavelet-index fidelity \
+    --depth 3 \
+    --num-batches 4 \
+    --batch-num 2 \
+    --output static_analysis_batch_2.json
+
+$ vc2-static-filter-analysis \
+    --wavelet-index fidelity \
+    --depth 3 \
+    --num-batches 4 \
+    --batch-num 3 \
+    --output static_analysis_batch_3.json
+</pre></div>
+</div>
+<p>Once all four analyses have finished, the results are then combined together
+using the <a class="reference internal" href="vc2_static_filter_analysis_combine.html#vc2-static-filter-analysis-combine"><span class="std std-ref">vc2-static-filter-analysis-combine</span></a> utility:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis-combine \
+    static_analysis_batch_0.json \
+    static_analysis_batch_1.json \
+    static_analysis_batch_2.json \
+    static_analysis_batch_3.json \
+    --output static_analysis.json
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Each batch may still require the same amount of RAM as a complete analysis.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The batching process requires some duplicated processing in each batch.
+Consequently more total CPU time may be required than non-batched
+execution.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Though batches are intended to take similar amounts of time to execute,
+this is not guaranteed.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code></a><ul>
+<li><a class="reference internal" href="#example-usage">Example usage</a></li>
+<li><a class="reference internal" href="#arguments">Arguments</a></li>
+<li><a class="reference internal" href="#json-file-format">JSON file format</a><ul>
+<li><a class="reference internal" href="#signal-bounds">Signal bounds</a></li>
+<li><a class="reference internal" href="#test-patterns">Test patterns</a></li>
+<li><a class="reference internal" href="#missing-values">Missing values</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#runtime-and-memory-consumption">Runtime and memory consumption</a></li>
+<li><a class="reference internal" href="#batched-parallel-execution">Batched/parallel execution</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Command-line utilities reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vc2_static_filter_analysis_combine.html"
+                        title="next chapter"><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis-combine</span></code></a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cli/vc2_static_filter_analysis.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_static_filter_analysis_combine.html" title="vc2-static-filter-analysis-combine"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Command-line utilities reference"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,502 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tutorial &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Command-line utilities reference" href="cli/index.html" />
+    <link rel="prev" title="Terminology" href="introduction/terminology.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cli/index.html" title="Command-line utilities reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="introduction/terminology.html" title="Terminology"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial">
+<span id="usage-overview"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>Use of this software is generally divided into two steps:</p>
+<ul class="simple">
+<li><p>Performing static filter analysis</p></li>
+<li><p>Calculating bit width requirements or generating test pictures</p></li>
+</ul>
+<p>In the static filter analysis step, a mathematical analysis of a specific
+wavelet and transform depth is performed. The result of this analysis is a
+series of test patterns and abstract mathematical descriptions of the expected
+signal range.</p>
+<p>In the second step, the output of the static analysis is specialised further
+for a particular picture bit width and quantisation matrix from which concrete
+signal ranges, test patterns and other information can be computed.</p>
+<p>This software provides both command line tools and a Python API
+(<a class="reference internal" href="high_level_api/index.html#module-vc2_bit_widths" title="vc2_bit_widths"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths</span></code></a>) with which these tasks may be performed. The command
+line interface will be demonstrated in the examples below.</p>
+<div class="section" id="static-filter-analysis">
+<h2>Static filter analysis<a class="headerlink" href="#static-filter-analysis" title="Permalink to this headline">¶</a></h2>
+<p>Static filter analysis is typically performed using the
+<a class="reference internal" href="cli/vc2_static_filter_analysis.html#vc2-static-filter-analysis"><span class="std std-ref">vc2-static-filter-analysis</span></a> command line utility like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2 \
+    --output static_analysis.json
+</pre></div>
+</div>
+<p>In the example above, the static analysis is performed for a 2-level LeGall (5,
+3) wavelet transform and written to <code class="docutils literal notranslate"><span class="pre">static_analysis.json</span></code>.</p>
+<p>Asymmetric transforms can also be specified using the <code class="docutils literal notranslate"><span class="pre">--wavelet-index-ho</span></code>
+and <code class="docutils literal notranslate"><span class="pre">--dwt-depth-ho</span></code> arguments.</p>
+<p>For most wavelets and transform depths (as in the example above), the static
+analysis process completes after a few seconds. For very large wavelets and
+transform depths, however, the process can take several hours. To monitor the
+progress the <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> argument may be used.</p>
+<p>The JSON files produced by <code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code> follow the format
+described in <a class="reference internal" href="cli/vc2_static_filter_analysis.html#vc2-static-filter-analysis-json-schema"><span class="std std-ref">JSON file format</span></a>. This file contains
+theoretical worst-case signal levels in algebraic form along with test patterns
+for every intermediate value array and filter phase. In this form, however,
+everything is quite abstractly defined and we must process this file further to
+produce more useful results.</p>
+</div>
+<div class="section" id="calculating-bit-width-requirements">
+<h2>Calculating bit-width requirements<a class="headerlink" href="#calculating-bit-width-requirements" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="cli/vc2_bit_widths_table.html#vc2-bit-widths-table"><span class="std std-ref">vc2-bit-widths-table</span></a> command line utility may be used to compute a
+table of concrete signal ranges and bit width requirements:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-bit-widths-table \
+    static_analysis.json \
+    --picture-bit-width 10 \
+    --output bit_widths_table.csv
+</pre></div>
+</div>
+<p>In this example, we use results of the static analysis produced in the previous
+step to find the signal ranges and bit widths when 10 bit input pictures and
+the default quantisation matrix are used. (Custom quantisation matrices may be
+specified using the <code class="docutils literal notranslate"><span class="pre">--custom-quantisation-matrix</span></code> argument.)</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">bit_widths_table.csv</span></code> file produced may be opened using any spreadsheet
+package (e.g. Microsoft Excel) and contains a table as illustrated below:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 7%" />
+<col style="width: 12%" />
+<col style="width: 13%" />
+<col style="width: 19%" />
+<col style="width: 19%" />
+<col style="width: 13%" />
+<col style="width: 6%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>type</p></th>
+<th class="head"><p>level</p></th>
+<th class="head"><p>array_name</p></th>
+<th class="head"><p>lower_bound</p></th>
+<th class="head"><p>test_pattern_min</p></th>
+<th class="head"><p>test_pattern_max</p></th>
+<th class="head"><p>upper_bound</p></th>
+<th class="head"><p>bits</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>Input</p></td>
+<td><p>-512</p></td>
+<td><p>-512</p></td>
+<td><p>511</p></td>
+<td><p>511</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>DC</p></td>
+<td><p>-1024</p></td>
+<td><p>-1024</p></td>
+<td><p>1022</p></td>
+<td><p>1022</p></td>
+<td><p>11</p></td>
+</tr>
+<tr class="row-even"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>DC’</p></td>
+<td><p>-2047</p></td>
+<td><p>-2046</p></td>
+<td><p>2046</p></td>
+<td><p>2047</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>DC’’</p></td>
+<td><p>-2047</p></td>
+<td><p>-2046</p></td>
+<td><p>2046</p></td>
+<td><p>2047</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>L</p></td>
+<td><p>-1537</p></td>
+<td><p>-1535</p></td>
+<td><p>1534</p></td>
+<td><p>1535</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>H</p></td>
+<td><p>-2047</p></td>
+<td><p>-2046</p></td>
+<td><p>2046</p></td>
+<td><p>2047</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>L’</p></td>
+<td><p>-3071</p></td>
+<td><p>-3069</p></td>
+<td><p>3069</p></td>
+<td><p>3071</p></td>
+<td><p>13</p></td>
+</tr>
+<tr class="row-odd"><td><p>analysis</p></td>
+<td><p>2</p></td>
+<td><p>H’</p></td>
+<td><p>-4094</p></td>
+<td><p>-4092</p></td>
+<td><p>4092</p></td>
+<td><p>4094</p></td>
+<td><p>13</p></td>
+</tr>
+<tr class="row-even"><td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+</tr>
+<tr class="row-odd"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>L’</p></td>
+<td><p>-26806</p></td>
+<td><p>-4888</p></td>
+<td><p>4888</p></td>
+<td><p>26806</p></td>
+<td><p>14-16</p></td>
+</tr>
+<tr class="row-even"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>H’</p></td>
+<td><p>-6929</p></td>
+<td><p>-5167</p></td>
+<td><p>5167</p></td>
+<td><p>6929</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>L</p></td>
+<td><p>-26806</p></td>
+<td><p>-4888</p></td>
+<td><p>4888</p></td>
+<td><p>26806</p></td>
+<td><p>14-16</p></td>
+</tr>
+<tr class="row-even"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>H</p></td>
+<td><p>-9513</p></td>
+<td><p>-4345</p></td>
+<td><p>4345</p></td>
+<td><p>9513</p></td>
+<td><p>14-15</p></td>
+</tr>
+<tr class="row-odd"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>DC’’</p></td>
+<td><p>-26806</p></td>
+<td><p>-4888</p></td>
+<td><p>4888</p></td>
+<td><p>26806</p></td>
+<td><p>14-16</p></td>
+</tr>
+<tr class="row-even"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>DC’</p></td>
+<td><p>-30271</p></td>
+<td><p>-4888</p></td>
+<td><p>4888</p></td>
+<td><p>30271</p></td>
+<td><p>14-16</p></td>
+</tr>
+<tr class="row-odd"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>DC</p></td>
+<td><p>-30271</p></td>
+<td><p>-4888</p></td>
+<td><p>4888</p></td>
+<td><p>30271</p></td>
+<td><p>14-16</p></td>
+</tr>
+<tr class="row-even"><td><p>synthesis</p></td>
+<td><p>2</p></td>
+<td><p>Output</p></td>
+<td><p>-15136</p></td>
+<td><p>-2444</p></td>
+<td><p>2444</p></td>
+<td><p>15136</p></td>
+<td><p>13-15</p></td>
+</tr>
+</tbody>
+</table>
+<p>Each row in the table describes a different intermediate value array within a
+VC-2 analysis or synthesis filter, as identified by the ‘type’, ‘level’ and
+‘array_name’ columns (see <a class="reference internal" href="introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>). (If required, the table can be
+broken down further into individual phases using the
+<code class="docutils literal notranslate"><span class="pre">--show-all-filter-phases</span></code> argument.)</p>
+<p>The ‘lower_bound’ and ‘upper_bound’ columns give an estimate of the worst-case
+signal levels which could appear in that array. This estimate is guaranteed not
+to under-estimate the true worst case signal levels but, in the case of
+synthesis filters, can sometimes be a significant over-estimate.</p>
+<p>The ‘test_pattern_min’ and ‘test_pattern_max’ columns give actual signal values
+resulting from passing the test patterns generated during static analysis
+through a VC-2 encoder and decoder. In the case of the synthesis transform, the
+values reported are for whichever quantisation index produces the most extreme
+value.</p>
+<p>The final column gives the number of bits required for a correct VC-2
+implementation. This value may be given as a range in the case where the test
+patterns and theoretical worst case differ significantly. The true bit width
+requirement is guaranteed to lie somewhere within that range. (See
+<a class="reference internal" href="introduction/caveats.html#caveats"><span class="std std-ref">Caveats</span></a>).</p>
+</div>
+<div class="section" id="bounding-quantisation-indices">
+<h2>Bounding quantisation indices<a class="headerlink" href="#bounding-quantisation-indices" title="Permalink to this headline">¶</a></h2>
+<p>The VC-2 specification does not put an upper bound on the quantisation indices
+which might be used. The <a class="reference internal" href="cli/vc2_maximum_quantisation_index.html#vc2-maximum-quantisation-index"><span class="std std-ref">vc2-maximum-quantisation-index</span></a> utility uses the
+theoretical bounds of the analysis filter (encoder) outputs to determine the
+largest quantisation index which could sensibly be used for a particular
+picture bit depth and quantisation matrix:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-maximum-quantisation-index \
+    static_analysis.json \
+    --picture-bit-width 10
+55
+</pre></div>
+</div>
+<p>As before, custom quantisation matrices may be specified using the
+<code class="docutils literal notranslate"><span class="pre">--custom-quantisation-matrix</span></code> argument, otherwise the default quantisation
+matrix will be assumed.</p>
+</div>
+<div class="section" id="optimising-synthesis-test-patterns">
+<h2>Optimising synthesis test patterns<a class="headerlink" href="#optimising-synthesis-test-patterns" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="cli/vc2_optimise_synthesis_test_patterns.html#vc2-optimise-synthesis-test-patterns"><span class="std std-ref">vc2-optimise-synthesis-test-patterns</span></a> command attempts to enhance the
+synthesis filter test patterns produced by <code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code> to
+produce even larger signal values.</p>
+<p>The test patterns produced by <code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code> are the result of
+a heuristic designed to be likely to elicit extreme signal values, but
+worst-case signal levels are not guaranteed. For analysis transforms
+(encoding), this heuristic performs very well, however synthesis transforms
+(decoding) are more challenging due to the non-linearity introduced during
+quantisation (see <a class="reference internal" href="introduction/caveats.html#caveats-non-linearity"><span class="std std-ref">Non-linearity</span></a>).</p>
+<p>A stochastic optimisation algorithm is used by
+<code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code> to manipulate the initial test
+pattern. This process repeatedly encodes, quantises and then decodes modified
+test patterns using a full implementation of the VC-2 integer filtering
+process. As a consequence, the optimised test signals are able to exploit
+quirks of the integer rounding and quantisation errors introduced by a
+particular codec configuration. As a result, the optimised test patterns are
+very tightly matched to that particular configuration, but can achieve
+substantial worst-case signal level increases.</p>
+<p>The command may be used with its default parameters like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-optimise-synthesis-test-patterns \
+    static_analysis.json \
+    --picture-bit-width 10 \
+    --output optimised_patterns.json
+</pre></div>
+</div>
+<p>In this example, the test patterns will be optimised for codecs operating on 10
+bit pictures and using the default quantisation matrix, with the resulting test
+patterns being written to <code class="docutils literal notranslate"><span class="pre">optimised_patterns.json</span></code>. The <code class="docutils literal notranslate"><span class="pre">--verbose</span></code>
+argument may be used to give a greater indication of progress.</p>
+<p>The level of improvement achieved, and the algorithm runtime, are highly
+dependent on the careful tuning of the search parameters (see
+<a class="reference internal" href="cli/vc2_optimise_synthesis_test_patterns.html#vc2-optimise-synthesis-test-patterns-parameter-tuning"><span class="std std-ref">Choosing parameters</span></a>). It may be
+expected that to produce useful improvements several hours of optimisation will
+be required.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">vc2-bit-widths-table</span></code> command may be provided with the optimised test
+patterns to generate a table showing the signal ranges and bit widths reached
+by the optimised test signal:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-bit-widths-table \
+    static_analysis.json \
+    optimised_patterns.json \
+    --output optimised_bit_widths_table.csv
+</pre></div>
+</div>
+</div>
+<div class="section" id="generating-test-pictures">
+<h2>Generating test pictures<a class="headerlink" href="#generating-test-pictures" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="cli/vc2_bit_width_test_pictures.html#vc2-bit-width-test-pictures"><span class="std std-ref">vc2-bit-width-test-pictures</span></a> command may be used to generate a series
+of test pictures containing test patterns suitable for passing through a VC-2
+encoder or decoder.</p>
+<p>As a simple example, set of test patterns generated as above may be turned into
+a collection of HD test pictures like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir test_pictures
+$ vc2-bit-width-test-pictures \
+    static_analysis.json \
+    1920 1080 \
+    --picture-bit-width 10 \
+    --output-directory test_pictures
+</pre></div>
+</div>
+<p>The generated test pictures contain test patterns packed together as
+illustrated in the example below:</p>
+<img alt="_images/example_test_picture.png" src="_images/example_test_picture.png" />
+<p>The test pictures are split into analysis and synthesis test pictures.</p>
+<p>The analysis test pictures may be fed directly to an encoder.</p>
+<p>The synthesis test pictures are further split up into groups which should be
+quantised to different levels. These pictures should be individually encoded
+such that every picture slice is quantised with the specified quantisation
+index. These encoded pictures may then be fed to a decoder implementation.</p>
+<p>See <a class="reference internal" href="cli/vc2_bit_width_test_pictures.html#vc2-bit-width-test-pictures-format"><span class="std std-ref">Test picture format and usage</span></a> for a more detailed explanation
+of how these test pictures should be used.</p>
+</div>
+<div class="section" id="bundling-analyses-and-test-pattern-data-files">
+<h2>Bundling analyses and test pattern data files<a class="headerlink" href="#bundling-analyses-and-test-pattern-data-files" title="Permalink to this headline">¶</a></h2>
+<p>When a large number of analyses have been performed (using, e.g.
+<a class="reference internal" href="cli/vc2_static_filter_analysis.html#vc2-static-filter-analysis"><span class="std std-ref">vc2-static-filter-analysis</span></a>), a correspondingly large set of analysis
+JSON files will also accumulate. These can be bundled together, along with any
+optimised synthesis test patterns test (from
+<a class="reference internal" href="cli/vc2_optimise_synthesis_test_patterns.html#vc2-optimise-synthesis-test-patterns"><span class="std std-ref">vc2-optimise-synthesis-test-patterns</span></a>) into a compressed bundle file.</p>
+<p>As well as substantially reducing the diskspace required to store the analysis
+files, specific analyses and optimised test patterns may be extracted on demand
+using a built-in index.</p>
+<p>The <a class="reference internal" href="cli/vc2_bundle.html#vc2-bundle"><span class="std std-ref">vc2-bundle</span></a> command may be used to create and query bundle files. For
+example, if you have a number of static filter analyses with filenames like
+<code class="docutils literal notranslate"><span class="pre">static_filter_analysis_*.json</span></code> and optimised synthesis test patterns with
+filenames like <code class="docutils literal notranslate"><span class="pre">optimised_synthesis_test_patterns_*.json</span></code>, a bundle can be
+produced using <code class="docutils literal notranslate"><span class="pre">vc2-bundle</span> <span class="pre">create</span></code> like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-bundle create bundle.zip \
+    --static-filter-analyses static_filter_analysis_*.json \
+    --optimised-synthesis-test-patterns optimised_synthesis_test_patterns_*.json
+</pre></div>
+</div>
+<p>Individual analyses may be extracted like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-bundle extract-static-filter-analyses \
+    bundle.zip \
+    --wavelet-index haar_with_shift \
+    --dwt-depth 1 \
+    --output extracted.json
+</pre></div>
+</div>
+<p>And so too can optimised synthesis test patterns:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-bundle extract-optimised-static-synthesis-test-patterns \
+    bundle.zip \
+    --wavelet-index haar_with_shift \
+    --dwt-depth 1 \
+    --picture-bit-width 10 \
+    --output extracted.json
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#static-filter-analysis">Static filter analysis</a></li>
+<li><a class="reference internal" href="#calculating-bit-width-requirements">Calculating bit-width requirements</a></li>
+<li><a class="reference internal" href="#bounding-quantisation-indices">Bounding quantisation indices</a></li>
+<li><a class="reference internal" href="#optimising-synthesis-test-patterns">Optimising synthesis test patterns</a></li>
+<li><a class="reference internal" href="#generating-test-pictures">Generating test pictures</a></li>
+<li><a class="reference internal" href="#bundling-analyses-and-test-pattern-data-files">Bundling analyses and test pattern data files</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="introduction/terminology.html"
+                        title="previous chapter">Terminology</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cli/index.html"
+                        title="next chapter">Command-line utilities reference</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/usage_overview.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cli/index.html" title="Command-line utilities reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="introduction/terminology.html" title="Terminology"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

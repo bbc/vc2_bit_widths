@@ -1,0 +1,329 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2-bundle &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="High-level Python API Reference" href="../high_level_api/index.html" />
+    <link rel="prev" title="vc2-optimise-synthesis-test-patterns" href="vc2_optimise_synthesis_test_patterns.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../high_level_api/index.html" title="High-level Python API Reference"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vc2_optimise_synthesis_test_patterns.html" title="vc2-optimise-synthesis-test-patterns"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-bundle</span></code></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.scripts.vc2_bundle"></span><div class="section" id="vc2-bundle">
+<span id="id1"></span><h1><code class="docutils literal notranslate"><span class="pre">vc2-bundle</span></code><a class="headerlink" href="#vc2-bundle" title="Permalink to this headline">¶</a></h1>
+<p>Create, or query a compressed bundle containing a set of static filter analyses
+(from <a class="reference internal" href="vc2_static_filter_analysis.html#vc2-static-filter-analysis"><span class="std std-ref">vc2-static-filter-analysis</span></a>) and optimised synthesis test patterns
+(from <a class="reference internal" href="vc2_optimise_synthesis_test_patterns.html#vc2-optimise-synthesis-test-patterns"><span class="std std-ref">vc2-optimise-synthesis-test-patterns</span></a>).</p>
+<div class="section" id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<p>Creating a bundle</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ # Create some files
+$ vc2-static-filter-analysis \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2 \
+    --output static_analysis.json
+$ vc2-maximum-quantisation-index \
+    static_analysis.json \
+    --picture-bit-width 10 \
+    --custom-quantisation-matrix \
+        0 LL 1 \
+        1 HL 2   1 LH 0   1 HH 4 \
+        2 HL 1   2 LH 3   2 HH 3 \
+    --output optimised_patterns.json
+
+$ # Bundle the files together
+$ vc2-bundle \
+    create \
+    bundle.zip \
+    static_analysis.json \
+    optimised_patterns.json \
+    # ...
+</pre></div>
+</div>
+<p>Listing bundle contents</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-bundle list bundle.zip
+Static filter analyses
+======================
+
+0.
+    * wavelet_index: le_gall_5_3
+    * wavelet_index_ho: le_gall_5_3
+    * dwt_depth: 2
+    * dwt_depth_ho: 0
+
+Optimised synthesis test patterns
+=================================
+
+0.
+    * wavelet_index: le_gall_5_3
+    * wavelet_index_ho: le_gall_5_3
+    * dwt_depth: 2
+    * dwt_depth_ho: 0
+    * picture_bit_width: 10
+    * custom_quantisation_matrix:
+      {
+          0: {&#39;LL&#39;: 1},
+          1: {&#39;HL&#39;: 2, &#39;LH&#39;: 0, &#39;HH&#39; 4},
+          2: {&#39;HL&#39;: 1, &#39;LH&#39;: 3, &#39;HH&#39; 3},
+      }
+</pre></div>
+</div>
+<p>Extracting files from a bundle</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ # Extract a static analysis file from the bundle
+$ vc2-bundle \
+    extract-static-filter-analysis \
+    bundle.zip \
+    extracted.json \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2
+
+$ # Extract a set of optimised synthesis test patterns from the bundle
+$ vc2-bundle \
+    extract-optimised-synthesis-test-pattern \
+    bundle.zip \
+    extracted.json \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2
+    --picture-bit-width 10 \
+    --custom-quantisation-matrix \
+        0 LL 1 \
+        1 HL 2   1 LH 0   1 HH 4 \
+        2 HL 1   2 LH 3   2 HH 3 \
+</pre></div>
+</div>
+</div>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p>The complete set of arguments can be listed using <code class="docutils literal notranslate"><span class="pre">--help</span></code> for each
+subcommand.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-bundle [-h] [--verbose]
+                  {create,list,extract-static-filter-analysis,extract-optimised-synthesis-test-patterns}
+                  ...
+
+Create, or query a compressed bundle containing a set of static filter
+analyses (from vc2-static-filter-analysis) and optimised synthesis test
+patterns (from vc2-optimise-synthesis-test-patterns).
+
+positional arguments:
+  {create,list,extract-static-filter-analysis,extract-optimised-synthesis-test-patterns}
+    create              Create a bundle file.
+    list                List the contents of a bundle file.
+    extract-static-filter-analysis
+                        Extract a static filter analysis from the bundle.
+    extract-optimised-synthesis-test-patterns
+                        Extract a set of optimised synthesis test patterns
+                        from the bundle.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --verbose, -v         Show more detailed status information during
+                        execution.
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-bundle create [-h]
+                         [--static-filter-analysis JSON_FILE [JSON_FILE ...]]
+                         [--optimised-synthesis-test-patterns JSON_FILE [JSON_FILE ...]]
+                         bundle_file
+
+positional arguments:
+  bundle_file           Filename for the bundle file to create/overwrite.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --static-filter-analysis JSON_FILE [JSON_FILE ...], -s JSON_FILE [JSON_FILE ...]
+                        Filenames of the JSON files containing static filter
+                        analyses produced by vc2-static-filter-analysis.
+  --optimised-synthesis-test-patterns JSON_FILE [JSON_FILE ...], -o JSON_FILE [JSON_FILE ...]
+                        Filenames of the JSON files containing optimised
+                        synthesis test patterns produced by vc2-optimise-
+                        synthesis-test-patterns.
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-bundle list [-h] bundle_file
+
+positional arguments:
+  bundle_file  Filename for the bundle file to list.
+
+optional arguments:
+  -h, --help   show this help message and exit
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-bundle extract-static-filter-analysis [-h] [--output OUTPUT]
+                                                 --wavelet-index WAVELET_INDEX
+                                                 [--wavelet-index-ho WAVELET_INDEX_HO]
+                                                 [--dwt-depth DWT_DEPTH]
+                                                 [--dwt-depth-ho DWT_DEPTH_HO]
+                                                 bundle_file
+
+positional arguments:
+  bundle_file           Filename for the bundle file to query.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --output OUTPUT, -o OUTPUT
+                        Filename for the extracted JSON file. Defaults to
+                        stdout.
+  --wavelet-index WAVELET_INDEX, -w WAVELET_INDEX
+                        The VC-2 wavelet index for the wavelet transform. One
+                        of: 0 or deslauriers_dubuc_9_7, 1 or le_gall_5_3, 2 or
+                        deslauriers_dubuc_13_7, 3 or haar_no_shift, 4 or
+                        haar_with_shift, 5 or fidelity, 6 or daubechies_9_7.
+  --wavelet-index-ho WAVELET_INDEX_HO, -W WAVELET_INDEX_HO
+                        The VC-2 wavelet index for the horizontal parts of the
+                        wavelet transform. If not specified, assumed to be the
+                        same as --wavelet-index/-w.
+  --dwt-depth DWT_DEPTH, -d DWT_DEPTH
+                        The VC-2 transform depth. Defaults to 0 if not
+                        specified.
+  --dwt-depth-ho DWT_DEPTH_HO, -D DWT_DEPTH_HO
+                        The VC-2 horizontal-only transform depth. Defaults to
+                        0 if not specified.
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-bundle extract-optimised-synthesis-test-patterns
+       [-h] [--output OUTPUT] --wavelet-index WAVELET_INDEX
+       [--wavelet-index-ho WAVELET_INDEX_HO] [--dwt-depth DWT_DEPTH]
+       [--dwt-depth-ho DWT_DEPTH_HO] --picture-bit-width PICTURE_BIT_WIDTH
+       [--custom-quantisation-matrix CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...]]
+       bundle_file
+
+positional arguments:
+  bundle_file           Filename for the bundle file to query.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --output OUTPUT, -o OUTPUT
+                        Filename for the extracted JSON file. Defaults to
+                        stdout.
+  --wavelet-index WAVELET_INDEX, -w WAVELET_INDEX
+                        The VC-2 wavelet index for the wavelet transform. One
+                        of: 0 or deslauriers_dubuc_9_7, 1 or le_gall_5_3, 2 or
+                        deslauriers_dubuc_13_7, 3 or haar_no_shift, 4 or
+                        haar_with_shift, 5 or fidelity, 6 or daubechies_9_7.
+  --wavelet-index-ho WAVELET_INDEX_HO, -W WAVELET_INDEX_HO
+                        The VC-2 wavelet index for the horizontal parts of the
+                        wavelet transform. If not specified, assumed to be the
+                        same as --wavelet-index/-w.
+  --dwt-depth DWT_DEPTH, -d DWT_DEPTH
+                        The VC-2 transform depth. Defaults to 0 if not
+                        specified.
+  --dwt-depth-ho DWT_DEPTH_HO, -D DWT_DEPTH_HO
+                        The VC-2 horizontal-only transform depth. Defaults to
+                        0 if not specified.
+  --picture-bit-width PICTURE_BIT_WIDTH, -b PICTURE_BIT_WIDTH
+                        The number of bits in the picture signal.
+  --custom-quantisation-matrix CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...], -q CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...]
+                        Use a custom quantisation matrix for the search.
+                        Optional except for filters without a default
+                        quantisation matrix defined. Should be specified as a
+                        series 3-argument tuples giving the level, orientation
+                        and quantisation matrix value for every entry in the
+                        quantisation matrix.
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">vc2-bundle</span></code></a><ul>
+<li><a class="reference internal" href="#example-usage">Example usage</a></li>
+<li><a class="reference internal" href="#arguments">Arguments</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vc2_optimise_synthesis_test_patterns.html"
+                        title="previous chapter"><code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../high_level_api/index.html"
+                        title="next chapter">High-level Python API Reference</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cli/vc2_bundle.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../high_level_api/index.html" title="High-level Python API Reference"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vc2_optimise_synthesis_test_patterns.html" title="vc2-optimise-synthesis-test-patterns"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-bundle</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Command-line utilities reference &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2-static-filter-analysis" href="vc2_static_filter_analysis.html" />
+    <link rel="prev" title="Tutorial" href="../usage_overview.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_static_filter_analysis.html" title="vc2-static-filter-analysis"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../usage_overview.html" title="Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Command-line utilities reference</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="command-line-utilities-reference">
+<span id="cli"></span><h1>Command-line utilities reference<a class="headerlink" href="#command-line-utilities-reference" title="Permalink to this headline">¶</a></h1>
+<p>This package provides a suite of command line utilities which may be used to
+perform all of the essential tasks involved in computing bit width requirements
+and generating test pictures in a stand-alone manner. Refer to
+<a class="reference internal" href="../usage_overview.html#usage-overview"><span class="std std-ref">Tutorial</span></a> for an introduction to these tools. More detailed
+instructions are provided below.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="vc2_static_filter_analysis.html"><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vc2_static_filter_analysis.html#example-usage">Example usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_static_filter_analysis.html#arguments">Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_static_filter_analysis.html#json-file-format">JSON file format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_static_filter_analysis.html#runtime-and-memory-consumption">Runtime and memory consumption</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_static_filter_analysis.html#batched-parallel-execution">Batched/parallel execution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vc2_static_filter_analysis_combine.html"><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis-combine</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vc2_static_filter_analysis_combine.html#example-usage">Example usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_static_filter_analysis_combine.html#arguments">Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vc2_bit_widths_table.html"><code class="docutils literal notranslate"><span class="pre">vc2-bit-widths-table</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bit_widths_table.html#example-usage">Example usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bit_widths_table.html#arguments">Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bit_widths_table.html#csv-format">CSV Format</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vc2_bit_width_test_pictures.html"><code class="docutils literal notranslate"><span class="pre">vc2-bit-width-test-pictures</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bit_width_test_pictures.html#example-usage">Example usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bit_width_test_pictures.html#test-picture-format-and-usage">Test picture format and usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bit_width_test_pictures.html#json-metadata-format">JSON metadata format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bit_width_test_pictures.html#arguments">Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vc2_maximum_quantisation_index.html"><code class="docutils literal notranslate"><span class="pre">vc2-maximum-quantisation-index</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vc2_maximum_quantisation_index.html#example-usage">Example usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_maximum_quantisation_index.html#arguments">Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vc2_optimise_synthesis_test_patterns.html"><code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vc2_optimise_synthesis_test_patterns.html#example-usage">Example usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_optimise_synthesis_test_patterns.html#arguments">Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_optimise_synthesis_test_patterns.html#choosing-parameters">Choosing parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_optimise_synthesis_test_patterns.html#json-file-format">JSON file format</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vc2_bundle.html"><code class="docutils literal notranslate"><span class="pre">vc2-bundle</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bundle.html#example-usage">Example usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vc2_bundle.html#arguments">Arguments</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../usage_overview.html"
+                        title="previous chapter">Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vc2_static_filter_analysis.html"
+                        title="next chapter"><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code></a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cli/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_static_filter_analysis.html" title="vc2-static-filter-analysis"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../usage_overview.html" title="Tutorial"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Command-line utilities reference</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

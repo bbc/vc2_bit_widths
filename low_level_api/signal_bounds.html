@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.signal_bounds: Finding bounds for filter output values &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.pattern_generation: Heuristic test pattern generation" href="pattern_generation.html" />
+    <link rel="prev" title="vc2_bit_widths.picture_packing: Pack test patterns into pictures" href="picture_packing.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pattern_generation.html" title="vc2_bit_widths.pattern_generation: Heuristic test pattern generation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="picture_packing.html" title="vc2_bit_widths.picture_packing: Pack test patterns into pictures"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.signal_bounds</span></code>: Finding bounds for filter output values</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.signal_bounds"></span><div class="section" id="vc2-bit-widths-signal-bounds-finding-bounds-for-filter-output-values">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.signal_bounds" title="vc2_bit_widths.signal_bounds"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.signal_bounds</span></code></a>: Finding bounds for filter output values<a class="headerlink" href="#vc2-bit-widths-signal-bounds-finding-bounds-for-filter-output-values" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-vc2_bit_widths.signal_bounds" title="vc2_bit_widths.signal_bounds"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.signal_bounds</span></code></a> module contains functions for
+computing theoretical lower- and upper-bounds for VC-2 codec intermediate and
+final values.</p>
+<div class="section" id="finding-signal-bounds">
+<h2>Finding signal bounds<a class="headerlink" href="#finding-signal-bounds" title="Permalink to this headline">¶</a></h2>
+<p>The following functions may be used to convert algebraic descriptions of a VC-2
+filters into worst-case signal ranges (according to an affine arithmetic based
+model of rounding and quantisation).</p>
+<p>The process of finding signal bounds is split into two stages:</p>
+<ol class="arabic simple">
+<li><p>Finding a generic algebraic expression for worst-case signal bounds.</p></li>
+<li><p>Evaluating those expressions for a particular picture bit width.</p></li>
+</ol>
+<p>The two steps are split this way to allow step 2 to be inexpensively repeated
+for different picture bit widths.</p>
+<div class="section" id="analysis-filter">
+<h3>Analysis filter<a class="headerlink" href="#analysis-filter" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.analysis_filter_bounds">
+<code class="sig-name descname"><span class="pre">analysis_filter_bounds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.analysis_filter_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the lower- and upper-bound reachable in a
+<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> describing an analysis filter.</p>
+<p>The filter expression must consist of only affine error symbols
+(<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a>) and symbols of the form <code class="docutils literal notranslate"><span class="pre">(_,</span>
+<span class="pre">x,</span> <span class="pre">y)</span></code> representing pixel values in an input picture.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>expression</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>lower_bound</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd></dd>
+<dt><strong>upper_bound</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd><p>Algebraic expressions for the lower and upper bounds for the signal
+level. These expressions are given in terms of the symbols
+<code class="docutils literal notranslate"><span class="pre">LinExp(&quot;signal_min&quot;)</span></code> and <code class="docutils literal notranslate"><span class="pre">LinExp(&quot;signal_max&quot;)</span></code>, which represent
+the minimum and maximum picture signal levels respectively.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.evaluate_analysis_filter_bounds">
+<code class="sig-name descname"><span class="pre">evaluate_analysis_filter_bounds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lower_bound_exp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bound_exp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bits</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.evaluate_analysis_filter_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a pair of symbolic analysis filter bounds into concrete, numerical
+lower/upper bounds for an input picture signal with the specified number of
+bits.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>lower_bound_exp</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd></dd>
+<dt><strong>upper_bound_exp</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd><p>Analysis filter bounds expressions from
+<a class="reference internal" href="#vc2_bit_widths.signal_bounds.analysis_filter_bounds" title="vc2_bit_widths.signal_bounds.analysis_filter_bounds"><code class="xref py py-func docutils literal notranslate"><span class="pre">analysis_filter_bounds()</span></code></a>.</p>
+</dd>
+<dt><strong>num_bits</strong><span class="classifier">int</span></dt><dd><p>The number of bits in the signal values being analysed.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>lower_bound</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>upper_bound</strong><span class="classifier">int</span></dt><dd><p>The concrete (numerical) bounds for the analysis filter given
+<code class="docutils literal notranslate"><span class="pre">num_bits</span></code> input pictures.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="synthesis-filter">
+<h3>Synthesis filter<a class="headerlink" href="#synthesis-filter" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.synthesis_filter_bounds">
+<code class="sig-name descname"><span class="pre">synthesis_filter_bounds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.synthesis_filter_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the lower- and upper-bound reachable in a
+<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> describing a synthesis filter.</p>
+<p>The filter expression must contain only affine error symbols
+(<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a>) and symbols of the form <code class="docutils literal notranslate"><span class="pre">((_,</span>
+<span class="pre">level,</span> <span class="pre">orient),</span> <span class="pre">x,</span> <span class="pre">y)</span></code> representing transform coefficients.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>expression</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>(lower_bound, upper_bound)</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd><p>Lower and upper bounds for the signal level in terms of the symbols of
+the form <code class="docutils literal notranslate"><span class="pre">LinExp(&quot;signal_LEVEL_ORIENT_min&quot;)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">LinExp(&quot;signal_LEVEL_ORIENT_max&quot;)</span></code>, representing the minimum and
+maximum signal levels for transform coefficients in level <code class="docutils literal notranslate"><span class="pre">LEVEL</span></code> and
+orientation <code class="docutils literal notranslate"><span class="pre">ORIENT</span></code> respectively.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.evaluate_synthesis_filter_bounds">
+<code class="sig-name descname"><span class="pre">evaluate_synthesis_filter_bounds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lower_bound_exp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bound_exp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coeff_bounds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.evaluate_synthesis_filter_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a pair of symbolic synthesis filter bounds into concrete, numerical
+lower/upper bounds given the bounds of the input transform coefficients.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>lower_bound_exp</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd></dd>
+<dt><strong>upper_bound_exp</strong><span class="classifier"><a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd><p>Synthesis filter bounds expressions from
+<a class="reference internal" href="#vc2_bit_widths.signal_bounds.synthesis_filter_bounds" title="vc2_bit_widths.signal_bounds.synthesis_filter_bounds"><code class="xref py py-func docutils literal notranslate"><span class="pre">synthesis_filter_bounds()</span></code></a>.</p>
+</dd>
+<dt><strong>coeff_bounds</strong><span class="classifier">{(level, orient): (lower_bound, upper_bound), …}</span></dt><dd><p>For each transform coefficient, the concrete lower and upper bounds
+(e.g. as computed using <a class="reference internal" href="#vc2_bit_widths.signal_bounds.evaluate_analysis_filter_bounds" title="vc2_bit_widths.signal_bounds.evaluate_analysis_filter_bounds"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate_analysis_filter_bounds()</span></code></a> and
+<a class="reference internal" href="quantisation.html#vc2_bit_widths.quantisation.maximum_dequantised_magnitude" title="vc2_bit_widths.quantisation.maximum_dequantised_magnitude"><code class="xref py py-func docutils literal notranslate"><span class="pre">vc2_bit_widths.quantisation.maximum_dequantised_magnitude()</span></code></a>
+for each transform subband).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>lower_bound</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>upper_bound</strong><span class="classifier">int</span></dt><dd><p>The concrete (numerical) bounds for the synthesis filter.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="integer-representation-utilities">
+<h2>Integer representation utilities<a class="headerlink" href="#integer-representation-utilities" title="Permalink to this headline">¶</a></h2>
+<p>The following utility functions compute the relationship between bit-width and
+numerical range.</p>
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.twos_compliment_bits">
+<code class="sig-name descname"><span class="pre">twos_compliment_bits</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.twos_compliment_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>How many bits does the provided integer require for a two’s compliment
+(signed) integer representation?</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.signed_integer_range">
+<code class="sig-name descname"><span class="pre">signed_integer_range</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_bits</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.signed_integer_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the lower- and upper-bound values for a signed integer with the
+specified number of bits.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.unsigned_integer_range">
+<code class="sig-name descname"><span class="pre">unsigned_integer_range</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_bits</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.unsigned_integer_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the lower- and upper-bound values for an unsigned integer with the
+specified number of bits.</p>
+</dd></dl>
+
+<p>The following function may be used to pessimistically round values to integers:</p>
+<dl class="py function">
+<dt id="vc2_bit_widths.signal_bounds.round_away_from_zero">
+<code class="sig-name descname"><span class="pre">round_away_from_zero</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.signal_bounds.round_away_from_zero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Round a number away from zero.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.signal_bounds</span></code>: Finding bounds for filter output values</a><ul>
+<li><a class="reference internal" href="#finding-signal-bounds">Finding signal bounds</a><ul>
+<li><a class="reference internal" href="#analysis-filter">Analysis filter</a></li>
+<li><a class="reference internal" href="#synthesis-filter">Synthesis filter</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#integer-representation-utilities">Integer representation utilities</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="picture_packing.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.picture_packing</span></code>: Pack test patterns into pictures</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pattern_generation.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_generation</span></code>: Heuristic test pattern generation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/signal_bounds.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pattern_generation.html" title="vc2_bit_widths.pattern_generation: Heuristic test pattern generation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="picture_packing.html" title="vc2_bit_widths.picture_packing: Pack test patterns into pictures"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.signal_bounds</span></code>: Finding bounds for filter output values</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

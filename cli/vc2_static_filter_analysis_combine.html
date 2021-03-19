@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2-static-filter-analysis-combine &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2-bit-widths-table" href="vc2_bit_widths_table.html" />
+    <link rel="prev" title="vc2-static-filter-analysis" href="vc2_static_filter_analysis.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_bit_widths_table.html" title="vc2-bit-widths-table"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vc2_static_filter_analysis.html" title="vc2-static-filter-analysis"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis-combine</span></code></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.scripts.vc2_static_filter_analysis_combine"></span><div class="section" id="vc2-static-filter-analysis-combine">
+<span id="id1"></span><h1><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis-combine</span></code><a class="headerlink" href="#vc2-static-filter-analysis-combine" title="Permalink to this headline">¶</a></h1>
+<p>Combine the results of several batched runs of
+<a class="reference internal" href="vc2_static_filter_analysis.html#vc2-static-filter-analysis"><span class="std std-ref">vc2-static-filter-analysis</span></a> into a single set of results.</p>
+<div class="section" id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2 \
+    --num-batches 2 \
+    --batch-num 0 \
+    --output static_analysis_batch_0.json
+$ vc2-static-filter-analysis \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2 \
+    --num-batches 2 \
+    --batch-num 1 \
+    --output static_analysis_batch_1.json
+
+$ vc2-static-filter-analysis-combine \
+    static_analysis_batch_0.json \
+    static_analysis_batch_1.json \
+    --output static_analysis.json
+</pre></div>
+</div>
+</div>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p>The complete set of arguments can be listed using <code class="docutils literal notranslate"><span class="pre">--help</span></code></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-static-filter-analysis-combine [-h] [--output OUTPUT]
+                                          inputs [inputs ...]
+
+Combine the outputs of a series of batched calls to vc2-static-filter-
+analysis.
+
+positional arguments:
+  inputs                A complete set of matching batched filter analysis
+                        outputs.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --output OUTPUT, -o OUTPUT
+                        The name of the file to write the computed JSON output
+                        to. Defaults to stdout.
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis-combine</span></code></a><ul>
+<li><a class="reference internal" href="#example-usage">Example usage</a></li>
+<li><a class="reference internal" href="#arguments">Arguments</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vc2_static_filter_analysis.html"
+                        title="previous chapter"><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vc2_bit_widths_table.html"
+                        title="next chapter"><code class="docutils literal notranslate"><span class="pre">vc2-bit-widths-table</span></code></a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cli/vc2_static_filter_analysis_combine.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_bit_widths_table.html" title="vc2-bit-widths-table"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vc2_static_filter_analysis.html" title="vc2-static-filter-analysis"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis-combine</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

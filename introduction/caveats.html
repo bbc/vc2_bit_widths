@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caveats &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Terminology" href="terminology.html" />
+    <link rel="prev" title="Introduction" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="terminology.html" title="Terminology"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Introduction</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Caveats</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="caveats">
+<span id="id1"></span><h1>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h1>
+<p>While this software aims to produce robust bit width figures, it can only go as
+far as the VC-2 specification and current mathematical techniques allow.</p>
+<div class="section" id="assumed-encoder-behaviour">
+<h2>Assumed encoder behaviour<a class="headerlink" href="#assumed-encoder-behaviour" title="Permalink to this headline">¶</a></h2>
+<p>The VC-2 standard only defines the behaviour of a decoder. Unfortunately,
+due to the clipper at the output, it is not possible to work backwards from the
+output bit width to calculate the input or intermediate signal ranges (as
+illustrated below).</p>
+<img alt="A VC-2 decoder with bit widths defined by the standard annotated." src="../_images/decoder_alone_not_enough.svg" /><p>The standard also does not define legal ranges for values in a bitstream (which
+would allow us to work forwards through the decoder). Instead we must make some
+assumptions about the behaviour of VC-2 encoders which will allow us to
+determine the ranges of values which could appear in real bitstreams.</p>
+<p>This software makes the assumption that all VC-2 encoders consist of a
+(forward) discrete wavelet transform followed by a dead zone quantiser
+implemented as informatively suggested by the standard. Once this assumption
+has been made it becomes possible to determine the bit widths of every part of
+a VC-2 encoder and decoder.</p>
+<img alt="A VC-2 encoder and decoder with inferred bit widths shown." src="../_images/working_out_bit_widths.svg" /><p>In principle, VC-2 encoder implementations are free to diverge from this
+assumed behaviour and so may produce bitstreams with different signal ranges to
+those predicted by this software. In practice, it is relatively unlikely to be
+the case. Nevertheless, you should be aware that this software relies on this
+assumption.</p>
+</div>
+<div class="section" id="non-linearity">
+<span id="caveats-non-linearity"></span><h2>Non-linearity<a class="headerlink" href="#non-linearity" title="Permalink to this headline">¶</a></h2>
+<p>Though VC-2 is based on the (linear) wavelet transform, its use of integer
+arithmetic and quantisation makes VC-2 a non-linear filter. Due to the
+difficulty of analysing large non-linear filters, this software is generally
+unable to give exact answers about the numbers of bits required and instead are
+given as a range of possible values.</p>
+<p>The upper-bounds on signal levels and bit widths are computed by this software
+using robust mathematical models of VC-2’s filters and are guaranteed not to be
+under-estimates. However, these upper bounds can be (sometimes significant)
+over-estimates of the signal levels produced by true worst-case signals.</p>
+<p>Likewise, lower-bounds on signal level ranges are provided based on the signal
+levels exhibited during the encoding and decoding of specially created test
+patterns. Since these test patterns are valid pictures (or the result of
+encoding valid pictures), they represent concrete lower-bounds on signal
+levels. Despite producing more extreme signals than natural pictures or noise
+in general, the test patterns are not guaranteed to elicit worst-case signal
+levels. As such the signal levels produced merely set a lower-bound on the true
+worst-case.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Caveats</a><ul>
+<li><a class="reference internal" href="#assumed-encoder-behaviour">Assumed encoder behaviour</a></li>
+<li><a class="reference internal" href="#non-linearity">Non-linearity</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="terminology.html"
+                        title="next chapter">Terminology</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/introduction/caveats.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="terminology.html" title="Terminology"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Introduction"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Introduction</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Caveats</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

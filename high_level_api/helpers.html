@@ -1,0 +1,499 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.helpers: Helper Functions &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.patterns: Containers for test pattern data" href="patterns.html" />
+    <link rel="prev" title="High-level Python API Reference" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="patterns.html" title="vc2_bit_widths.patterns: Containers for test pattern data"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="High-level Python API Reference"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code>: Helper Functions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.helpers"></span><div class="section" id="vc2-bit-widths-helpers-helper-functions">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.helpers" title="vc2_bit_widths.helpers"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code></a>: Helper Functions<a class="headerlink" href="#vc2-bit-widths-helpers-helper-functions" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-vc2_bit_widths.helpers" title="vc2_bit_widths.helpers"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code></a> module provides a set of high-level
+utility functions implementing the key processes involved in bit-width analysis
+and test picture production for VC-2 codecs. These functions are used in much
+the same way as the command line interfaces, so refer to <a class="reference internal" href="../usage_overview.html#usage-overview"><span class="std std-ref">Tutorial</span></a>
+for a more general introduction.</p>
+<p>Many of the functions in this module can take a significant amount of time to
+execute for very large filters. Status information is reported using Python’s
+built-in <a class="reference external" href="https://docs.python.org/3/library/logging.html#module-logging" title="(in Python v3.9)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> library and may be made visible using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="static-filter-analysis">
+<h2>Static filter analysis<a class="headerlink" href="#static-filter-analysis" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.helpers.static_filter_analysis">
+<code class="sig-name descname"><span class="pre">static_filter_analysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wavelet_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_batches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_num</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.static_filter_analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a complete static analysis of a VC-2 filter configuration,
+computing theoretical upper- and lower-bounds for signal values (see
+<a class="reference internal" href="../theory_and_design/aa_integer_arithmetic.html#theory-affine-arithmetic"><span class="std std-ref">Computing signal bounds with Affine Arithmetic</span></a>) and heuristic test patterns (see
+<a class="reference internal" href="../theory_and_design/test_patterns.html#theory-test-patterns"><span class="std std-ref">Test pattern generation</span></a>) for all intermediate and final analysis and
+synthesis filter values.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>wavelet_index</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>wavelet_index_ho</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>dwt_depth</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth_ho</strong><span class="classifier">int</span></dt><dd><p>The filter parameters.</p>
+</dd>
+<dt><strong>num_batches</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>batch_num</strong><span class="classifier">int</span></dt><dd><p>Though for most filters this function runs either instantaneously or at
+worst in the space of a couple of hours, unusually large filters can
+take an extremely long time to run. For example, a 4-level Fidelity
+transform may take around a month to evaluate.</p>
+<p>These arguments may be used to split this job into separate batches
+which may be computed separately (and in parallel) and later combined.
+For example, setting <code class="docutils literal notranslate"><span class="pre">num_batches</span></code> to 3 results in only analysing
+every third filter phase. The <code class="docutils literal notranslate"><span class="pre">batch_num</span></code> parameter should then be
+set to either 0, 1 or 2 to specify which third.</p>
+<p>The skipped phases are simply omitted from the returned dictionaries.
+The dictionaries returned for each batch should be unified to produce
+the complete analysis.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>analysis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), …}</span></dt><dd></dd>
+<dt><strong>synthesis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), …}</span></dt><dd><p>Expressions defining the upper and lower bounds for all intermediate
+and final analysis and synthesis filter values.</p>
+<p>The keys of the returned dictionaries give the level, array name and
+filter phase for which each pair of bounds corresponds (see
+<a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>). The naming
+conventions used are those defined by
+<a class="reference internal" href="../low_level_api/vc2_filters.html#vc2_bit_widths.vc2_filters.analysis_transform" title="vc2_bit_widths.vc2_filters.analysis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters.analysis_transform()</span></code></a> and
+<a class="reference internal" href="../low_level_api/vc2_filters.html#vc2_bit_widths.vc2_filters.synthesis_transform" title="vc2_bit_widths.vc2_filters.synthesis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters.synthesis_transform()</span></code></a>. Arrays which
+are just interleavings, subsamplings or renamings of other arrays are
+omitted.</p>
+<p>The lower and upper bounds are given algebraically as
+<a class="reference internal" href="../low_level_api/linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a>s.</p>
+<p>For the analysis filter bounds, the expressions are defined in terms of
+the variables <code class="docutils literal notranslate"><span class="pre">LinExp(&quot;signal_min&quot;)</span></code> and <code class="docutils literal notranslate"><span class="pre">LinExp(&quot;signal_max&quot;)</span></code>.
+These should be substituted for the minimum and maximum picture signal
+level to find the upper and lower bounds for a particular picture bit
+width.</p>
+<p>For the synthesis filter bounds, the expressions are defined in terms
+of variables of the form <code class="docutils literal notranslate"><span class="pre">LinExp(&quot;coeff_LEVEL_ORIENT_min&quot;)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">LinExp(&quot;coeff_LEVEL_ORIENT_max&quot;)</span></code> which give lower and upper bounds
+for the transform coefficients with the named level and orientation.</p>
+<p>The <a class="reference internal" href="#vc2_bit_widths.helpers.evaluate_filter_bounds" title="vc2_bit_widths.helpers.evaluate_filter_bounds"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate_filter_bounds()</span></code></a> function
+may be used to substitute concrete values into these expressions for a
+particular picture bit width.</p>
+</dd>
+<dt>analysis_test_patterns: {(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</dt><dd></dd>
+<dt>synthesis_test_patterns: {(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</dt><dd><p>Heuristic test patterns which are designed to maximise a particular
+intermediate or final filter value. For a minimising test pattern,
+invert the polarities of the pixels.</p>
+<p>The keys of the returned dictionaries give the level, array name and
+filter phase for which each set of bounds corresponds (see
+<a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>). Arrays which are just interleavings, subsamplings
+or renamings of other arrays are omitted.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="calculating-bit-width-requirements">
+<h2>Calculating bit-width requirements<a class="headerlink" href="#calculating-bit-width-requirements" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.helpers.evaluate_filter_bounds">
+<code class="sig-name descname"><span class="pre">evaluate_filter_bounds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wavelet_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_signal_bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_signal_bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">picture_bit_width</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.evaluate_filter_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate all analysis and synthesis filter signal bounds expressions for a
+given picture bit width, giving concrete signal ranges.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>wavelet_index</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>wavelet_index_ho</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>dwt_depth</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth_ho</strong><span class="classifier">int</span></dt><dd><p>The filter parameters.</p>
+</dd>
+<dt><strong>analysis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), …}</span></dt><dd></dd>
+<dt><strong>synthesis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), …}</span></dt><dd><p>The outputs of <a class="reference internal" href="#vc2_bit_widths.helpers.static_filter_analysis" title="vc2_bit_widths.helpers.static_filter_analysis"><code class="xref py py-func docutils literal notranslate"><span class="pre">static_filter_analysis()</span></code></a>.</p>
+</dd>
+<dt><strong>picture_bit_width</strong><span class="classifier">int</span></dt><dd><p>The number of bits in the input pictures.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>concrete_analysis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound, upper_bound), …}</span></dt><dd></dd>
+<dt><strong>concrete_synthesis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound, upper_bound), …}</span></dt><dd><p>The concrete, integer signal bounds for all analysis and signal filters
+given a <code class="docutils literal notranslate"><span class="pre">picture_bit_width</span></code>-bit input picture.</p>
+<p>Includes values for <em>all</em> arrays and phases, even if
+array interleavings/subsamplings/renamings are omitted in the input
+arguments.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.helpers.evaluate_test_pattern_outputs">
+<code class="sig-name descname"><span class="pre">evaluate_test_pattern_outputs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wavelet_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">picture_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantisation_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_quantisation_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_test_patterns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_test_patterns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.evaluate_test_pattern_outputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a set of test patterns, compute the signal levels actually produced
+by them when passed through a real encoder/decoder.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>wavelet_index</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>wavelet_index_ho</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>dwt_depth</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth_ho</strong><span class="classifier">int</span></dt><dd><p>The filter parameters.</p>
+</dd>
+<dt><strong>picture_bit_width</strong><span class="classifier">int</span></dt><dd><p>The number of bits in the input pictures.</p>
+</dd>
+<dt><strong>quantisation_matrix</strong><span class="classifier">{level: {orient: value, …}, …}</span></dt><dd><p>The quantisation matrix.</p>
+</dd>
+<dt><strong>max_quantisation_index</strong><span class="classifier">int</span></dt><dd><p>The maximum quantisation index to try (e.g. as computed by
+<a class="reference internal" href="#vc2_bit_widths.helpers.quantisation_index_bound" title="vc2_bit_widths.helpers.quantisation_index_bound"><code class="xref py py-func docutils literal notranslate"><span class="pre">quantisation_index_bound()</span></code></a>). Each synthesis test pattern will
+be quantised with every quantisation index up to (and inclusing) this
+limit and the worst-case value for any quantisation index will be
+reported.</p>
+</dd>
+<dt><strong>analysis_test_patterns</strong><span class="classifier">{(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</span></dt><dd></dd>
+<dt><strong>synthesis_test_patterns</strong><span class="classifier">{(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</span></dt><dd><p>The test patterns to assess, e.g. from
+<a class="reference internal" href="#vc2_bit_widths.helpers.static_filter_analysis" title="vc2_bit_widths.helpers.static_filter_analysis"><code class="xref py py-func docutils literal notranslate"><span class="pre">static_filter_analysis()</span></code></a> or
+<a class="reference internal" href="#vc2_bit_widths.helpers.optimise_synthesis_test_patterns" title="vc2_bit_widths.helpers.optimise_synthesis_test_patterns"><code class="xref py py-func docutils literal notranslate"><span class="pre">optimise_synthesis_test_patterns()</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>analysis_test_pattern_outputs</strong><span class="classifier">{(level, array_name, x, y): (lower_bound, upper_bound), …}</span></dt><dd></dd>
+<dt><strong>synthesis_test_pattern_outputs</strong><span class="classifier">{(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), …}</span></dt><dd><p>The worst-case signal levels achieved for each of the provided test
+signals when using minimising and maximising versions of the test
+pattern respectively.</p>
+<p>For the syntehsis test patterns, the quantisation index used to achieve
+the worst-case values is also reported.</p>
+<p>Includes values for <em>all</em> arrays and phases, even if array
+interleavings/subsamplings/renamings are omitted in the input
+arguments.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="bounding-quantisation-indices">
+<h2>Bounding quantisation indices<a class="headerlink" href="#bounding-quantisation-indices" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.helpers.quantisation_index_bound">
+<code class="sig-name descname"><span class="pre">quantisation_index_bound</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concrete_analysis_signal_bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantisation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.quantisation_index_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the largest quantisation index which could usefully be used given the
+supplied analysis signal bounds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>concrete_analysis_signal_bounds</strong><span class="classifier">{(level, orient, x, y): (lower_bound, upper_bound), …}</span></dt><dd><p>Concrete analysis filter bounds as produced by, e.g.,
+<a class="reference internal" href="#vc2_bit_widths.helpers.evaluate_filter_bounds" title="vc2_bit_widths.helpers.evaluate_filter_bounds"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate_filter_bounds()</span></code></a>.</p>
+</dd>
+<dt><strong>quantisation_matrix</strong><span class="classifier">{level: {orient: value, …}, …}</span></dt><dd><p>The quantisation matrix in use.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>max_quantisation_index</strong><span class="classifier">int</span></dt><dd><p>The upper bound for the quantisation indices sensibly used by an
+encoder. This value will be the smallest quantisation index which will
+quantise all possible transform coefficients to zero.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="optimising-synthesis-test-patterns">
+<h2>Optimising synthesis test patterns<a class="headerlink" href="#optimising-synthesis-test-patterns" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.helpers.optimise_synthesis_test_patterns">
+<code class="sig-name descname"><span class="pre">optimise_synthesis_test_patterns</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wavelet_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantisation_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">picture_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_test_patterns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_quantisation_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_searches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminate_early</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_corruption_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removed_corruption_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_iterations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_iterations_per_improvement</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.optimise_synthesis_test_patterns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a greedy search based optimisation of a complete set of synthesis
+test patterns.</p>
+<p>See <a class="reference internal" href="../low_level_api/pattern_optimisation.html#optimisation"><span class="std std-ref">Search algorithm &amp; parameters</span></a> for details of the optimisation process and
+parameters.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>wavelet_index</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>wavelet_index_ho</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.WaveletFilters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.WaveletFilters</span></code></a> or int</span></dt><dd></dd>
+<dt><strong>dwt_depth</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth_ho</strong><span class="classifier">int</span></dt><dd><p>The filter parameters.</p>
+</dd>
+<dt><strong>quantisation_matrix</strong><span class="classifier">{level: {orient: value, …}, …}</span></dt><dd><p>The quantisation matrix in use.</p>
+</dd>
+<dt><strong>picture_bit_width</strong><span class="classifier">int</span></dt><dd><p>The number of bits in the input pictures.</p>
+</dd>
+<dt><strong>synthesis_test_patterns</strong><span class="classifier">{(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</span></dt><dd><p>Synthesis test patterns to use as the starting point for optimisation,
+as produced by e.g.  <a class="reference internal" href="#vc2_bit_widths.helpers.static_filter_analysis" title="vc2_bit_widths.helpers.static_filter_analysis"><code class="xref py py-func docutils literal notranslate"><span class="pre">static_filter_analysis()</span></code></a>.</p>
+</dd>
+<dt><strong>max_quantisation_index</strong><span class="classifier">int</span></dt><dd><p>The maximum quantisation index to use, e.g. computed using
+<a class="reference internal" href="#vc2_bit_widths.helpers.quantisation_index_bound" title="vc2_bit_widths.helpers.quantisation_index_bound"><code class="xref py py-func docutils literal notranslate"><span class="pre">quantisation_index_bound()</span></code></a>.</p>
+</dd>
+<dt><strong>random_state</strong><span class="classifier"><a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v1.20)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.random.RandomState</span></code></a></span></dt><dd><p>The random number generator to use for the search.</p>
+</dd>
+<dt><strong>number_of_searches</strong><span class="classifier">int</span></dt><dd><p>Repeat the greedy stochastic search process this many times for each
+test pattern. Since searches will tend to converge on local minima,
+increasing this parameter will tend to produce improved results.</p>
+</dd>
+<dt><strong>terminate_early</strong><span class="classifier">None or int</span></dt><dd><p>If an integer, stop searching if the first <code class="docutils literal notranslate"><span class="pre">terminate_early</span></code> searches
+fail to find an improvement. If None, always performs all searches.</p>
+</dd>
+<dt><strong>added_corruption_rate</strong><span class="classifier">float</span></dt><dd><p>The proportion of pixels to assign with a random value during each
+search attempt (0.0-1.0).</p>
+</dd>
+<dt><strong>removed_corruption_rate</strong><span class="classifier">float</span></dt><dd><p>The proportion of pixels to reset to their starting value during each
+search attempt (0.0-1.0).</p>
+</dd>
+<dt><strong>base_iterations</strong><span class="classifier">int</span></dt><dd><p>The initial number of search iterations to perform in each attempt.</p>
+</dd>
+<dt><strong>added_iterations_per_improvement</strong><span class="classifier">int</span></dt><dd><p>The number of additional search iterations to perform whenever an
+improved picture is found.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>optimised_test_patterns</strong><span class="classifier">{(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.OptimisedTestPatternSpecification" title="vc2_bit_widths.patterns.OptimisedTestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimisedTestPatternSpecification</span></code></a>, …}</span></dt><dd><p>The optimised test patterns.</p>
+<p>Note that arrays are omitted for arrays which are just interleavings of
+other arrays.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="generating-test-pictures">
+<h2>Generating test pictures<a class="headerlink" href="#generating-test-pictures" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.helpers.generate_test_pictures">
+<code class="sig-name descname"><span class="pre">generate_test_pictures</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">picture_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">picture_height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">picture_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_test_patterns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_test_patterns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_test_pattern_outputs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.generate_test_pictures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a series of test pictures containing the supplied selection of
+test patterns.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>picture_width</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>picture_height</strong><span class="classifier">int</span></dt><dd><p>The dimensions of the pictures to generate.</p>
+</dd>
+<dt><strong>picture_bit_width</strong><span class="classifier">int</span></dt><dd><p>The number of bits in the input pictures.</p>
+</dd>
+<dt><strong>analysis_test_patterns</strong><span class="classifier">{(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</span></dt><dd></dd>
+<dt><strong>synthesis_test_patterns</strong><span class="classifier">{(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</span></dt><dd><p>The individual analysis and synthesis test patterns to be combined. A
+maximising and minimising variant of each pattern will be included in
+the output. See <a class="reference internal" href="#vc2_bit_widths.helpers.static_filter_analysis" title="vc2_bit_widths.helpers.static_filter_analysis"><code class="xref py py-func docutils literal notranslate"><span class="pre">static_filter_analysis()</span></code></a> and
+<a class="reference internal" href="#vc2_bit_widths.helpers.optimise_synthesis_test_patterns" title="vc2_bit_widths.helpers.optimise_synthesis_test_patterns"><code class="xref py py-func docutils literal notranslate"><span class="pre">optimise_synthesis_test_patterns()</span></code></a>.</p>
+</dd>
+<dt><strong>synthesis_test_pattern_outputs</strong><span class="classifier">{(level, array_name, x, y): ((lower_bound, qi), (upper_bound, qi)), …}</span></dt><dd><p>The worst-case quantisation indicies for each synthesis test pattern,
+as computed by <a class="reference internal" href="#vc2_bit_widths.helpers.evaluate_test_pattern_outputs" title="vc2_bit_widths.helpers.evaluate_test_pattern_outputs"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate_test_pattern_outputs()</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>analysis_pictures</strong><span class="classifier">[<a class="reference internal" href="#vc2_bit_widths.helpers.AnalysisPicture" title="vc2_bit_widths.helpers.AnalysisPicture"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisPicture</span></code></a>, …]</span></dt><dd></dd>
+<dt><strong>synthesis_pictures</strong><span class="classifier">[<a class="reference internal" href="#vc2_bit_widths.helpers.SynthesisPicture" title="vc2_bit_widths.helpers.SynthesisPicture"><code class="xref py py-class docutils literal notranslate"><span class="pre">SynthesisPicture</span></code></a>, …]</span></dt><dd><p>A series of test pictures containing correctly aligned instances of
+each supplied test pattern.</p>
+<p>Pictures are returned with values in the range 0 to
+(2**picture_bit_width)-1, as expected by a VC-2 encoder.</p>
+<p>Each analysis picture includes a subset of the test patterns supplied
+(see <a class="reference internal" href="#vc2_bit_widths.helpers.AnalysisPicture" title="vc2_bit_widths.helpers.AnalysisPicture"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisPicture</span></code></a>). The analysis test pictures are
+intended to be passed to an analysis filter as-is.</p>
+<p>Each synthesis test picture includes a subset of the test patterns
+supplied, grouped according to the quantisation index to be used.  The
+synthesis test pictures should first be passed through a synthesis
+filter and then the transform coefficients quantised using the
+quantisation index specified (see <a class="reference internal" href="#vc2_bit_widths.helpers.SynthesisPicture" title="vc2_bit_widths.helpers.SynthesisPicture"><code class="xref py py-class docutils literal notranslate"><span class="pre">SynthesisPicture</span></code></a>). The
+quantised transform coefficients should then be passed through the
+synthesis filter.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.helpers.AnalysisPicture">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">AnalysisPicture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">picture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.AnalysisPicture" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.namedtuple" title="(in Python v3.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">namedtuple()</span></code></a>. A test picture which is to be used to
+assess an analysis filter.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>picture</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code></span></dt><dd><p>The test picture.</p>
+</dd>
+<dt><strong>test_points</strong><span class="classifier">[<a class="reference internal" href="#vc2_bit_widths.helpers.TestPoint" title="vc2_bit_widths.helpers.TestPoint"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPoint</span></code></a>, …]</span></dt><dd><p>A list of locations within the analysis filter being tested by this
+picture.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.helpers.SynthesisPicture">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">SynthesisPicture</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">picture</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantisation_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.SynthesisPicture" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.namedtuple" title="(in Python v3.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">namedtuple()</span></code></a>. A test picture which is to be used to
+assess an synthesis filter.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>picture</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code></span></dt><dd><p>The test picture.</p>
+</dd>
+<dt><strong>quantisation_index</strong><span class="classifier">int</span></dt><dd><p>The quantisation index to use for all picture slices when encoding the test
+picture.</p>
+</dd>
+<dt><strong>test_points</strong><span class="classifier">[<a class="reference internal" href="#vc2_bit_widths.helpers.TestPoint" title="vc2_bit_widths.helpers.TestPoint"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPoint</span></code></a>, …]</span></dt><dd><p>A list of locations within the synthesis filter being tested by this
+picture.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.helpers.TestPoint">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">TestPoint</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximise</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.helpers.TestPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.namedtuple" title="(in Python v3.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">namedtuple()</span></code></a>. Definition of the location of a point in
+an encoder/decoder tested by a test picture.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>level</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>array_name</strong><span class="classifier">str</span></dt><dd></dd>
+<dt><strong>x</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>y</strong><span class="classifier">int</span></dt><dd><p>The encoder/decoder intermediate value array and phase tested by this test
+point.</p>
+</dd>
+<dt><strong>maximise</strong><span class="classifier">bool</span></dt><dd><p>If True, at this point the signal level is being maximised, if False it
+will be minimised.</p>
+</dd>
+<dt><strong>tx</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>ty</strong><span class="classifier">int</span></dt><dd><p>The coordinates (in the intermediate value array (level, array_name)) which
+are being maximised or minimised.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code>: Helper Functions</a><ul>
+<li><a class="reference internal" href="#static-filter-analysis">Static filter analysis</a></li>
+<li><a class="reference internal" href="#calculating-bit-width-requirements">Calculating bit-width requirements</a></li>
+<li><a class="reference internal" href="#bounding-quantisation-indices">Bounding quantisation indices</a></li>
+<li><a class="reference internal" href="#optimising-synthesis-test-patterns">Optimising synthesis test patterns</a></li>
+<li><a class="reference internal" href="#generating-test-pictures">Generating test pictures</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">High-level Python API Reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="patterns.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.patterns</span></code>: Containers for test pattern data</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/high_level_api/helpers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="patterns.html" title="vc2_bit_widths.patterns: Containers for test pattern data"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="High-level Python API Reference"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code>: Helper Functions</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

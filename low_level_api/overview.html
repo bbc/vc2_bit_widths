@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Low-level API Overview &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.pattern_evaluation: Measure the outputs achieved by test patterns" href="pattern_evaluation.html" />
+    <link rel="prev" title="Experimental results" href="../theory_and_design/results.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pattern_evaluation.html" title="vc2_bit_widths.pattern_evaluation: Measure the outputs achieved by test patterns"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../theory_and_design/results.html" title="Experimental results"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Low-level API Overview</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="low-level-api-overview">
+<h1>Low-level API Overview<a class="headerlink" href="#low-level-api-overview" title="Permalink to this headline">¶</a></h1>
+<p>The remaining documentation defines the low-level APIs which are used
+internally to implement the high-level APIs (see <a class="reference internal" href="../high_level_api/index.html#high-level-api"><span class="std std-ref">High-level Python API Reference</span></a>). This
+documentation is primarily intended for developers of <a class="reference internal" href="../high_level_api/index.html#module-vc2_bit_widths" title="vc2_bit_widths"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths</span></code></a>
+but also potentially also researchers requiring unusual or low-level
+functionality.</p>
+<p>The sections below are arranged in approximately reverse-dependency order with
+higher-level utilities listed first.</p>
+<div class="section" id="evaluation-and-deployment-of-test-patterns">
+<h2>Evaluation and deployment of test patterns<a class="headerlink" href="#evaluation-and-deployment-of-test-patterns" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="pattern_evaluation.html#module-vc2_bit_widths.pattern_evaluation" title="vc2_bit_widths.pattern_evaluation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pattern_evaluation</span></code></a> module provide functions for
+evaluating test patterns (by passing them through a VC-2 encoder/decoder). Once
+evaluated, these test patterns may then be grouped together (according to e.g.
+required quantisation index) and packed into full-sized pictures using
+<a class="reference internal" href="picture_packing.html#module-vc2_bit_widths.picture_packing" title="vc2_bit_widths.picture_packing"><code class="xref py py-mod docutils literal notranslate"><span class="pre">picture_packing</span></code></a>.</p>
+</div>
+<div class="section" id="calculating-signal-bounds-and-test-patterns">
+<h2>Calculating signal bounds and test patterns<a class="headerlink" href="#calculating-signal-bounds-and-test-patterns" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="signal_bounds.html#module-vc2_bit_widths.signal_bounds" title="vc2_bit_widths.signal_bounds"><code class="xref py py-mod docutils literal notranslate"><span class="pre">signal_bounds</span></code></a> module performs static analysis on
+VC-2 filters to calculate theoretical worst-case signal bounds. These analyses
+may then be converted into test patterns using the components in the
+<a class="reference internal" href="pattern_generation.html#module-vc2_bit_widths.pattern_generation" title="vc2_bit_widths.pattern_generation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pattern_generation</span></code></a> module and optionally further
+optimised using algorithms in the
+<a class="reference internal" href="pattern_optimisation.html#module-vc2_bit_widths.pattern_optimisation" title="vc2_bit_widths.pattern_optimisation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pattern_optimisation</span></code></a> module.</p>
+</div>
+<div class="section" id="specialised-partial-evaluation-functions-for-vc-2-filters">
+<h2>Specialised partial evaluation functions for VC-2 filters<a class="headerlink" href="#specialised-partial-evaluation-functions-for-vc-2-filters" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="fast_partial_analysis_transform.html#module-vc2_bit_widths.fast_partial_analysis_transform" title="vc2_bit_widths.fast_partial_analysis_transform"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fast_partial_analysis_transform</span></code></a> and
+<a class="reference internal" href="fast_partial_analyse_quantise_synthesise.html#module-vc2_bit_widths.fast_partial_analyse_quantise_synthesise" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fast_partial_analyse_quantise_synthesise</span></code></a> modules
+provide specialised implementations of VC-2’s analysis and synthesis transforms
+(respectively).</p>
+<p>These implementations compute ‘partial’ analyses and syntheses meaning they
+only calculate one analysis or synthesis output value. Since this is often all
+that is required by this software, ths can save a significant amount of
+computation.</p>
+<p>These implementations are also able to directly compute intermediate results
+which would ordinarily be accessible in ordinary analysis or synthesis
+implementations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These implementations are still Python based (albeit with some
+<a class="reference external" href="https://numpy.org/doc/stable/reference/index.html#module-numpy" title="(in NumPy v1.20)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> acceleration) and so are so the ‘fast’ monicer only truly
+applies when compared with the VC-2 pseudocode implemented in Python.</p>
+</div>
+</div>
+<div class="section" id="implementations-of-vc-2-s-quantiser-and-wavelet-filters">
+<h2>Implementations of VC-2’s quantiser and wavelet filters<a class="headerlink" href="#implementations-of-vc-2-s-quantiser-and-wavelet-filters" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="quantisation.html#module-vc2_bit_widths.quantisation" title="vc2_bit_widths.quantisation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">quantisation</span></code></a> module provides an implementation of
+VC-2’s quantisation and dequantisation routines, along with various utilities
+for bounding the quantiser’s outputs or inputs.</p>
+<p>The <a class="reference internal" href="vc2_filters.html#module-vc2_bit_widths.vc2_filters" title="vc2_bit_widths.vc2_filters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_filters</span></code></a> implements VC-2’s wavelet filters in
+terms of <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s. These
+are used to construct the algebraic descriptions of VC-2’s filters used to
+construct test patterns and signal bounds. They are also used to derive
+efficient partial implementations of these filters in
+<a class="reference internal" href="fast_partial_analyse_quantise_synthesise.html#module-vc2_bit_widths.fast_partial_analyse_quantise_synthesise" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fast_partial_analyse_quantise_synthesise</span></code></a>.</p>
+</div>
+<div class="section" id="utilities-for-representing-and-implementing-filter-behaviour">
+<h2>Utilities for representing and implementing filter behaviour<a class="headerlink" href="#utilities-for-representing-and-implementing-filter-behaviour" title="Permalink to this headline">¶</a></h2>
+<p>Finally <a class="reference internal" href="../high_level_api/index.html#module-vc2_bit_widths" title="vc2_bit_widths"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths</span></code></a> contains a number of low-level mathematical
+modules which provide the foundations upon which the others are built.</p>
+<p>The <a class="reference internal" href="linexp.html#module-vc2_bit_widths.linexp" title="vc2_bit_widths.linexp"><code class="xref py py-mod docutils literal notranslate"><span class="pre">linexp</span></code></a> module implements a specialised <a class="reference external" href="https://en.wikipedia.org/wiki/Computer_algebra_system">Computer
+Algebra System</a>
+optimised for building and manipulating algebraic descriptions of VC-2’s
+filters.</p>
+<p>The <a class="reference internal" href="pyexp.html#module-vc2_bit_widths.pyexp" title="vc2_bit_widths.pyexp"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyexp</span></code></a> module implements a scheme for extracting
+Python functions which compute a single value from the output of a function
+acting on whole arrays. This functionality is used within
+<a class="reference internal" href="fast_partial_analyse_quantise_synthesise.html#module-vc2_bit_widths.fast_partial_analyse_quantise_synthesise" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fast_partial_analyse_quantise_synthesise</span></code></a> to build
+efficient partial implementations of VC-2’s synthesis filters.</p>
+<p>Finally, <a class="reference internal" href="infinite_arrays.html#module-vc2_bit_widths.infinite_arrays" title="vc2_bit_widths.infinite_arrays"><code class="xref py py-mod docutils literal notranslate"><span class="pre">infinite_arrays</span></code></a> provide an abstraction for
+describing the operation of VC-2’s filters in terms of array operations. As
+well as being suited to building the algebraic descriptions used in this
+module, this form of description itself directly provides several useful
+metrics about a filter and its outputs.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Low-level API Overview</a><ul>
+<li><a class="reference internal" href="#evaluation-and-deployment-of-test-patterns">Evaluation and deployment of test patterns</a></li>
+<li><a class="reference internal" href="#calculating-signal-bounds-and-test-patterns">Calculating signal bounds and test patterns</a></li>
+<li><a class="reference internal" href="#specialised-partial-evaluation-functions-for-vc-2-filters">Specialised partial evaluation functions for VC-2 filters</a></li>
+<li><a class="reference internal" href="#implementations-of-vc-2-s-quantiser-and-wavelet-filters">Implementations of VC-2’s quantiser and wavelet filters</a></li>
+<li><a class="reference internal" href="#utilities-for-representing-and-implementing-filter-behaviour">Utilities for representing and implementing filter behaviour</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../theory_and_design/results.html"
+                        title="previous chapter">Experimental results</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pattern_evaluation.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_evaluation</span></code>: Measure the outputs achieved by test patterns</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/overview.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pattern_evaluation.html" title="vc2_bit_widths.pattern_evaluation: Measure the outputs achieved by test patterns"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../theory_and_design/results.html" title="Experimental results"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Low-level API Overview</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

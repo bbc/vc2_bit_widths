@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.fast_partial_analysis_transform: Wavelet analysis transform &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise: Fast single value encode, quantise and decode" href="fast_partial_analyse_quantise_synthesise.html" />
+    <link rel="prev" title="vc2_bit_widths.pattern_optimisation: (Synthesis) Test Pattern Optimisation" href="pattern_optimisation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="fast_partial_analyse_quantise_synthesise.html" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise: Fast single value encode, quantise and decode"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pattern_optimisation.html" title="vc2_bit_widths.pattern_optimisation: (Synthesis) Test Pattern Optimisation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.fast_partial_analysis_transform</span></code>: Wavelet analysis transform</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.fast_partial_analysis_transform"></span><div class="section" id="vc2-bit-widths-fast-partial-analysis-transform-wavelet-analysis-transform">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.fast_partial_analysis_transform" title="vc2_bit_widths.fast_partial_analysis_transform"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.fast_partial_analysis_transform</span></code></a>: Wavelet analysis transform<a class="headerlink" href="#vc2-bit-widths-fast-partial-analysis-transform-wavelet-analysis-transform" title="Permalink to this headline">¶</a></h1>
+<p>This module contains a <a class="reference external" href="https://numpy.org/doc/stable/reference/index.html#module-numpy" title="(in NumPy v1.20)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a>-based implementation of a VC-2-like
+integer lifting wavelet analysis (encoding) transform. This implementation is
+approximately 100x faster than executing the equivalent VC-2 pseudocode under
+Python. It also optionally may be used to extract intermediate results from the
+codec.</p>
+<p>This module is not indended as a general-purpose encoder implementation but
+rather for rapid evaluation of test patterns. Since test patterns are
+edge-effect free, this implementation does not implement VC-2’s edge effect
+handling behaviour – hence the ‘partial’ part of the module name. Output
+values which would have been effected by edge effects will contain nonsense
+values.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This Python+numpy filter is still extremely slow compared to any reasonable
+native software implementation. However, being pure Python, it is more
+portable and therefore useful in this application.</p>
+</div>
+<div class="section" id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<p>The example below demonstrates how the
+<a class="reference internal" href="#vc2_bit_widths.fast_partial_analysis_transform.fast_partial_analysis_transform" title="vc2_bit_widths.fast_partial_analysis_transform.fast_partial_analysis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">fast_partial_analysis_transform()</span></code></a> function may be used to perform an
+analysis transform on an example picture:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_data_tables</span> <span class="kn">import</span> <span class="n">LIFTING_FILTERS</span><span class="p">,</span> <span class="n">WaveletFilters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.fast_partial_analysis_transform</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="n">fast_partial_analysis_transform</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Codec parameters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wavelet_index</span> <span class="o">=</span> <span class="n">WaveletFilters</span><span class="o">.</span><span class="n">le_gall_5_3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wavelet_index_ho</span> <span class="o">=</span> <span class="n">WaveletFilters</span><span class="o">.</span><span class="n">le_gall_5_3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dwt_depth</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dwt_depth_ho</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># A test picture</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">width</span> <span class="o">=</span> <span class="mi">1024</span>  <span class="c1"># NB: Must be appropriate multiple for</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">height</span> <span class="o">=</span> <span class="mi">512</span>  <span class="c1"># filter depth chosen!</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">picture</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">512</span><span class="p">,</span> <span class="mi">511</span><span class="p">,</span> <span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">))</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h_filter_params</span> <span class="o">=</span> <span class="n">LIFTING_FILTERS</span><span class="p">[</span><span class="n">wavelet_index_ho</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">v_filter_params</span> <span class="o">=</span> <span class="n">LIFTING_FILTERS</span><span class="p">[</span><span class="n">wavelet_index</span><span class="p">]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Perform the analysis transform (in place)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transform_coeffs</span> <span class="o">=</span> <span class="n">fast_partial_analysis_transform</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">h_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">v_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth_ho</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">picture</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.fast_partial_analysis_transform.fast_partial_analysis_transform">
+<code class="sig-name descname"><span class="pre">fast_partial_analysis_transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.fast_partial_analysis_transform.fast_partial_analysis_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a multi-level 2D analysis transform, ignoring edge effects.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>h_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd></dd>
+<dt><strong>v_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd><p>Horizontal and vertical filter <em>synthesis</em> (not analysis!) filter
+parameters (e.g. from <a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LIFTING_FILTERS" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-data docutils literal notranslate"><span class="pre">vc2_data_tables.LIFTING_FILTERS</span></code></a>).</p>
+</dd>
+<dt><strong>dwt_depth, dwt_depth_ho: int</strong></dt><dd><p>Transform depths for 2D and horizontal-only transforms.</p>
+</dd>
+<dt><strong>signal</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code></span></dt><dd><p>The picture to be transformed. Will be transformed in-place (in
+interleaved form) but de-interleaved views will also be returned.</p>
+<p>Width must be a multiple of <code class="docutils literal notranslate"><span class="pre">2**(dwt_depth+dwt_depth_ho)</span></code> pixels and
+height a multiple of <code class="docutils literal notranslate"><span class="pre">2**dwt_depth</span></code> pixels.</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">(level, array_name, tx, ty) or None</span></dt><dd><p>If None, the complete analysis transform will be performed. If a tuple
+is given, the transform will run until the specified value has been
+computed and this value alone will be returned.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>transform_coeffs</strong><span class="classifier">{level: {orient: <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code>, …}, …} or intermediate_value</span></dt><dd><p>Subsampled views of the <code class="docutils literal notranslate"><span class="pre">signal</span></code> array (which will have been modified
+in-place).</p>
+<p>Alternatively, if the <code class="docutils literal notranslate"><span class="pre">target</span></code> argument is not None, the single
+intermediate value requested will be returned.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.fast_partial_analysis_transform</span></code>: Wavelet analysis transform</a><ul>
+<li><a class="reference internal" href="#example-usage">Example usage</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pattern_optimisation.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_optimisation</span></code>: (Synthesis) Test Pattern Optimisation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fast_partial_analyse_quantise_synthesise.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.fast_partial_analyse_quantise_synthesise</span></code>: Fast single value encode, quantise and decode</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/fast_partial_analysis_transform.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="fast_partial_analyse_quantise_synthesise.html" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise: Fast single value encode, quantise and decode"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pattern_optimisation.html" title="vc2_bit_widths.pattern_optimisation: (Synthesis) Test Pattern Optimisation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.fast_partial_analysis_transform</span></code>: Wavelet analysis transform</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

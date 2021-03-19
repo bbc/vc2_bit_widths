@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.linexp: A simple Computer Algebra System with affine arithmetic &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.pyexp: Construct Python programs implementing arithmetic expressions" href="pyexp.html" />
+    <link rel="prev" title="vc2_bit_widths.vc2_filters: VC-2 Filters Implemented as InfiniteArrays" href="vc2_filters.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyexp.html" title="vc2_bit_widths.pyexp: Construct Python programs implementing arithmetic expressions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vc2_filters.html" title="vc2_bit_widths.vc2_filters: VC-2 Filters Implemented as InfiniteArrays"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.linexp</span></code>: A simple Computer Algebra System with affine arithmetic</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.linexp"></span><div class="section" id="vc2-bit-widths-linexp-a-simple-computer-algebra-system-with-affine-arithmetic">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.linexp" title="vc2_bit_widths.linexp"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.linexp</span></code></a>: A simple Computer Algebra System with affine arithmetic<a class="headerlink" href="#vc2-bit-widths-linexp-a-simple-computer-algebra-system-with-affine-arithmetic" title="Permalink to this headline">¶</a></h1>
+<p>This module implements a Computer Algebra System (CAS) which is able to perform
+simple linear algebraic manipulations on linear expressions. In addition, a
+limited set of non-linear operations (such as truncating division) are
+supported and modelled using affine arithmetic.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Compared with the mature and powerful <code class="xref py py-mod docutils literal notranslate"><span class="pre">sympy</span></code> CAS,
+<a class="reference internal" href="#module-vc2_bit_widths.linexp" title="vc2_bit_widths.linexp"><code class="xref py py-mod docutils literal notranslate"><span class="pre">linexp</span></code></a> is extremely limited. However, within its
+restricted domain, <a class="reference internal" href="#module-vc2_bit_widths.linexp" title="vc2_bit_widths.linexp"><code class="xref py py-mod docutils literal notranslate"><span class="pre">linexp</span></code></a> is significantly more
+computationally efficient.</p>
+</div>
+<div class="section" id="linear-expressions">
+<h2>Linear expressions<a class="headerlink" href="#linear-expressions" title="Permalink to this headline">¶</a></h2>
+<p>Linear expressions are defined as being of the form:</p>
+<div class="math notranslate nohighlight">
+\[k_1 v_1 + k_2 v_2 + \cdots + k_j\]</div>
+<p>Where <span class="math notranslate nohighlight">\(k_n\)</span> are constants and <span class="math notranslate nohighlight">\(v_n\)</span> are free symbols (i.e.
+variables). For example, the following represents a linear expression:</p>
+<div class="math notranslate nohighlight">
+\[a + 2b - 3c + 100\]</div>
+<p>Where <span class="math notranslate nohighlight">\(a\)</span>, <span class="math notranslate nohighlight">\(b\)</span> and <span class="math notranslate nohighlight">\(c\)</span> are the free symbols and 1, 2, -3 and
+100 are the relevant constants.</p>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>The expression above may be constructed using this library as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.linexp</span> <span class="kn">import</span> <span class="n">LinExp</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create expressions containing just the symbols named &#39;a&#39;, &#39;b&#39; and &#39;c&#39;.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">LinExp</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">LinExp</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">LinExp</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">b</span> <span class="o">-</span> <span class="mi">3</span><span class="o">*</span><span class="n">c</span> <span class="o">+</span> <span class="mi">100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<span class="go">a + 2*b + -3*c + 100</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp.subs" title="vc2_bit_widths.linexp.LinExp.subs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">LinExp.subs()</span></code></a> method may be used to substitute symbols with
+numbers:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">subs</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">10000</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="mi">100000</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span>
+<span class="go">LinExp(-278900)</span>
+</pre></div>
+</div>
+<p>When a <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> contains just a constant value, the constant may be
+extracted as a conventional Python number type using <code class="xref py py-attr docutils literal notranslate"><span class="pre">constant</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">is_constant</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">constant</span>
+<span class="go">-278900</span>
+</pre></div>
+</div>
+<p>In a similar way, for <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> instances consisting of a single
+symbol with weight 1, the symbol name may be extracted like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">is_symbol</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">symbol</span>
+<span class="go">&#39;a&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Weighted symbols are considered different</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a3</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a3</span><span class="o">.</span><span class="n">is_symbol</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Instances of <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> support all Python operators when the resulting
+expression would be strictly linear. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr_times_ten</span> <span class="o">=</span> <span class="n">expr</span> <span class="o">*</span> <span class="mi">10</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">expr_times_ten</span><span class="p">)</span>
+<span class="go">10*a + 20*b + -30*c + 1000</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">three</span> <span class="o">=</span> <span class="p">(</span><span class="n">expr</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="n">expr</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">three</span><span class="p">)</span>
+<span class="go">3</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Not allowed since the result would not be linear</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">/</span> <span class="n">a</span>
+<span class="go">TypeError: unsupported operand type(s) for /: &#39;LinExp&#39; and &#39;LinExp&#39;</span>
+</pre></div>
+</div>
+<p>Expressions may use <a class="reference external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Fraction</span></code></a>s to represent
+coefficients exactly. Accordingly <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> implements division using
+<a class="reference external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Fraction</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr_over_three</span> <span class="o">=</span> <span class="n">expr</span> <span class="o">/</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">expr_over_three</span><span class="p">)</span>
+<span class="go">(1/3)*a + (2/3)*b + -1*c + 100/3</span>
+</pre></div>
+</div>
+<p>Internally, linear expressions are represented by a dictionary of the form
+<code class="docutils literal notranslate"><span class="pre">{symbol:</span> <span class="pre">coefficient,</span> <span class="pre">...}</span></code>. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">repr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<span class="go">&quot;LinExp({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: -3, None: 100})&quot;</span>
+</pre></div>
+</div>
+<p>Note that the constant term is stored in the special entry <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>The <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> class provides a number of methods for inspecting the
+value within an expression. For example, iterating over a <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a>
+yields the <code class="docutils literal notranslate"><span class="pre">(symbol,</span> <span class="pre">coefficient)</span></code> pairs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<span class="go">[(&#39;a&#39;, 1), (&#39;b&#39;, 2), (&#39;c&#39;, -3), (None, 100)]</span>
+</pre></div>
+</div>
+<p>Alternatively, just the symbols can be listed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">symbols</span><span class="p">())</span>
+<span class="go">[&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, None]</span>
+</pre></div>
+</div>
+<p>The coefficients associated with particular symbols can be queried like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span><span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">]</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span><span class="p">[</span><span class="s2">&quot;d&quot;</span><span class="p">]</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="affine-arithmetic">
+<h2>Affine Arithmetic<a class="headerlink" href="#affine-arithmetic" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Affine_arithmetic">Affine arithmetic</a> may be
+used to bound the effects of non-linear operations such as integer truncation
+within a linear expression. In affine arithmetic, whenever a non-linear
+operation is performed, an error term is introduced which represents the range
+of values the non-linear operation could produce. In this way, the bounds of
+the effects of the non-linearity may be tracked.</p>
+<p>For example, consider the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">LinExp</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a_over_2</span> <span class="o">=</span> <span class="n">a</span> <span class="o">//</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">a_over_2</span><span class="p">)</span>
+<span class="go">(1/2)*a + (1/2)*AAError(id=1) + -1/2</span>
+</pre></div>
+</div>
+<p>Here, the symbol “a” is divded by 2 with truncating integer division. The
+resulting expression starts with <code class="docutils literal notranslate"><span class="pre">(1/2)*a</span></code> as usual but is followed by an
+<a class="reference internal" href="#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> term and constant representing the rounding error.</p>
+<p>In affine arithmetic, <a class="reference internal" href="#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> symbols represent unknown values in
+the range <span class="math notranslate nohighlight">\([-1, +1]\)</span>. As a result we can see that our expression defines
+a range <span class="math notranslate nohighlight">\([\frac{a}{2}-1, \frac{a}{2}]\)</span>. This range represents the lower-
+and upper-bounds for the result of the truncating integer division. These
+bounds may be computed using the <a class="reference internal" href="#vc2_bit_widths.linexp.affine_lower_bound" title="vc2_bit_widths.linexp.affine_lower_bound"><code class="xref py py-func docutils literal notranslate"><span class="pre">affine_lower_bound()</span></code></a> and
+<a class="reference internal" href="#vc2_bit_widths.linexp.affine_upper_bound" title="vc2_bit_widths.linexp.affine_upper_bound"><code class="xref py py-func docutils literal notranslate"><span class="pre">affine_upper_bound()</span></code></a> functions respectively:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.linexp</span> <span class="kn">import</span> <span class="n">affine_lower_bound</span><span class="p">,</span> <span class="n">affine_upper_bound</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">affine_lower_bound</span><span class="p">(</span><span class="n">a_over_2</span><span class="p">))</span>
+<span class="go">(1/2)*a + -1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">affine_upper_bound</span><span class="p">(</span><span class="n">a_over_2</span><span class="p">))</span>
+<span class="go">(1/2)*a</span>
+</pre></div>
+</div>
+<p>Since affine arithmetic <a class="reference internal" href="#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> symbols are ordinary symbols they
+will be scaled and manipulated as in ordinary algebra. As such, the affine
+arithmetic bounds of an expression will remain correct. For example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">((</span><span class="n">a</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<span class="go">a + Error(id=1) + 99</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">affine_lower_bound</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
+<span class="go">a + 98</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">affine_upper_bound</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
+<span class="go">a + 100</span>
+</pre></div>
+</div>
+<p>As well as the inherent limitations of affine arithmetic, :py;class:<cite>LinExp</cite> is
+also naive in its implementation leading to additional sources of
+over-estimates. For example, in the following we might know that ‘a’ is an
+integer so the expected result should be just ‘a’, but <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> is
+unable to use this information:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<span class="go">a + (1/2)*Error(id=4) + -1/2</span>
+</pre></div>
+</div>
+<p>As a second example, every truncation produces a new <a class="reference internal" href="#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> term
+meaning that sometimes error terms do not cancel when they otherwise could:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Error terms cancel as expected</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">a_over_2</span> <span class="o">-</span> <span class="n">a_over_2</span><span class="p">)</span>
+<span class="go">0</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Two different error terms don&#39;t cancel as expected</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">((</span><span class="n">a</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">a</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span>
+<span class="go">(1/2)*AAError(id=5) + (-1/2)*AAError(id=6)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="vc2_bit_widths.linexp.LinExp">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">LinExp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="vc2_bit_widths.linexp.LinExp.new_affine_error_symbol">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">new_affine_error_symbol</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp.new_affine_error_symbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> with a unique <a class="reference internal" href="#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> symbol.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.linexp.LinExp.symbols">
+<code class="sig-name descname"><span class="pre">symbols</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp.symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterator over the symbols in this <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> where
+the symbol <code class="docutils literal notranslate"><span class="pre">None</span></code> represents a constant term.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.linexp.LinExp.is_constant">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">is_constant</span></code><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp.is_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>True iff this <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> represents only a constant
+value (including zero) and includes no symbols.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.linexp.LinExp.constant">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">constant</span></code><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp.constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp.is_constant" title="vc2_bit_widths.linexp.LinExp.is_constant"><code class="xref py py-attr docutils literal notranslate"><span class="pre">is_constant</span></code></a> is True, contains the value as a normal
+numerical Python type. Otherwise raises <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.9)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code></a> on access.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.linexp.LinExp.is_symbol">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">is_symbol</span></code><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp.is_symbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>True iff this <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> represents only single
+1-weighted symbols.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.linexp.LinExp.symbol">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">symbol</span></code><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp.symbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iff this <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> contains only a single 1-weighted symbol
+(see <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp.is_symbol" title="vc2_bit_widths.linexp.LinExp.is_symbol"><code class="xref py py-attr docutils literal notranslate"><span class="pre">is_symbol</span></code></a>) returns that symbol. Otherwise raises
+<a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.9)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code></a> on access.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.linexp.LinExp.subs">
+<code class="sig-name descname"><span class="pre">subs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">substitutions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.LinExp.subs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Substitute symbols in this linear expression for new values.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>substitutions</strong><span class="classifier">{symbol: number or symbol or <a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a>, …}</span></dt><dd><p>Substitutions to carry out. Substitutions will be carried out
+as if performed simultaneously.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>linexp</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a></span></dt><dd><p>A new expression once the substitution has been carried out.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.linexp.AAError">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">AAError</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.AAError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An Affine Arithmetic error term. This symbol should be considered to represent
+an unknown value in the range <span class="math notranslate nohighlight">\([-1, +1]\)</span>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.linexp.strip_affine_errors">
+<code class="sig-name descname"><span class="pre">strip_affine_errors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.strip_affine_errors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the provided expression with all affine error symbols removed (i.e.
+set to 0).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.linexp.affine_lower_bound">
+<code class="sig-name descname"><span class="pre">affine_lower_bound</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.affine_lower_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the lower-bound of an affine arithmetic expression.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.linexp.affine_upper_bound">
+<code class="sig-name descname"><span class="pre">affine_upper_bound</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.affine_upper_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the upper-bound of an affine arithmetic expression.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.linexp.affine_error_with_range">
+<code class="sig-name descname"><span class="pre">affine_error_with_range</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.linexp.affine_error_with_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an affine arithmetic expression defining the specified
+range.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.linexp</span></code>: A simple Computer Algebra System with affine arithmetic</a><ul>
+<li><a class="reference internal" href="#linear-expressions">Linear expressions</a></li>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#affine-arithmetic">Affine Arithmetic</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vc2_filters.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters</span></code>: VC-2 Filters Implemented as <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pyexp.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pyexp</span></code>: Construct Python programs implementing arithmetic expressions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/linexp.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyexp.html" title="vc2_bit_widths.pyexp: Construct Python programs implementing arithmetic expressions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vc2_filters.html" title="vc2_bit_widths.vc2_filters: VC-2 Filters Implemented as InfiniteArrays"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.linexp</span></code>: A simple Computer Algebra System with affine arithmetic</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

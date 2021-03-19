@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.pattern_optimisation: (Synthesis) Test Pattern Optimisation &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.fast_partial_analysis_transform: Wavelet analysis transform" href="fast_partial_analysis_transform.html" />
+    <link rel="prev" title="vc2_bit_widths.pattern_generation: Heuristic test pattern generation" href="pattern_generation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="fast_partial_analysis_transform.html" title="vc2_bit_widths.fast_partial_analysis_transform: Wavelet analysis transform"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pattern_generation.html" title="vc2_bit_widths.pattern_generation: Heuristic test pattern generation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_optimisation</span></code>: (Synthesis) Test Pattern Optimisation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.pattern_optimisation"></span><div class="section" id="vc2-bit-widths-pattern-optimisation-synthesis-test-pattern-optimisation">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.pattern_optimisation" title="vc2_bit_widths.pattern_optimisation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_optimisation</span></code></a>: (Synthesis) Test Pattern Optimisation<a class="headerlink" href="#vc2-bit-widths-pattern-optimisation-synthesis-test-pattern-optimisation" title="Permalink to this headline">¶</a></h1>
+<p>This module contains routines for optimising heuristic synthesis filter test
+patterns for a particular codec configuration (e.g. bit width and quantisation
+matrix).</p>
+<div class="section" id="search-algorithm-parameters">
+<span id="optimisation"></span><h2>Search algorithm &amp; parameters<a class="headerlink" href="#search-algorithm-parameters" title="Permalink to this headline">¶</a></h2>
+<p>At a high-level the greedy search proceeds to optimise a test pattern in the
+following steps:</p>
+<ol class="arabic simple">
+<li><p>Make some random changes to the input pattern.</p></li>
+<li><p>See if these changes made the decoded output value larger. If they did, keep
+the changes, if they didn’t, discard them.</p></li>
+<li><p>Go to step 1, unless no progress has been made for some time.</p></li>
+</ol>
+<p>As an added detail, the whole search process may be repeated several times to
+reduce the impact of local minima encountered during a search.</p>
+<p>The search is controlled by a number of parameters, explained below. These must
+be chosen appropriately for each codec configuration and good parameters for
+one transform may perform poorly with others. Only general advice is offered
+about the effect of each parameter, experimentation is essential.</p>
+<div class="section" id="step-1-random-perturbations">
+<h3>Step 1: Random perturbations<a class="headerlink" href="#step-1-random-perturbations" title="Permalink to this headline">¶</a></h3>
+<p>Test patterns are perturbed as follows:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">removed_corruptions_per_iteration</span></code> pixels within the test pattern are
+selected at random (with replacement – i.e. fewer than
+<code class="docutils literal notranslate"><span class="pre">removed_corruptions_per_iteration</span></code> pixels may be chosen in some cases).</p></li>
+<li><p>The chosen pixels are set back to their original state, before optimisation
+began.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">added_corruptions_per_iteration</span></code> pixels within the test pattern are
+selected at random (in the same way as above).</p></li>
+<li><p>The chosen pixels are overwritten with a positive or negative polarity at
+random.</p></li>
+</ol>
+<p>The <code class="docutils literal notranslate"><span class="pre">added_corruptions_per_iteration</span></code> parameter controls the exploratory
+tendency of the search. Setting this to a low value will make the search move
+more slowly but tend not less readily discard good features of a pattern
+discovered so far. Setting this to a high value will allow the search to more
+easily escape local minima but may require increased runtime to complete.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">removed_corruptions_per_iteration</span></code> parameter can allow a search to
+‘undo’ bad decisions, working on the basis that the starting pattern is more
+effective than random noise.</p>
+<p>The effect of these two parameters varies widely between wavelets.
+Experimentation is recommended.</p>
+</div>
+<div class="section" id="step-2-evaluate-the-perturbed-test-pattern">
+<h3>Step 2: Evaluate the perturbed test pattern<a class="headerlink" href="#step-2-evaluate-the-perturbed-test-pattern" title="Permalink to this headline">¶</a></h3>
+<p>This step in the algorithm uses
+<a class="reference internal" href="fast_partial_analyse_quantise_synthesise.html#vc2_bit_widths.fast_partial_analyse_quantise_synthesise.FastPartialAnalyseQuantiseSynthesise" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise.FastPartialAnalyseQuantiseSynthesise"><code class="xref py py-class docutils literal notranslate"><span class="pre">FastPartialAnalyseQuantiseSynthesise</span></code></a>
+to evaluate the test pattern’s performance over a range of quantisation
+indices. This process exactly matches the integer arithmetic specified in the
+VC-2 standard.</p>
+<p>This step is parameterised by the obvious wavelet, transform depth,
+quantisation matrix and picture signal range parameters.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">max_quantisation_index</span></code> specifies the maximum quantisation index which
+will be used to evaluate a test pattern. This should be sufficiently high that
+at any higher level, all transform coefficients are quantised to zero. Setting
+this parameter too low may cause especially effective test patterns to be
+missed (the most effective patterns often work best at high quantisation
+indices). Setting this parameter too high simply wastes time. The
+<a class="reference internal" href="../high_level_api/helpers.html#vc2_bit_widths.helpers.quantisation_index_bound" title="vc2_bit_widths.helpers.quantisation_index_bound"><code class="xref py py-func docutils literal notranslate"><span class="pre">quantisation_index_bound()</span></code></a> function may be
+used to determine the ideal value for this parameter.</p>
+</div>
+<div class="section" id="step-3-repeat-or-terminate">
+<h3>Step 3: Repeat or terminate<a class="headerlink" href="#step-3-repeat-or-terminate" title="Permalink to this headline">¶</a></h3>
+<p>If the perturbed test pattern was found to produce a larger signal value than
+both the unmodified test pattern and the best perturbed pattern found
+previously, the new test pattern will be accepted as the new starting point for
+subsequent searches. If no improvement was found, the perturbed pattern is
+discarded and the previous best pattern is used for the next search iteration.</p>
+<p>To trigger the eventual termination of the search, a counter is used. This
+counter is initialised <code class="docutils literal notranslate"><span class="pre">base_iterations</span></code> parameter and is decremented by one
+after each search iteration. Whenever an improved test pattern is discovered,
+the counter is incremented by <code class="docutils literal notranslate"><span class="pre">added_iterations_per_improvement</span></code>. When the
+counter reaches zero, the search is terminated.</p>
+<p>These parameters should be set experimentally according to the time available
+and wavelet used. Longer searches produce larger, though diminishing,
+improvements. The <code class="docutils literal notranslate"><span class="pre">added_iterations_per_improvement</span></code> parameter allows
+fruitful searches to continue for longer than searches which do not appear to
+be producing results.</p>
+</div>
+<div class="section" id="search-repitition">
+<h3>Search repitition<a class="headerlink" href="#search-repitition" title="Permalink to this headline">¶</a></h3>
+<p>The whole search process may be repeated, re-starting from the unmodified test
+pattern each time, to escape local minima encountered during a search. The best
+result found in any attempt will be returned as the final result.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">number_of_searches</span></code> parameter may be used to set the number of times the
+whole search process should be repeated. It can sometimes be more productive to
+choose a larger <code class="docutils literal notranslate"><span class="pre">number_of_searches</span></code> with lower <code class="docutils literal notranslate"><span class="pre">base_iterations</span></code> and
+<code class="docutils literal notranslate"><span class="pre">added_iterations_per_improvement</span></code> over fewer but longer searchs.</p>
+<p>For certain test patterns, random search may never manage to make any
+improvements. In these cases, the <code class="docutils literal notranslate"><span class="pre">terminate_early</span></code> parameter may be used to
+stop repeating the search process before <code class="docutils literal notranslate"><span class="pre">number_of_searches</span></code> if no search
+manages to find any improvement. When <code class="docutils literal notranslate"><span class="pre">base_iterations</span></code> is sufficiently
+large, this early termination behaviour should be unlikely to result in false
+negatives.</p>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.pattern_optimisation.optimise_synthesis_maximising_test_pattern">
+<code class="sig-name descname"><span class="pre">optimise_synthesis_maximising_test_pattern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantisation_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_pyexp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_pattern_specification</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_quantisation_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_searches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminate_early</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_corruptions_per_iteration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removed_corruptions_per_iteration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_iterations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">added_iterations_per_improvement</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.pattern_optimisation.optimise_synthesis_maximising_test_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimise a test pattern generated by
+<a class="reference internal" href="pattern_generation.html#vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern" title="vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_synthesis_maximising_pattern()</span></code></a>
+using repeated greedy stochastic search, attempting to produce larger
+signal values for the specified codec configuration.</p>
+<p>The basic
+<a class="reference internal" href="pattern_generation.html#vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern" title="vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_synthesis_maximising_pattern()</span></code></a>
+function simply uses a heuristic to produce a patterns likely to produce
+extreme values in the general case. By contrast this function attempts to
+more directly optimise the test pattern for particular input signal ranges
+and quantiser configurations.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>h_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd></dd>
+<dt><strong>v_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd><p>Horizontal and vertical filter synthesis filter parameters (e.g. from
+<a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LIFTING_FILTERS" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-data docutils literal notranslate"><span class="pre">vc2_data_tables.LIFTING_FILTERS</span></code></a>) defining the wavelet
+transform used.</p>
+</dd>
+<dt><strong>dwt_depth</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth_ho</strong><span class="classifier">int</span></dt><dd><p>The transform depth used by the filters.</p>
+</dd>
+<dt><strong>quantisation_matrix</strong><span class="classifier">{level: {orient: int, …}, …}</span></dt><dd><p>The VC-2 quantisation matrix to use.</p>
+</dd>
+<dt><strong>synthesis_pyexp</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></span></dt><dd><p>A <a class="reference internal" href="pyexp.html#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> expression which defines the
+synthesis process for the decoder value the test pattern is
+maximising/minimising. Such an expression is usually obtained from the
+use of <a class="reference internal" href="vc2_filters.html#vc2_bit_widths.vc2_filters.synthesis_transform" title="vc2_bit_widths.vc2_filters.synthesis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">synthesis_transform()</span></code></a> and
+<a class="reference internal" href="vc2_filters.html#vc2_bit_widths.vc2_filters.make_variable_coeff_arrays" title="vc2_bit_widths.vc2_filters.make_variable_coeff_arrays"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_variable_coeff_arrays()</span></code></a>.</p>
+</dd>
+<dt><strong>test_pattern_specification</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></span></dt><dd><p>The test pattern to optimise. This test pattern must be translated such
+that no analysis or synthesis step depends on VC-2’s edge extension
+behaviour. This will be the case for test patterns produced by
+<a class="reference internal" href="pattern_generation.html#vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern" title="vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_synthesis_maximising_pattern()</span></code></a>.</p>
+</dd>
+<dt><strong>input_min</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>input_max</strong><span class="classifier">int</span></dt><dd><p>The minimum and maximum value which may be used in the test pattern.</p>
+</dd>
+<dt><strong>max_quantisation_index</strong><span class="classifier">int</span></dt><dd><p>The maximum quantisation index to use. This should be set high enough
+that at the highest quantisation level all transform coefficients are
+quantised to zero.</p>
+</dd>
+<dt><strong>random_state</strong><span class="classifier"><a class="reference external" href="https://numpy.org/doc/stable/reference/random/legacy.html#numpy.random.RandomState" title="(in NumPy v1.20)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.random.RandomState</span></code></a></span></dt><dd><p>The random number generator to use during the search.</p>
+</dd>
+<dt><strong>number_of_searches</strong><span class="classifier">int</span></dt><dd><p>Repeat the greedy stochastic search process this many times. Since
+searches will tend to converge on local minima, increasing this
+parameter will tend to produce improved results.</p>
+</dd>
+<dt><strong>terminate_early</strong><span class="classifier">None or int</span></dt><dd><p>If an integer, stop searching if the first <code class="docutils literal notranslate"><span class="pre">terminate_early</span></code> searches
+fail to find an improvement. If None, always performs all searches.</p>
+</dd>
+<dt><strong>added_corruptions_per_iteration</strong><span class="classifier">int</span></dt><dd><p>The number of pixels to assign with a random value during each search
+attempt.</p>
+</dd>
+<dt><strong>removed_corruptions_per_iteration</strong><span class="classifier">int</span></dt><dd><p>The number of pixels entries to reset to their original value during
+each search attempt.</p>
+</dd>
+<dt><strong>base_iterations</strong><span class="classifier">int</span></dt><dd><p>The initial number of search iterations to perform.</p>
+</dd>
+<dt><strong>added_iterations_per_improvement</strong><span class="classifier">int</span></dt><dd><p>The number of additional search iterations to perform whenever an
+improved pattern is found.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>optimised_test_pattern</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimisedTestPatternSpecification</span></code></span></dt><dd><p>The optimised test pattern found during the search.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_optimisation</span></code>: (Synthesis) Test Pattern Optimisation</a><ul>
+<li><a class="reference internal" href="#search-algorithm-parameters">Search algorithm &amp; parameters</a><ul>
+<li><a class="reference internal" href="#step-1-random-perturbations">Step 1: Random perturbations</a></li>
+<li><a class="reference internal" href="#step-2-evaluate-the-perturbed-test-pattern">Step 2: Evaluate the perturbed test pattern</a></li>
+<li><a class="reference internal" href="#step-3-repeat-or-terminate">Step 3: Repeat or terminate</a></li>
+<li><a class="reference internal" href="#search-repitition">Search repitition</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pattern_generation.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_generation</span></code>: Heuristic test pattern generation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fast_partial_analysis_transform.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.fast_partial_analysis_transform</span></code>: Wavelet analysis transform</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/pattern_optimisation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="fast_partial_analysis_transform.html" title="vc2_bit_widths.fast_partial_analysis_transform: Wavelet analysis transform"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pattern_generation.html" title="vc2_bit_widths.pattern_generation: Heuristic test pattern generation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_optimisation</span></code>: (Synthesis) Test Pattern Optimisation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

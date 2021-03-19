@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Introduction &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Caveats" href="caveats.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="../bibliography.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="caveats.html" title="Caveats"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../bibliography.html" title="&lt;no title&gt;"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Introduction</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="introduction">
+<span id="id1"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>The VC-2 standard defines the video decoding process using infinite precision
+integer arithmetic. For practical implementations, however, fixed-width
+integers must be used to achieve useful performance.</p>
+<p>If a codec is built with too few bits of precision, artefacts may be produced
+in the event of integer wrap-around or saturation (see examples below). If too
+many bits are used, however, the implementation will consume more resources
+than necessary.</p>
+<img alt="Example of the effects of an insufficient number of bits on decoded pictures." src="../_images/bit_width_artefacts.png" />
+<p>Perhaps surprisingly, the question ‘how many bits do I need?’ is not a simple
+one to answer. This software attempts to provide useful estimates for these
+figures based on mathematical analyses of VC-2’s filters</p>
+<p>Before introducing this software it is important to understand its limitations
+and the terminology it uses. These will be introduced in the next few sections
+before the command line and Python library interfaces of
+<a class="reference internal" href="../high_level_api/index.html#module-vc2_bit_widths" title="vc2_bit_widths"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths</span></code></a> is introduced.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="caveats.html">Caveats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="caveats.html#assumed-encoder-behaviour">Assumed encoder behaviour</a></li>
+<li class="toctree-l2"><a class="reference internal" href="caveats.html#non-linearity">Non-linearity</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="terminology.html">Terminology</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="terminology.html#levels-and-subbands">Levels and subbands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terminology.html#intermediate-value-arrays">Intermediate value arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terminology.html#phases">Phases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="terminology.html#targets">Targets</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../bibliography.html"
+                        title="previous chapter">&lt;no title&gt;</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="caveats.html"
+                        title="next chapter">Caveats</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/introduction/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="caveats.html" title="Caveats"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../bibliography.html" title="&lt;no title&gt;"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Introduction</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

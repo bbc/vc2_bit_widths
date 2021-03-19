@@ -1,0 +1,370 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.pyexp: Construct Python programs implementing arithmetic expressions &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.infinite_arrays: Infinite arrays" href="infinite_arrays.html" />
+    <link rel="prev" title="vc2_bit_widths.linexp: A simple Computer Algebra System with affine arithmetic" href="linexp.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="infinite_arrays.html" title="vc2_bit_widths.infinite_arrays: Infinite arrays"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="linexp.html" title="vc2_bit_widths.linexp: A simple Computer Algebra System with affine arithmetic"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pyexp</span></code>: Construct Python programs implementing arithmetic expressions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.pyexp"></span><div class="section" id="vc2-bit-widths-pyexp-construct-python-programs-implementing-arithmetic-expressions">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.pyexp" title="vc2_bit_widths.pyexp"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pyexp</span></code></a>: Construct Python programs implementing arithmetic expressions<a class="headerlink" href="#vc2-bit-widths-pyexp-construct-python-programs-implementing-arithmetic-expressions" title="Permalink to this headline">¶</a></h1>
+<p>This module provides the <a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> class which tracks arithmetic
+operations performed on its instances. These objects may later be used to
+generate a Python function which implements these steps.</p>
+<div class="section" id="motivation">
+<h2>Motivation<a class="headerlink" href="#motivation" title="Permalink to this headline">¶</a></h2>
+<p>When constructing test patterns it is often necessary to compute the output of
+a single filter output. Typically filters are described in terms of lifting
+steps which compute the filter output for an entire picture at once, even when
+only a single pixel or intermediate value is required. Using <a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a>,
+it is possible to automatically extract a function which implements just the
+computations required to produce a single filter output. In this way,
+individual filter outputs may be efficiently computed in isolation.</p>
+</div>
+<div class="section" id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">pyexp</span></code> module provides a series of subclasses of the abstract
+<a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> base class. Together these subclasses may be used to define
+Python expressions which may be compiled into a function.</p>
+<p>For example, using <a class="reference internal" href="#vc2_bit_widths.pyexp.Constant" title="vc2_bit_widths.pyexp.Constant"><code class="xref py py-class docutils literal notranslate"><span class="pre">Constant</span></code></a> we can define a pair of constants and
+add them together:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.pyexp</span> <span class="kn">import</span> <span class="n">Constant</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">five</span> <span class="o">=</span> <span class="n">Constant</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nine</span> <span class="o">=</span> <span class="n">Constant</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">five_add_nine</span> <span class="o">=</span> <span class="n">five</span> <span class="o">+</span> <span class="n">nine</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">five_add_nine</span><span class="p">)</span>
+<span class="go">BinaryOperator(Constant(5), Constant(9), &#39;+&#39;)</span>
+</pre></div>
+</div>
+<p>Rather than immediately computing a result, adding the <a class="reference internal" href="#vc2_bit_widths.pyexp.Constant" title="vc2_bit_widths.pyexp.Constant"><code class="xref py py-class docutils literal notranslate"><span class="pre">Constant</span></code></a>s
+together produced a new <a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> (of type <a class="reference internal" href="#vc2_bit_widths.pyexp.BinaryOperator" title="vc2_bit_widths.pyexp.BinaryOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BinaryOperator</span></code></a>)
+representing the computation to be carried out. Using the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">make_function()</span></code> method, we can create a Python function which
+actually evaluates the expression:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compute_five_add_nine</span> <span class="o">=</span> <span class="n">five_add_nine</span><span class="o">.</span><span class="n">make_function</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compute_five_add_nine</span><span class="p">()</span>
+<span class="go">14</span>
+</pre></div>
+</div>
+<p>The <code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_code()</span></code> method may be used to inspect the generated
+code.  Here we can see that the generated function does actually perform the
+computation on demand:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">five_add_nine</span><span class="o">.</span><span class="n">generate_code</span><span class="p">())</span>
+<span class="go">def f():</span>
+<span class="go">    return (5 + 9)</span>
+</pre></div>
+</div>
+<p>To build more interesting functions we can define <a class="reference internal" href="#vc2_bit_widths.pyexp.Argument" title="vc2_bit_widths.pyexp.Argument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Argument</span></code></a>s.  The
+names passed to the <a class="reference internal" href="#vc2_bit_widths.pyexp.Argument" title="vc2_bit_widths.pyexp.Argument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Argument</span></code></a> constructor become the argument names
+in the generated function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.pyexp</span> <span class="kn">import</span> <span class="n">Argument</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">average_expr</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">Constant</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">average</span> <span class="o">=</span> <span class="n">average_expr</span><span class="o">.</span><span class="n">make_function</span><span class="p">()</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">average</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="go">12.5</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> instances support many Python operators and will
+automatically wrap non-<a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> values in <a class="reference internal" href="#vc2_bit_widths.pyexp.Constant" title="vc2_bit_widths.pyexp.Constant"><code class="xref py py-class docutils literal notranslate"><span class="pre">Constant</span></code></a>. For
+example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">array</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;array&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">average_of_first_and_last_expr</span> <span class="o">=</span> <span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">array</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">average_of_first_and_last</span> <span class="o">=</span> <span class="n">average_of_first_and_last_expr</span><span class="o">.</span><span class="n">make_function</span><span class="p">()</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">average_of_first_and_last</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
+<span class="go">4.5</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="carving-functions-out-of-existing-code">
+<h2>Carving functions out of existing code<a class="headerlink" href="#carving-functions-out-of-existing-code" title="Permalink to this headline">¶</a></h2>
+<p>Because <a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> objects support the usual Python operators they can
+be passed as arguments to existing code. For example, consider the following
+function designed to operate on arrays of numbers:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">multiply_by_place</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="p">[</span><span class="n">value</span> <span class="o">*</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">array</span><span class="p">)]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Demo</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">multiply_by_place</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">])</span>
+<span class="go">[0, 3, 10, 33]</span>
+</pre></div>
+</div>
+<p>Now, instead of passing in an array of numbers, lets pass in an array of
+<a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> values:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;values&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">multiply_by_place</span><span class="p">([</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)])</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pprint</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+<span class="go">[Constant(0),</span>
+<span class="go"> Subscript(Argument(&#39;values&#39;), Constant(1)),</span>
+<span class="go"> BinaryOperator(Subscript(Argument(&#39;values&#39;), Constant(2)), Constant(2), &#39;*&#39;),</span>
+<span class="go"> BinaryOperator(Subscript(Argument(&#39;values&#39;), Constant(3)), Constant(3), &#39;*&#39;)]</span>
+</pre></div>
+</div>
+<p>Our function now returns a list of <a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> values. Using these we can
+generate functions which just compute one of the output values of
+<code class="docutils literal notranslate"><span class="pre">multiply_by_place</span></code> in isolation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">compute_third_output</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">make_function</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compute_third_output</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">])</span>
+<span class="go">10</span>
+</pre></div>
+</div>
+<p>We can verify that the generated function is genuinely computing only the
+required value (and not just computing everything and throwing most of it
+away) by inspecting its source code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">generate_code</span><span class="p">())</span>
+<span class="go">def f(values):</span>
+<span class="go">    return (values[2] * 2)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="manipulating-expressions">
+<h2>Manipulating expressions<a class="headerlink" href="#manipulating-expressions" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a> supports simple manipulation of expressions in the form of
+the <code class="xref py py-meth docutils literal notranslate"><span class="pre">subs()</span></code> method which substitutes subexpressions within an
+expression. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">exp</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;deeply&quot;</span><span class="p">][</span><span class="s2">&quot;nested&quot;</span><span class="p">][</span><span class="s2">&quot;subscript&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span>
+<span class="go">BinaryOperator(Subscript(Subscript(Subscript(Argument(&#39;a&#39;), Constant(&#39;deeply&#39;)), Constant(&#39;nested&#39;)), Constant(&#39;subscript&#39;)), Argument(&#39;b&#39;), &#39;+&#39;)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">exp2</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">subs</span><span class="p">({</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;deeply&quot;</span><span class="p">][</span><span class="s2">&quot;nested&quot;</span><span class="p">][</span><span class="s2">&quot;subscript&quot;</span><span class="p">]:</span> <span class="n">c</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">exp2</span><span class="p">)</span>
+<span class="go">BinaryOperator(Argument(&#39;c&#39;), Argument(&quot;b&quot;), &quot;+&quot;)</span>
+</pre></div>
+</div>
+<p>This functionality is intended to allow simple optimisations such as constant
+folding (substituting constants in place of variables) and replacing
+subscripted values with <a class="reference internal" href="#vc2_bit_widths.pyexp.Argument" title="vc2_bit_widths.pyexp.Argument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Argument</span></code></a>s to reduce overheads.</p>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="vc2_bit_widths.pyexp.PyExp">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">PyExp</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.PyExp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract Base class for Python Expression objects.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.pyexp.Constant">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">Constant</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.pyexp.Constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>A constant value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>value</strong><span class="classifier">any</span></dt><dd><p>Must be serialised to a valid Python expression by <a class="reference external" href="https://docs.python.org/3/library/functions.html#repr" title="(in Python v3.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">repr()</span></code></a></p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="vc2_bit_widths.pyexp.Constant.value">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">value</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.Constant.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of this constant.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.pyexp.Argument">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">Argument</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.pyexp.Argument" title="Permalink to this definition">¶</a></dt>
+<dd><p>An named argument which will be expected by the Python function
+implementing this expression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>A valid Python argument name</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="vc2_bit_widths.pyexp.Argument.name">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">name</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.Argument.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this argument.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.pyexp.Subscript">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">Subscript</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.pyexp.Subscript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subscript an expression, i.e. <code class="docutils literal notranslate"><span class="pre">exp[key]</span></code>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>exp</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a></span></dt><dd><p>The value to be subscripted.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a></span></dt><dd><p>The key to access.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="vc2_bit_widths.pyexp.Subscript.exp">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">exp</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.Subscript.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>The expression being subscripted.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.pyexp.Subscript.key">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">key</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.Subscript.key" title="Permalink to this definition">¶</a></dt>
+<dd><p>The subscript key.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.pyexp.BinaryOperator">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">BinaryOperator</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.pyexp.BinaryOperator" title="Permalink to this definition">¶</a></dt>
+<dd><p>A binary operation applied to two <a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a>s, e.g. addition.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>lhs</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a></span></dt><dd></dd>
+<dt><strong>rhs</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a></span></dt><dd><p>The arguments to the operator.</p>
+</dd>
+<dt><strong>operator</strong><span class="classifier">str</span></dt><dd><p>The python operator symbol to apply (e.g. “+”).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="vc2_bit_widths.pyexp.BinaryOperator.lhs">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">lhs</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.BinaryOperator.lhs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The expression on the left-hand side of the operator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.pyexp.BinaryOperator.rhs">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">rhs</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.BinaryOperator.rhs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The expression on the right-hand side of the operator.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.pyexp.BinaryOperator.operator">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">operator</span></code><a class="headerlink" href="#vc2_bit_widths.pyexp.BinaryOperator.operator" title="Permalink to this definition">¶</a></dt>
+<dd><p>The operator, as a string.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pyexp</span></code>: Construct Python programs implementing arithmetic expressions</a><ul>
+<li><a class="reference internal" href="#motivation">Motivation</a></li>
+<li><a class="reference internal" href="#getting-started">Getting started</a></li>
+<li><a class="reference internal" href="#carving-functions-out-of-existing-code">Carving functions out of existing code</a></li>
+<li><a class="reference internal" href="#manipulating-expressions">Manipulating expressions</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="linexp.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.linexp</span></code>: A simple Computer Algebra System with affine arithmetic</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="infinite_arrays.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.infinite_arrays</span></code>: Infinite arrays</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/pyexp.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="infinite_arrays.html" title="vc2_bit_widths.infinite_arrays: Infinite arrays"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="linexp.html" title="vc2_bit_widths.linexp: A simple Computer Algebra System with affine arithmetic"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pyexp</span></code>: Construct Python programs implementing arithmetic expressions</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

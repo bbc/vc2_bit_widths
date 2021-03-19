@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Related work &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Computing signal bounds with Affine Arithmetic" href="aa_integer_arithmetic.html" />
+    <link rel="prev" title="Theory overview" href="overview.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="aa_integer_arithmetic.html" title="Computing signal bounds with Affine Arithmetic"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Theory overview"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Related work</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="related-work">
+<span id="theory-related-work"></span><h1>Related work<a class="headerlink" href="#related-work" title="Permalink to this headline">¶</a></h1>
+<p>There are numerous examples of implementations of integer wavelet transforms in
+the literature, however published attempts at selecting bit-widths for
+arithmetic operations have been quite limited.</p>
+<p>In <a class="reference internal" href="#baft11" id="id1"><span>[BaFT11]</span></a> and <a class="reference internal" href="#faga08" id="id2"><span>[FaGa08]</span></a>, the authors take the potentially wasteful approach
+of adding an extra bit after every addition and summing the bits after a
+multiplication. In both cases, however, the authors fail to account for
+accumulated signal growth in multi-level transforms.</p>
+<p>The other common approach used by, for example, <a class="reference internal" href="#szaa02" id="id3"><span>[SZAA02]</span></a>, <a class="reference internal" href="#brgt06" id="id4"><span>[BRGT06]</span></a> and
+<a class="reference internal" href="#htls08" id="id5"><span>[HTLS08]</span></a>, is to pass a series of test pictures through a codec and observe the
+largest signal values encountered. This approach is error prone since the
+difference between ‘worst case’ signals and typical natural images can be
+great, as shown later.</p>
+<p>In general, the problem of determining how many bits are required for a given
+integer arithmetic problem is NP-complete. For small problems involving a few
+tens of variables, SAT-Modulo-Theory (SMT) solvers may be used to find exact
+answers. For example, SMT solvers have been used to automatically identify
+integer-overflow bugs in C and C++ code <a class="reference internal" href="#mobj10" id="id6"><span>[MoBj10]</span></a>.</p>
+<p>Video filters unfortunately represent considerably larger problems than SMT
+solvers can tackle effectively, requiring hundreds or thousands of variables.</p>
+<p>Kinsman and Nicolici <a class="reference internal" href="#kini10" id="id7"><span>[KiNi10]</span></a> demonstrated an approach to applying SMT
+solvers to larger problems by terminating the SMT solver’s search process after
+a fixed timeout. The incomplete state of the SMT solver is then used to give an
+(guaranteed over-estimated) upper-bound on signal values. Unfortunately, the
+performance of this approach is dependent on the timeouts chosen and the
+behaviour of the SMT solver during a given run. Further, the approach was only
+demonstrated for small numbers of variables (low tens) and it is unclear that
+it would scale well for considerably larger problems.</p>
+<p>In the wider fields of digital signal processing and numerical methods,
+Interval Arithmetic (IA) and Affine Arithmetic (AA) are widely used techniques
+for bounding errors in linear functions in the presence of rounding and
+quantisation. López and Carreras give a good introduction and discussion of
+both techniques in <a class="reference internal" href="#locn07" id="id8"><span>[LoCN07]</span></a>.</p>
+<p>Like Kinsman and Nicolici’s truncated SMT approach, both IA and AA give hard
+upper bounds on signal levels. Unfortunately both are prone to over-estimating
+these bounds, with AA giving the tighter bounds. Nevertheless, these approaches
+are deterministic and easy to compute.</p>
+<p class="rubric">References</p>
+<dl class="citation">
+<dt class="label" id="baft11"><span class="brackets"><a class="fn-backref" href="#id1">BaFT11</a></span></dt>
+<dd><p>Eric J. Balster; Benjamin T. Fortener; William F. Turri: “Integer
+Computation of Lossy JPEG2000 Compression”. In: IEEE Transactions on Image
+Processing, August 2011.</p>
+</dd>
+<dt class="label" id="faga08"><span class="brackets"><a class="fn-backref" href="#id2">FaGa08</a></span></dt>
+<dd><p>Wenbing Fan; Yingmin Gao: “FPGA Design of Fast Lifting Wavelet
+Transform”. In: Proceedings of the Congress on Image and Signal
+Processing, 2008.</p>
+</dd>
+<dt class="label" id="szaa02"><span class="brackets"><a class="fn-backref" href="#id3">SZAA02</a></span></dt>
+<dd><p>Vassilis Spiliotopoulos; N. D. Zcrvas; C. E. Androulidakis; G.
+Anagnostopoulos; S. Thcoharis: “Quantizing the 9/7 Daubechies filter
+coefficients for 2D DWT VLSI implementations”. In: Proceedings of the
+International Conference on Digital Signal Processing, 2002.</p>
+</dd>
+<dt class="label" id="brgt06"><span class="brackets"><a class="fn-backref" href="#id4">BRGT06</a></span></dt>
+<dd><p>Stephen Bishop; Suresh Rai; B. Gunturk;  J. Trahan; R.
+Vaidyanathan: “Reconfigurable Implementation of Wavelet Integer Lifting
+Transforms for Image Compression”. In: Proceedings of IEEE International
+Conference on Reconfigurable Computing and FPGAs, 2006.</p>
+</dd>
+<dt class="label" id="htls08"><span class="brackets"><a class="fn-backref" href="#id5">HTLS08</a></span></dt>
+<dd><p>Chin-Fa Hsieh; Tsung-Han Tsai; Chih-Hung Lai; Tai-An Shan: “A Novel
+Efficient VLSI Architecture of 2-D Discrete Wavelet Transform”. In:
+Proceedings of the International Conference on Intelligent Information
+Hiding and Multimedia Signal Processing, 2008.</p>
+</dd>
+<dt class="label" id="mobj10"><span class="brackets"><a class="fn-backref" href="#id6">MoBj10</a></span></dt>
+<dd><p>Leonardo de Moura; Nikolaj Bjørner: “Applications and Challenges in
+Satisfiability Modulo Theories”. In: Proceedings of the Workshop on Invariant
+Generation, 2010.</p>
+</dd>
+<dt class="label" id="kini10"><span class="brackets"><a class="fn-backref" href="#id7">KiNi10</a></span></dt>
+<dd><p>Adam B. Kinsman; Nicola Nicolici: “Bit-Width Allocation for Hardware
+Accelerators for Scientific Computing Using SAT-Modulo Theory”. In: IEEE
+Transactions on Computer-Aided Design of Integrated Circuits and Systems,
+March 2010.</p>
+</dd>
+<dt class="label" id="locn07"><span class="brackets"><a class="fn-backref" href="#id8">LoCN07</a></span></dt>
+<dd><p>Juan A. López; Carlos Carreras; Octavio Nieto-Taladriz: “Improved
+Interval-Based Characterization ofFixed-Point LTI Systems With Feedback
+Loops”.  In: IEEE Transactions on Computer-Aided Design of Integrated
+Circuits and Systems, November 2007.</p>
+</dd>
+</dl>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="overview.html"
+                        title="previous chapter">Theory overview</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="aa_integer_arithmetic.html"
+                        title="next chapter">Computing signal bounds with Affine Arithmetic</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/theory_and_design/related_work.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="aa_integer_arithmetic.html" title="Computing signal bounds with Affine Arithmetic"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Theory overview"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Related work</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

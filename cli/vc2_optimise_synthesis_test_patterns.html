@@ -1,0 +1,301 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2-optimise-synthesis-test-patterns &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2-bundle" href="vc2_bundle.html" />
+    <link rel="prev" title="vc2-maximum-quantisation-index" href="vc2_maximum_quantisation_index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_bundle.html" title="vc2-bundle"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vc2_maximum_quantisation_index.html" title="vc2-maximum-quantisation-index"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.scripts.vc2_optimise_synthesis_test_patterns"></span><div class="section" id="vc2-optimise-synthesis-test-patterns">
+<span id="id1"></span><h1><code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code><a class="headerlink" href="#vc2-optimise-synthesis-test-patterns" title="Permalink to this headline">¶</a></h1>
+<p>Use a stochastic search to enchance the synthesis test patterns
+produced by vc2-static-filter-analysis so that they produce even more
+extreme values.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The enhanced test patterns produced by this tool are valid only for the
+wavelet transform, depth, picture bit width and quantisation matrix
+specified. See <a class="reference internal" href="../introduction/caveats.html#caveats"><span class="std std-ref">Caveats</span></a> for further limitations and assumptions made
+by this software.</p>
+</div>
+<div class="section" id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2 \
+    --output static_analysis.json
+
+$ vc2-maximum-quantisation-index \
+    static_analysis.json \
+    --picture-bit-width 10 \
+    --custom-quantisation-matrix \
+        0 LL 1 \
+        1 HL 2   1 LH 0   1 HH 4 \
+        2 HL 1   2 LH 3   2 HH 3 \
+    --number-of-searches 10 \
+    --added-corruption-rate 0.2 \
+    --removed-corruption-rate 0.05 \
+    --base-iterations 1000 \
+    --added-iterations-per-improvement 500 \
+    --output optimised_patterns.json
+</pre></div>
+</div>
+</div>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p>The complete set of arguments can be listed using <code class="docutils literal notranslate"><span class="pre">--help</span></code></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-optimise-synthesis-test-patterns [-h] --picture-bit-width
+                                            PICTURE_BIT_WIDTH
+                                            [--custom-quantisation-matrix CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...]]
+                                            [--seed SEED]
+                                            [--number-of-searches NUMBER_OF_SEARCHES]
+                                            [--terminate-early TERMINATE_EARLY]
+                                            [--added-corruption-rate ADDED_CORRUPTION_RATE]
+                                            [--removed-corruption-rate REMOVED_CORRUPTION_RATE]
+                                            [--base-iterations BASE_ITERATIONS]
+                                            [--added-iterations-per-improvement ADDED_ITERATIONS_PER_IMPROVEMENT]
+                                            [--output OUTPUT] [--verbose]
+                                            static_filter_analysis
+
+Use a stochastic search to enchance the synthesis test patterns produced by
+vc2-static-filter-analysis so that they produce even more extreme values.
+
+positional arguments:
+  static_filter_analysis
+                        The static analysis JSON data produced by vc2-static-
+                        filter-analysis.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --picture-bit-width PICTURE_BIT_WIDTH, -b PICTURE_BIT_WIDTH
+                        The number of bits in the picture signal.
+  --custom-quantisation-matrix CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...], -q CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...]
+                        Use a custom quantisation matrix for the search.
+                        Optional except for filters without a default
+                        quantisation matrix defined. Should be specified as a
+                        series 3-argument tuples giving the level, orientation
+                        and quantisation matrix value for every entry in the
+                        quantisation matrix.
+  --seed SEED, -s SEED  The seed for the random number generator used to
+                        perform searches.
+  --number-of-searches NUMBER_OF_SEARCHES, -N NUMBER_OF_SEARCHES
+                        The number of independent search runs to use. The
+                        larger this option, the more likely it is that the
+                        search will avoid local minima (default: 10).
+  --terminate-early TERMINATE_EARLY, -t TERMINATE_EARLY
+                        Terminate optimisation early if this many searches
+                        fail to find an improvement. (Default: 1).
+  --added-corruption-rate ADDED_CORRUPTION_RATE, -a ADDED_CORRUPTION_RATE
+                        The proportion of pixel values to corrupt in each
+                        search iteration. (Default: 0.05).
+  --removed-corruption-rate REMOVED_CORRUPTION_RATE, -r REMOVED_CORRUPTION_RATE
+                        The proportion of pixel values to reset to their
+                        original state in each search iteration. (Default:
+                        0.0).
+  --base-iterations BASE_ITERATIONS, -i BASE_ITERATIONS
+                        The base number of trials to run the search for. The
+                        larger this value, the longer the search will run
+                        without finding any improvements before terminating.
+                        (Default: 200).
+  --added-iterations-per-improvement ADDED_ITERATIONS_PER_IMPROVEMENT, -I ADDED_ITERATIONS_PER_IMPROVEMENT
+                        The number of additional search iterations to perform
+                        when an improved test pattern is found. (Default:
+                        200).
+  --output OUTPUT, -o OUTPUT
+                        The name of the file to write the optimised test
+                        pattern JSON file to. Defaults to stdout.
+  --verbose, -v         Show more detailed status information during
+                        execution.
+</pre></div>
+</div>
+</div>
+<div class="section" id="choosing-parameters">
+<span id="vc2-optimise-synthesis-test-patterns-parameter-tuning"></span><h2>Choosing parameters<a class="headerlink" href="#choosing-parameters" title="Permalink to this headline">¶</a></h2>
+<p>The runtime and output quality of the optimisation algorithm is highly
+dependent on the paramters supplied. The best performing parameters for one
+wavelet transform may not be the best for others.</p>
+<p>Choosing good parameters requires manual exploration and experimentation and is
+unfortunately out of the scope of this manual.</p>
+<p>See <a class="reference internal" href="../high_level_api/helpers.html#vc2_bit_widths.helpers.optimise_synthesis_test_patterns" title="vc2_bit_widths.helpers.optimise_synthesis_test_patterns"><code class="xref py py-func docutils literal notranslate"><span class="pre">optimise_synthesis_test_patterns()</span></code></a> for
+additional details.</p>
+</div>
+<div class="section" id="json-file-format">
+<h2>JSON file format<a class="headerlink" href="#json-file-format" title="Permalink to this headline">¶</a></h2>
+<p>The output is a JSON file with the following structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;wavelet_index&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;wavelet_index_ho&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;dwt_depth&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;dwt_depth_ho&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;picture_bit_width&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;quantisation_matrix&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">quantisation</span><span class="o">-</span><span class="n">matrix</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;optimised_synthesis_test_patterns&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">test</span><span class="o">-</span><span class="n">pattern</span><span class="o">-</span><span class="n">specification</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="section" id="quantisation-matrix">
+<h3>Quantisation matrix<a class="headerlink" href="#quantisation-matrix" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">&quot;quantisation_matrix&quot;</span></code> field encodes the quantisation matrix used in the
+same fashion as the VC-2 pseudocode and its format should be self-explanatory.
+For example, the quantisation matrix passed to the example above is encoded
+as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;LL&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;HL&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;LH&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;HH&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;HL&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;LH&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;HH&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The
+<a class="reference internal" href="../high_level_api/json_serialisations.html#vc2_bit_widths.json_serialisations.deserialise_quantisation_matrix" title="vc2_bit_widths.json_serialisations.deserialise_quantisation_matrix"><code class="xref py py-func docutils literal notranslate"><span class="pre">deserialise_quantisation_matrix()</span></code></a>
+Python utility function is provided for unpacking this structure.</p>
+</div>
+</div>
+<div class="section" id="test-patterns">
+<h3>Test patterns<a class="headerlink" href="#test-patterns" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;test-pattern-specification&gt;</span></code> values follow the same format used by
+<code class="docutils literal notranslate"><span class="pre">vc2-static-filter-analysis</span></code> (see
+<a class="reference internal" href="vc2_static_filter_analysis.html#vc2-static-filter-analysis-json-test-patterns"><span class="std std-ref">Test patterns</span></a>) with some additional
+fields:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">test</span><span class="o">-</span><span class="n">pattern</span><span class="o">-</span><span class="n">specification</span><span class="o">&gt;</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="s2">&quot;quantisation_index&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;decoded_value&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;num_search_iterations&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">int</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These fields give the quantisation index found to produce the most extreme
+value for the test pattern, the value it managed to produce and the number of
+search iterations taken to reach that test pattern. This information is
+provided for informational purposes only.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The
+<a class="reference internal" href="../high_level_api/json_serialisations.html#vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications" title="vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications"><code class="xref py py-func docutils literal notranslate"><span class="pre">deserialise_test_pattern_specifications()</span></code></a>
+Python utility function is provided for unpacking this structure.</p>
+</div>
+</div>
+<div class="section" id="missing-values">
+<h3>Missing values<a class="headerlink" href="#missing-values" title="Permalink to this headline">¶</a></h3>
+<p>Only intermediate arrays are included which contain novel values. Arrays which
+are just renamings, interleavings and subsamplings of other arrays are omitted.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code></a><ul>
+<li><a class="reference internal" href="#example-usage">Example usage</a></li>
+<li><a class="reference internal" href="#arguments">Arguments</a></li>
+<li><a class="reference internal" href="#choosing-parameters">Choosing parameters</a></li>
+<li><a class="reference internal" href="#json-file-format">JSON file format</a><ul>
+<li><a class="reference internal" href="#quantisation-matrix">Quantisation matrix</a></li>
+<li><a class="reference internal" href="#test-patterns">Test patterns</a></li>
+<li><a class="reference internal" href="#missing-values">Missing values</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vc2_maximum_quantisation_index.html"
+                        title="previous chapter"><code class="docutils literal notranslate"><span class="pre">vc2-maximum-quantisation-index</span></code></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vc2_bundle.html"
+                        title="next chapter"><code class="docutils literal notranslate"><span class="pre">vc2-bundle</span></code></a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cli/vc2_optimise_synthesis_test_patterns.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_bundle.html" title="vc2-bundle"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vc2_maximum_quantisation_index.html" title="vc2-maximum-quantisation-index"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

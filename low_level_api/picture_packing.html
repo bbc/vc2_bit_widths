@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.picture_packing: Pack test patterns into pictures &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.signal_bounds: Finding bounds for filter output values" href="signal_bounds.html" />
+    <link rel="prev" title="vc2_bit_widths.pattern_evaluation: Measure the outputs achieved by test patterns" href="pattern_evaluation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="signal_bounds.html" title="vc2_bit_widths.signal_bounds: Finding bounds for filter output values"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pattern_evaluation.html" title="vc2_bit_widths.pattern_evaluation: Measure the outputs achieved by test patterns"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.picture_packing</span></code>: Pack test patterns into pictures</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.picture_packing"></span><div class="section" id="vc2-bit-widths-picture-packing-pack-test-patterns-into-pictures">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.picture_packing" title="vc2_bit_widths.picture_packing"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.picture_packing</span></code></a>: Pack test patterns into pictures<a class="headerlink" href="#vc2-bit-widths-picture-packing-pack-test-patterns-into-pictures" title="Permalink to this headline">¶</a></h1>
+<p>This module contains a simple packing algorithm which attempts to efficiently
+pack a collection of test patterns onto a small number of test pictures.</p>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.picture_packing.pack_test_patterns">
+<code class="sig-name descname"><span class="pre">pack_test_patterns</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_pattern_specifications</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.picture_packing.pack_test_patterns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a picture size and a series of test patterns, pack those patterns
+onto as few pictures as possible.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>width, height</strong><span class="classifier">int</span></dt><dd><p>The size of the pictures on to which the test patterns should be
+allocated.</p>
+</dd>
+<dt><strong>test_pattern_specifications</strong><span class="classifier">{key: <a class="reference internal" href="../high_level_api/patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</span></dt><dd><p>The test patterns to be packed.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>pictures</strong><span class="classifier">[<code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code>, …]</span></dt><dd><p>A series of pictures containing test patterns.</p>
+</dd>
+<dt><strong>locations</strong><span class="classifier">{key: (picture_number, tx, ty), …}</span></dt><dd><p>For each of the supplied test patterns, gives the index of the picture
+it was assigned to and the coordinates (within the targeted filter
+array) of the array value which will be maximised/minimised.</p>
+<p>If any of the supplied test patterns are too large to fit in the
+specified width and height, those patterns will be omitted (and
+corresponding entries in the ‘locations’ will also be omitted).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="example-output">
+<h2>Example output<a class="headerlink" href="#example-output" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#vc2_bit_widths.picture_packing.pack_test_patterns" title="vc2_bit_widths.picture_packing.pack_test_patterns"><code class="xref py py-func docutils literal notranslate"><span class="pre">pack_test_patterns()</span></code></a> function takes a dictionary of
+<a class="reference internal" href="../high_level_api/patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a> or
+<a class="reference internal" href="../high_level_api/patterns.html#vc2_bit_widths.patterns.OptimisedTestPatternSpecification" title="vc2_bit_widths.patterns.OptimisedTestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimisedTestPatternSpecification</span></code></a>
+objects and arranges these over as few pictures as possible. An example output
+picture is shown below:</p>
+<img alt="An example HD picture containing a selection of test patterns." src="../_images/example_packed_test_patterns.png" />
+<p>In typical use, several independent sets of packed test pictures should be
+created. One set can be created for all analysis transform test patterns. For
+synthesis transform test patterns, the patterns should be divided up into
+groups based on the quantisation index which should be used.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.picture_packing</span></code>: Pack test patterns into pictures</a><ul>
+<li><a class="reference internal" href="#api">API</a></li>
+<li><a class="reference internal" href="#example-output">Example output</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pattern_evaluation.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_evaluation</span></code>: Measure the outputs achieved by test patterns</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="signal_bounds.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.signal_bounds</span></code>: Finding bounds for filter output values</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/picture_packing.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="signal_bounds.html" title="vc2_bit_widths.signal_bounds: Finding bounds for filter output values"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pattern_evaluation.html" title="vc2_bit_widths.pattern_evaluation: Measure the outputs achieved by test patterns"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.picture_packing</span></code>: Pack test patterns into pictures</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2-maximum-quantisation-index &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2-optimise-synthesis-test-patterns" href="vc2_optimise_synthesis_test_patterns.html" />
+    <link rel="prev" title="vc2-bit-width-test-pictures" href="vc2_bit_width_test_pictures.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_optimise_synthesis_test_patterns.html" title="vc2-optimise-synthesis-test-patterns"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vc2_bit_width_test_pictures.html" title="vc2-bit-width-test-pictures"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-maximum-quantisation-index</span></code></a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.scripts.vc2_maximum_quantisation_index"></span><div class="section" id="vc2-maximum-quantisation-index">
+<span id="id1"></span><h1><code class="docutils literal notranslate"><span class="pre">vc2-maximum-quantisation-index</span></code><a class="headerlink" href="#vc2-maximum-quantisation-index" title="Permalink to this headline">¶</a></h1>
+<p>Compute the maximum quantisation index which is useful for a particular
+VC-2 codec configuration.</p>
+<p>Using the same approach as the <code class="docutils literal notranslate"><span class="pre">vc2-bit-widths-table</span></code> command, this command
+works out the most extreme values which a VC-2 quantiser might encounter (given
+certain assumptions about the behaviour of the encoder design, see
+<a class="reference internal" href="../introduction/caveats.html#caveats"><span class="std std-ref">Caveats</span></a>). Using this information, it is possible to find the smallest
+quantisation index sufficient to quantise all transform coefficients to zero.</p>
+<p>Though the VC-2 standard does not rule out larger quantisation indices being
+used, there is no reason for a sensible encoder implementation to use such a
+any larger quantisation index.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The values printed by this tool are valid only for the wavelet transform,
+depth, picture bit width and quantisation matrix specified. See
+<a class="reference internal" href="../introduction/caveats.html#caveats"><span class="std std-ref">Caveats</span></a> for further limitations and assumptions made by this
+software.</p>
+</div>
+<div class="section" id="example-usage">
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ vc2-static-filter-analysis \
+    --wavelet-index le_gall_5_3 \
+    --dwt-depth 2 \
+    --output static_analysis.json
+
+$ vc2-maximum-quantisation-index \
+    static_analysis.json \
+    --picture-bit-width 10 \
+    --custom-quantisation-matrix \
+        0 LL 1 \
+        1 HL 2   1 LH 0   1 HH 4 \
+        2 HL 1   2 LH 3   2 HH 3
+59
+</pre></div>
+</div>
+</div>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p>The complete set of arguments can be listed using <code class="docutils literal notranslate"><span class="pre">--help</span></code></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: vc2-maximum-quantisation-index [-h] --picture-bit-width
+                                      PICTURE_BIT_WIDTH
+                                      [--custom-quantisation-matrix CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...]]
+                                      [--verbose]
+                                      static_filter_analysis
+
+Compute the maximum quantisation index which is useful for a particular VC-2
+codec configuration.
+
+positional arguments:
+  static_filter_analysis
+                        The static analysis JSON data produced by vc2-static-
+                        filter-analysis.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --picture-bit-width PICTURE_BIT_WIDTH, -b PICTURE_BIT_WIDTH
+                        The number of bits in the picture signal.
+  --custom-quantisation-matrix CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...], -q CUSTOM_QUANTISATION_MATRIX [CUSTOM_QUANTISATION_MATRIX ...]
+                        Define the custom quantisation matrix used by a codec.
+                        Optional except for filters without a default
+                        quantisation matrix defined. Should be specified as a
+                        series 3-argument tuples giving the level, orientation
+                        and quantisation matrix value for every entry in the
+                        quantisation matrix.
+  --verbose, -v         Show more detailed status information during
+                        execution.
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">vc2-maximum-quantisation-index</span></code></a><ul>
+<li><a class="reference internal" href="#example-usage">Example usage</a></li>
+<li><a class="reference internal" href="#arguments">Arguments</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vc2_bit_width_test_pictures.html"
+                        title="previous chapter"><code class="docutils literal notranslate"><span class="pre">vc2-bit-width-test-pictures</span></code></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vc2_optimise_synthesis_test_patterns.html"
+                        title="next chapter"><code class="docutils literal notranslate"><span class="pre">vc2-optimise-synthesis-test-patterns</span></code></a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/cli/vc2_maximum_quantisation_index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_optimise_synthesis_test_patterns.html" title="vc2-optimise-synthesis-test-patterns"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="vc2_bit_width_test_pictures.html" title="vc2-bit-width-test-pictures"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Command-line utilities reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="docutils literal notranslate"><span class="pre">vc2-maximum-quantisation-index</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

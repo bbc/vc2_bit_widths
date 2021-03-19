@@ -1,0 +1,219 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.pattern_generation: Heuristic test pattern generation &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.pattern_optimisation: (Synthesis) Test Pattern Optimisation" href="pattern_optimisation.html" />
+    <link rel="prev" title="vc2_bit_widths.signal_bounds: Finding bounds for filter output values" href="signal_bounds.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pattern_optimisation.html" title="vc2_bit_widths.pattern_optimisation: (Synthesis) Test Pattern Optimisation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="signal_bounds.html" title="vc2_bit_widths.signal_bounds: Finding bounds for filter output values"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_generation</span></code>: Heuristic test pattern generation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.pattern_generation"></span><div class="section" id="vc2-bit-widths-pattern-generation-heuristic-test-pattern-generation">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.pattern_generation" title="vc2_bit_widths.pattern_generation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_generation</span></code></a>: Heuristic test pattern generation<a class="headerlink" href="#vc2-bit-widths-pattern-generation-heuristic-test-pattern-generation" title="Permalink to this headline">¶</a></h1>
+<p>The routines in this module implement heuristcs for producing test patterns for
+VC-2 filters which produce near-maximum magnitude values in a target
+intermediate or final value.</p>
+<p>Due to non-linearities in VC-2’s filters (i.e. rounding and quantisation), the
+test patterns generated are not true worst-case signals but rather a ‘best
+effort’ to get close to the worst case. Analysis test patterns will tend to be
+very close to worst-case signals while synthesis signals are likely to be
+modest under-estimates. Nevertheless, these signals often reach values well
+above real pictures and noise.</p>
+<div class="section" id="test-pattern-generators">
+<h2>Test pattern generators<a class="headerlink" href="#test-pattern-generators" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="analysis">
+<h3>Analysis<a class="headerlink" href="#analysis" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="vc2_bit_widths.pattern_generation.make_analysis_maximising_pattern">
+<code class="sig-name descname"><span class="pre">make_analysis_maximising_pattern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.pattern_generation.make_analysis_maximising_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a test pattern which maximises a value within an intermediate/final
+output of an analysis filter.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In lossless coding modes, test patterns which maximise a given value in
+the encoder also maximise the corresponding value in the decoder.
+Consequently this function may also be used to (indirectly) produce
+lossless decoder test patterns.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The returned test pattern is designed to maximise a real-valued
+implementation of the target filter. Though it is likely that this
+signal also maximises integer-based implementations (such as those used
+by VC-2) it is not guaranteed.</p>
+</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>input_array</strong><span class="classifier"><a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a></span></dt><dd><p>The input array to the analysis filter.</p>
+</dd>
+<dt><strong>target_array</strong><span class="classifier"><a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>An intermediate or final output array produced by the analysis filter
+within which a value should be maximised.</p>
+</dd>
+<dt><strong>tx, ty</strong><span class="classifier">int</span></dt><dd><p>The coordinates of the target value within target_array which is to be
+maximised.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>test_pattern_specification</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></span></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="synthesis">
+<h3>Synthesis<a class="headerlink" href="#synthesis" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern">
+<code class="sig-name descname"><span class="pre">make_synthesis_maximising_pattern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_transform_coeff_arrays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_target_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_output_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ty</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.pattern_generation.make_synthesis_maximising_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a test pattern which, after lossy encoding, is likely to maximise an
+intermediate/final value of the synthesis filter.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Because (heavy) lossy VC-2 encoding is a non-linear process, finding
+encoder inputs which maximise the decoder output is not feasible in
+general. This function uses a simple heuristic (see
+<a class="reference internal" href="../theory_and_design/test_patterns.html#theory-test-patterns"><span class="std std-ref">Test pattern generation</span></a>) to attempt to achieve this goal but
+cannot provide any guarantees about the extent to which it succeeds.</p>
+</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>analysis_input_array</strong><span class="classifier"><a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a></span></dt><dd><p>The input array to a compatible analysis filter for the synthesis
+filter whose values will be maximised.</p>
+</dd>
+<dt><strong>analysis_transform_coeff_arrays</strong><span class="classifier">{level: {orient: <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>, …}}</span></dt><dd><p>The final output arrays from a compatible analysis filter for the
+synthesis filter whose values will be maximised. These should be
+provided as a nested dictionary of the form produced by
+<a class="reference internal" href="vc2_filters.html#vc2_bit_widths.vc2_filters.analysis_transform" title="vc2_bit_widths.vc2_filters.analysis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">analysis_transform()</span></code></a>.</p>
+</dd>
+<dt><strong>synthesis_target_array</strong><span class="classifier"><a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The intermediate or final output array produced by the synthesis filter
+within which a value should be maximised.</p>
+</dd>
+<dt><strong>synthesis_output_array</strong><span class="classifier"><a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The output array for the synthesis filter.</p>
+</dd>
+<dt><strong>tx, ty</strong><span class="classifier">int</span></dt><dd><p>The index of the value within the synthesis_target_array which is to be
+maximised.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>test_pattern_specification</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></span></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_generation</span></code>: Heuristic test pattern generation</a><ul>
+<li><a class="reference internal" href="#test-pattern-generators">Test pattern generators</a><ul>
+<li><a class="reference internal" href="#analysis">Analysis</a></li>
+<li><a class="reference internal" href="#synthesis">Synthesis</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="signal_bounds.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.signal_bounds</span></code>: Finding bounds for filter output values</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pattern_optimisation.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_optimisation</span></code>: (Synthesis) Test Pattern Optimisation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/pattern_generation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pattern_optimisation.html" title="vc2_bit_widths.pattern_optimisation: (Synthesis) Test Pattern Optimisation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="signal_bounds.html" title="vc2_bit_widths.signal_bounds: Finding bounds for filter output values"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pattern_generation</span></code>: Heuristic test pattern generation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

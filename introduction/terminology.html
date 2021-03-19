@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terminology &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial" href="../usage_overview.html" />
+    <link rel="prev" title="Caveats" href="caveats.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../usage_overview.html" title="Tutorial"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="caveats.html" title="Caveats"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Introduction</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Terminology</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="terminology">
+<span id="id1"></span><h1>Terminology<a class="headerlink" href="#terminology" title="Permalink to this headline">¶</a></h1>
+<p>This software uses the following naming conventions to identify the numerous
+intermediate values within VC-2 analysis (encoding) and synthesis (decoding)
+filters.</p>
+<div class="section" id="levels-and-subbands">
+<h2>Levels and subbands<a class="headerlink" href="#levels-and-subbands" title="Permalink to this headline">¶</a></h2>
+<p>Levels and subbands are numbered similarly to the VC-2 specification with the
+exception of the DC-band being listed as part of level ‘1’, and not level ‘0’.</p>
+<img alt="Two examples showing 2D and asymmetric transforms." src="../_images/level_numbering.svg" /><p>For a given transform level, the filtering process is broken down into a series
+of steps which transform an array of input values into several (subsampled)
+arrays during analysis (encoding) and the reverse during synthesis (decoding).</p>
+</div>
+<div class="section" id="intermediate-value-arrays">
+<h2>Intermediate value arrays<a class="headerlink" href="#intermediate-value-arrays" title="Permalink to this headline">¶</a></h2>
+<p>The naming convention used for transform levels and subbands is extended to
+give names to every intermediate array of transform values in a multi-level
+transform. Within a single transform level, the arrays are named as illustrated
+below:</p>
+<img alt="Names for the various analysis and synthesis intermediate value arrays." src="../_images/array_names.svg" /><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In diagrams above two lifting stages are shown for each filter. For filters
+with more than two lifting stages, the outputs of these stages follow the same
+pattern. For example, for a Daubechies (9, 7) filter, which has four lifting
+stages, the additional arrays are named <code class="docutils literal notranslate"><span class="pre">DC'''</span></code>, <code class="docutils literal notranslate"><span class="pre">DC''''</span></code>, <code class="docutils literal notranslate"><span class="pre">L'''</span></code>,
+<code class="docutils literal notranslate"><span class="pre">L''''</span></code>, <code class="docutils literal notranslate"><span class="pre">H'''</span></code> and <code class="docutils literal notranslate"><span class="pre">H''''</span></code>.</p>
+</div>
+<p>For example, in a 2-level 2D analysis transform, we can use these names like
+so:</p>
+<ul class="simple">
+<li><p>The original input picture would be completely identified as ‘Analysis, Level
+2, Input’</p></li>
+<li><p>The array following the initial bit-shift operation is ‘Analysis, Level
+2, DC’.</p></li>
+<li><p>The final results after horizontal and vertical lifting filters would be
+identified as ‘Analysis, Level 2, LL’, ‘Analysis, Level 2, LH’, ‘Analysis,
+Level 2, HL’ and ‘Analysis, Level 2, HH’.</p></li>
+<li><p>The input to the next analysis transform is ‘Analysis, Level 1, Input’ and is
+exactly the same array as ‘Analysis, Level 1, LL’, just renamed for
+consistency.</p></li>
+</ul>
+<p>The synthesis transform is analogous. For example, the final decoded picture
+would be identified as ‘Synthesis, Level 2, Output’ in a 2-level transform.</p>
+</div>
+<div class="section" id="phases">
+<h2>Phases<a class="headerlink" href="#phases" title="Permalink to this headline">¶</a></h2>
+<p>Each of the intermediate arrays of values within a synthesis or analysis
+transform may be considered to be the result of some a 2D polyphase filter on
+the original input picture or transform coefficients. As such, each value in
+the array may be thought of as being the result of a particular phase of the
+filter, each with its own filtering characteristics. Since there are only a
+finite number of filter phases, we can completely characterise the process
+which led to a particular array using only one value per filter phase.</p>
+<p>For example, consider a horizontal only 1-level Haar analysis transform on a 1D
+image:</p>
+<img alt="Illustration of filter values for a 1-level Haar analysis." src="../_images/filter_phases.svg" /><p>It should be easy to see the repeating patterns of operations in the different
+arrays in the example.</p>
+<p>For instance, in the DC’ array, even numbered entries take the form
+<span class="math notranslate nohighlight">\(2~\text{Input}[n]\)</span> while odd numbered entries take the form
+<span class="math notranslate nohighlight">\(2~\text{Input}[n] - 2~\text{Input}[n-1]\)</span>. As a result, the DC’ array may
+be described as having two phases or, alternatively, as having a period of two.
+By contrast the DC array has a period of one, since all entries are alike
+(taking the form <span class="math notranslate nohighlight">\(2~\text{Input}[n]\)</span>).</p>
+<p>In the more general case of 2D filters processing 2D pictures, the period of a
+particular array is given as two numbers, e.g. (2, 4), giving the period in the
+X dimension and the period in the Y dimension respectively. Likewise,
+individual phases are also identified by an X and Y value.</p>
+<p>Using these conventions, a particular phase of a particular intermediate array
+of values may be named. For example, ‘Analysis, Level 1, DC’, 0, 1’ identifies
+the filter phase X=0, Y=1 at the output of the bit shift operation of the final
+transform level of the analysis filter.</p>
+</div>
+<div class="section" id="targets">
+<h2>Targets<a class="headerlink" href="#targets" title="Permalink to this headline">¶</a></h2>
+<p>For the purposes of analysing the filter behaviour leading to a particular
+array, it is sufficient to analyse one example of each filter phase, and this
+is exactly what this software does. When it comes to generating test pictures,
+however, this software may not always pick the top-leftmost example of a
+particular filter phase to test. The specific example chosen is referred to as
+the ‘target’ value.</p>
+<p>Since all instances of a particular filter phase are alike, using a different
+example is still equivalent if it has the same phase.</p>
+<p>There are various reasons why a test picture might not pick the top-left most
+example of a particular filter. For example, consider the problem of generating
+a test picture which tests both phases of the DC’’ array in the Haar example
+above. To test phase 0 of the DC’’ array we pick the zeroth element as our
+target and use inputs ‘a’ and ‘b’ to test filter. If we wish to simultaneously
+test phase 1 of this array, we can’t use element 1 as the target because this
+also depends on inputs ‘a’ and ‘b’, so instead we must pick element 3 (which
+uses inputs ‘c’ and ‘d’) as the target instead.</p>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Terminology</a><ul>
+<li><a class="reference internal" href="#levels-and-subbands">Levels and subbands</a></li>
+<li><a class="reference internal" href="#intermediate-value-arrays">Intermediate value arrays</a></li>
+<li><a class="reference internal" href="#phases">Phases</a></li>
+<li><a class="reference internal" href="#targets">Targets</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="caveats.html"
+                        title="previous chapter">Caveats</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../usage_overview.html"
+                        title="next chapter">Tutorial</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/introduction/terminology.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../usage_overview.html" title="Tutorial"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="caveats.html" title="Caveats"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Introduction</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Terminology</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

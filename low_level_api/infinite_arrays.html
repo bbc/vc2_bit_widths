@@ -1,0 +1,677 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.infinite_arrays: Infinite arrays &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="vc2_bit_widths.pyexp: Construct Python programs implementing arithmetic expressions" href="pyexp.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyexp.html" title="vc2_bit_widths.pyexp: Construct Python programs implementing arithmetic expressions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.infinite_arrays</span></code>: Infinite arrays</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.infinite_arrays"></span><div class="section" id="vc2-bit-widths-infinite-arrays-infinite-arrays">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.infinite_arrays" title="vc2_bit_widths.infinite_arrays"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.infinite_arrays</span></code></a>: Infinite arrays<a class="headerlink" href="#vc2-bit-widths-infinite-arrays-infinite-arrays" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a> and its subclasses provide a way to define and
+analyse VC-2 filters.</p>
+<div class="section" id="tutorial">
+<h2>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h2>
+<p>In the worked example below we’ll see how a simple LeGall (5, 3) synthesis
+filter can be described using <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s. We’ll use this
+description to enumerate all of the resulting filter phases and generate
+algebraic expressions for them.</p>
+<div class="section" id="building-a-vc-2-filter">
+<h3>Building a VC-2 filter<a class="headerlink" href="#building-a-vc-2-filter" title="Permalink to this headline">¶</a></h3>
+<p>A horizontal-only LeGall (5, 3) synthesis transform takes as input two arrays
+of transform coefficients (a low-pass band, <code class="docutils literal notranslate"><span class="pre">L</span></code>, and high-pass band, <code class="docutils literal notranslate"><span class="pre">H</span></code>)
+and produces a single output array. Lets start by defining the two input arrays:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.infinite_arrays</span> <span class="kn">import</span> <span class="n">SymbolArray</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">L</span> <span class="o">=</span> <span class="n">SymbolArray</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">H</span> <span class="o">=</span> <span class="n">SymbolArray</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a> class defines an infinite array of
+<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a>s containing a single symbol of the
+form <code class="docutils literal notranslate"><span class="pre">LinExp((prefix,</span> <span class="pre">x,</span> <span class="pre">y))</span></code>. Like all <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a> subclasses,
+we can access entries in our arrays using the usual Python subscript syntax:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">L</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="go">LinExp((&#39;L&#39;, 3, 4))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">H</span><span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">]</span>
+<span class="go">LinExp((&#39;H&#39;, 7, -5))</span>
+</pre></div>
+</div>
+<p>Notice that the coordinate system extends to positive and negative infinity.</p>
+<p>Next we’ll create an <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InterleavedArray" title="vc2_bit_widths.infinite_arrays.InterleavedArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InterleavedArray</span></code></a> which contains a horizontal
+interleaving of the two inputs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.infinite_arrays</span> <span class="kn">import</span> <span class="n">InterleavedArray</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interleaved</span> <span class="o">=</span> <span class="n">InterleavedArray</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The new interleaved array can be accessed just as before:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">interleaved</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp((&#39;L&#39;, 0, 0))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interleaved</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp((&#39;H&#39;, 0, 0))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interleaved</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="go">LinExp((&#39;L&#39;, 1, 1))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interleaved</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="go">LinExp((&#39;H&#39;, 1, 1))</span>
+</pre></div>
+</div>
+<p>Next we’ll apply the two lifting stages which implement the LeGall (5, 3)
+transform using a <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.LiftedArray" title="vc2_bit_widths.infinite_arrays.LiftedArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">LiftedArray</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.infinite_arrays</span> <span class="kn">import</span> <span class="n">LiftedArray</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_data_tables</span> <span class="kn">import</span> <span class="n">LIFTING_FILTERS</span><span class="p">,</span> <span class="n">WaveletFilters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wavelet</span> <span class="o">=</span> <span class="n">LIFTING_FILTERS</span><span class="p">[</span><span class="n">WaveletFilters</span><span class="o">.</span><span class="n">le_gall_5_3</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stage_0</span><span class="p">,</span> <span class="n">stage_1</span> <span class="o">=</span> <span class="n">wavelet</span><span class="o">.</span><span class="n">stages</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lifted_once</span> <span class="o">=</span> <span class="n">LiftedArray</span><span class="p">(</span><span class="n">interleaved</span><span class="p">,</span> <span class="n">stage_0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lifted_twice</span> <span class="o">=</span> <span class="n">LiftedArray</span><span class="p">(</span><span class="n">lifted_once</span><span class="p">,</span> <span class="n">stage_1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally we’ll use a <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.RightShiftedArray" title="vc2_bit_widths.infinite_arrays.RightShiftedArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">RightShiftedArray</span></code></a> to apply the final bit shift
+operation to the result:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.infinite_arrays</span> <span class="kn">import</span> <span class="n">RightShiftedArray</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">RightShiftedArray</span><span class="p">(</span><span class="n">lifted_twice</span><span class="p">,</span> <span class="n">wavelet</span><span class="o">.</span><span class="n">filter_bit_shift</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This final array now, in effect, contains a complete algebraic description of
+how each entry is computed in terms of our two input arrays, <code class="docutils literal notranslate"><span class="pre">L</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;L&#39;, 0, 0): Fraction(1, 2), (&#39;H&#39;, -1, 0): Fraction(-1, 8), (&#39;H&#39;, 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})</span>
+</pre></div>
+</div>
+<p>Notice that the expression above refers to transform coefficients with negative
+coordinates (e.g. <code class="docutils literal notranslate"><span class="pre">('H',</span> <span class="pre">-1,</span> <span class="pre">0)</span></code>). This is because the infinite dimensions of
+<a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s allows <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.LiftedArray" title="vc2_bit_widths.infinite_arrays.LiftedArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">LiftedArray</span></code></a> to ignore VC-2’s
+filter edge effect behaviour. This makes it easier to analyse filter behaviours
+without having to carefully avoid edge effected behaviour.</p>
+</div>
+<div class="section" id="filter-phases">
+<h3>Filter phases<a class="headerlink" href="#filter-phases" title="Permalink to this headline">¶</a></h3>
+<p>The <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a> subclasses automatically keep track of the period
+of each array (see <a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>) in the <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.period" title="vc2_bit_widths.infinite_arrays.InfiniteArray.period"><code class="xref py py-attr docutils literal notranslate"><span class="pre">InfiniteArray.period</span></code></a>
+property:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">L</span><span class="o">.</span><span class="n">period</span>
+<span class="go">(1, 1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">H</span><span class="o">.</span><span class="n">period</span>
+<span class="go">(1, 1)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="o">.</span><span class="n">period</span>
+<span class="go">(2, 1)</span>
+</pre></div>
+</div>
+<p>This makes it easy to automatically obtain an example of each filter phase in
+our output:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">all_output_filter_phases</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="n">output</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">period</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">period</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">... </span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="detecting-no-operations">
+<h3>Detecting no-operations<a class="headerlink" href="#detecting-no-operations" title="Permalink to this headline">¶</a></h3>
+<p>When performing a computationally expensive analysis on a set of filters
+described by <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s it can be helpful to skip arrays
+which just consist of interleavings and other non-transformative views of other
+arrays. For this purpose, the <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.nop" title="vc2_bit_widths.infinite_arrays.InfiniteArray.nop"><code class="xref py py-attr docutils literal notranslate"><span class="pre">InfiniteArray.nop</span></code></a> property indicates
+if a given array implements a no-operation (nop) and therefore may be skipped.</p>
+<p>From the example above:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">L</span><span class="o">.</span><span class="n">nop</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">H</span><span class="o">.</span><span class="n">nop</span>
+<span class="go">False</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">interleaved</span><span class="o">.</span><span class="n">nop</span>
+<span class="go">True</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lifted_once</span><span class="o">.</span><span class="n">nop</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lifted_twice</span><span class="o">.</span><span class="n">nop</span>
+<span class="go">False</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="o">.</span><span class="n">nop</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Here we can see that the interleaving stage is identified as having no material
+effect on the values it contains.</p>
+</div>
+<div class="section" id="relative-array-stepping">
+<h3>Relative array stepping<a class="headerlink" href="#relative-array-stepping" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s provide a
+<a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.relative_step_size_to" title="vc2_bit_widths.infinite_arrays.InfiniteArray.relative_step_size_to"><code class="xref py py-meth docutils literal notranslate"><span class="pre">InfiniteArray.relative_step_size_to()</span></code></a> method for calculating the
+scaling relationships between arrays. This can be useful for finding array
+values which don’t use inputs with negative coordinates (i.e. would not be
+affected by edge-effect behaviour in a real VC-2 filter).</p>
+<p>For example, consider the top-left pixel of the filter output from before:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;L&#39;, 0, 0): Fraction(1, 2), (&#39;H&#39;, -1, 0): Fraction(-1, 8), (&#39;H&#39;, 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})</span>
+</pre></div>
+</div>
+<p>This uses the input <code class="docutils literal notranslate"><span class="pre">('H',</span> <span class="pre">-1,</span> <span class="pre">0)</span></code> which has negative coordinates. Thanks to
+the <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.period" title="vc2_bit_widths.infinite_arrays.InfiniteArray.period"><code class="xref py py-attr docutils literal notranslate"><span class="pre">period</span></code></a> property we know that any array value with
+an even-numbered X coordinate implements the same filter phase as [0, 0].</p>
+<p>We could start trying every even-numbered X coordinate until we find an entry
+without a negative <code class="docutils literal notranslate"><span class="pre">H</span></code> coordinate, but this would be fairly inefficient.
+Instead lets use <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.relative_step_size_to" title="vc2_bit_widths.infinite_arrays.InfiniteArray.relative_step_size_to"><code class="xref py py-meth docutils literal notranslate"><span class="pre">relative_step_size_to()</span></code></a> to work out
+how many steps we must move in <code class="docutils literal notranslate"><span class="pre">output</span></code> to move all our <code class="docutils literal notranslate"><span class="pre">H</span></code> coordinates
+right by one step.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="o">.</span><span class="n">relative_step_size_to</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+<span class="go">(Fraction(1, 2), Fraction(1, 1))</span>
+</pre></div>
+</div>
+<p>This tells us that for every step we move in the X-dimension of <code class="docutils literal notranslate"><span class="pre">output</span></code>, we
+move half a step in that direction in <code class="docutils literal notranslate"><span class="pre">H</span></code>.  Therefore, we must pick a
+coordinate at least two steps to the right in <code class="docutils literal notranslate"><span class="pre">output</span></code> to avoid the -1
+coordinate in <code class="docutils literal notranslate"><span class="pre">H</span></code>. Moving to [2, 0] also gives an even
+numbered X coordinate so we know that we’re going to see the same filter phase
+and so we get:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;L&#39;, 1, 0): Fraction(1, 2), (&#39;H&#39;, 0, 0): Fraction(-1, 8), (&#39;H&#39;, 1, 0): Fraction(-1, 8), AAError(id=3): Fraction(-1, 4), AAError(id=6): Fraction(1, 2)})</span>
+</pre></div>
+</div>
+<p>Which implements the same filter phase as <code class="docutils literal notranslate"><span class="pre">output[0,</span> <span class="pre">0]</span></code> but without any
+negative coordinates.</p>
+</div>
+<div class="section" id="caching">
+<h3>Caching<a class="headerlink" href="#caching" title="Permalink to this headline">¶</a></h3>
+<p>All of the subclasses of <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a> which perform a non-trivial
+operation internally cache array values when they’re accessed.</p>
+<p>The most obvious benefit of this behaviour is to impart a substantial
+performance improvement for larger filter designs.</p>
+<p>A secondary benefit applies to <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s containing
+<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a>s. By caching the results of
+operations which introduce affine arithmetic error symbols
+(<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a>), these errors can correctly
+combine or cancel when that result is reused. As a result, while caching is not
+essential for correctness, it can materially improve the tightness of the
+bounds produced.</p>
+<p>In some instances, this basic caching behaviour may not go far enough.  For
+example, the contents of <code class="docutils literal notranslate"><span class="pre">output[0,</span> <span class="pre">0]</span></code> and <code class="docutils literal notranslate"><span class="pre">output[2,</span> <span class="pre">0]</span></code> are extremely
+similar, consisting of essentially the same coefficients, just translated to
+the right:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;L&#39;, 0, 0): Fraction(1, 2), (&#39;H&#39;, -1, 0): Fraction(-1, 8), (&#39;H&#39;, 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;L&#39;, 1, 0): Fraction(1, 2), (&#39;H&#39;, 0, 0): Fraction(-1, 8), (&#39;H&#39;, 1, 0): Fraction(-1, 8), AAError(id=3): Fraction(-1, 4), AAError(id=6): Fraction(1, 2)})</span>
+</pre></div>
+</div>
+<p>In principle, the cached result of <code class="docutils literal notranslate"><span class="pre">output[0,</span> <span class="pre">0]</span></code> could be re-used (and the
+coefficients suitably translated) to save the computational cost of evaluating
+<code class="docutils literal notranslate"><span class="pre">output[2,</span> <span class="pre">0]</span></code> from scratch. For extremely large transforms, this
+optimisation can result in substantial savings in runtime and RAM. For use in
+such scenarios the <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray" title="vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolicPeriodicCachingArray</span></code></a> array type is provided:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.infinite_arrays</span> <span class="kn">import</span> <span class="n">SymbolicPeriodicCachingArray</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output_cached</span> <span class="o">=</span> <span class="n">SymbolicPeriodicCachingArray</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">H</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The constructor takes the array to be cached along with all
+<a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>s used its definition. The new array may be accessed
+as usual but with more aggressive caching taking place internally:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">output_cached</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;L&#39;, 0, 0): Fraction(1, 2), (&#39;H&#39;, -1, 0): Fraction(-1, 8), (&#39;H&#39;, 0, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output_cached</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;L&#39;, 1, 0): Fraction(1, 2), (&#39;H&#39;, 0, 0): Fraction(-1, 8), (&#39;H&#39;, 1, 0): Fraction(-1, 8), AAError(id=1): Fraction(-1, 4), AAError(id=2): Fraction(1, 2)})</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note that in the cached version of the array, the
+<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> terms are not unique between
+<code class="docutils literal notranslate"><span class="pre">output_cached[0,</span> <span class="pre">0]</span></code> and <code class="docutils literal notranslate"><span class="pre">output_cached[2,</span> <span class="pre">0]</span></code>, though they should be.
+This is a result of the caching mechanism having no way to know how error
+terms should change between entries in the array. As a result,
+<a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray" title="vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolicPeriodicCachingArray</span></code></a> must not be used when the affine
+error terms in its output are expected to be significant.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray" title="vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolicPeriodicCachingArray</span></code></a> only works with
+<a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s defined in terms of <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>s.</p>
+</div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="infinitearray-base-class">
+<h3><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a> (base class)<a class="headerlink" href="#infinitearray-base-class" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.InfiniteArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">InfiniteArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>An abstract base class describing an immutable infinite N-dimensional array
+of symbolic values.</p>
+<p>Subclasses should implement <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.get" title="vc2_bit_widths.infinite_arrays.InfiniteArray.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> to return the value at a given
+position in an array.</p>
+<p>Instances of this type may be indexed like an N-dimensional array.</p>
+<p>The ‘cache’ argument controls whether array values are cached or not. It is
+recommended that this argument be set to ‘True’ for expensive to compute
+functions or functions which introduce new error terms (to ensure error
+terms are re-used)</p>
+<dl class="py method">
+<dt id="vc2_bit_widths.infinite_arrays.InfiniteArray.get">
+<code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called by <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code> with a tuple of array indices.</p>
+<p>The array of keys is guaranteed to be a tuple with <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.ndim" title="vc2_bit_widths.infinite_arrays.InfiniteArray.ndim"><code class="xref py py-data docutils literal notranslate"><span class="pre">ndim</span></code></a>
+entries.</p>
+<p>Values returned by this method will be memoized (cached) by
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code>. Consequently, this method will only be called
+the first time a particular array index is requested. Subsequent
+accesses will return the cached value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.infinite_arrays.InfiniteArray.clear_cache">
+<code class="sig-name descname"><span class="pre">clear_cache</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the cache (if enabled).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.infinite_arrays.InfiniteArray.ndim">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">ndim</span></code><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of dimensions in the array.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.infinite_arrays.InfiniteArray.period">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">period</span></code><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.period" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the period of this array (see <a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>period</strong><span class="classifier">(int, …)</span></dt><dd><p>The period of the array in each dimension.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.infinite_arrays.InfiniteArray.nop">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">nop</span></code><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.nop" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a> is a no-operation (nop), i.e. it
+just views values in other arrays. False if some computation is
+performed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.infinite_arrays.InfiniteArray.relative_step_size_to">
+<code class="sig-name descname"><span class="pre">relative_step_size_to</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InfiniteArray.relative_step_size_to" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a step along a dimension in this array, compute the equivalent step
+size in the provided array.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>other</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>An array to compare the step size with. Must have been used (maybe
+indirectly) to define this array.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>relative_step_size</strong><span class="classifier">(<a class="reference external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">fractions.Fraction</span></code></a>, …) or None</span></dt><dd><p>The relative step sizes for each dimension, or None if the provided
+array was not used in the computation of this array.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="base-value-type-arrays">
+<h3>Base value type arrays<a class="headerlink" href="#base-value-type-arrays" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.SymbolArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">SymbolArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'v'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.SymbolArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>An infinite array of <a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> symbols.</p>
+<p>Symbols will be identified by tuples like <code class="docutils literal notranslate"><span class="pre">(prefix,</span> <span class="pre">n)</span></code> for a one
+dimensional array, <code class="docutils literal notranslate"><span class="pre">(prefix,</span> <span class="pre">n,</span> <span class="pre">n)</span></code> for a two-dimensional array,
+<code class="docutils literal notranslate"><span class="pre">(prefix,</span> <span class="pre">n,</span> <span class="pre">n,</span> <span class="pre">n)</span></code> for a three-dimensional array and so-on.</p>
+<p>Example usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">SymbolArray</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="go">LinExp((&#39;foo&#39;, 1, 2, 3))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp((&#39;foo&#39;, 100, -5, 0))</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>ndim</strong><span class="classifier">int</span></dt><dd><p>The number of dimensions in the array.</p>
+</dd>
+<dt><strong>prefix</strong><span class="classifier">object</span></dt><dd><p>A prefix to be used as the first element of every symbol tuple.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.VariableArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">VariableArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.VariableArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>An infinite array of subscripted <a class="reference internal" href="pyexp.html#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a>
+expressions.</p>
+<p>Example usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.pyexp</span> <span class="kn">import</span> <span class="n">Argument</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">arg</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;arg&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">VariableArray</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="go">Subscript(Argument(&#39;arg&#39;), Constant((1, 2)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="go">Subscript(Argument(&#39;arg&#39;), Constant((-10, 3)))</span>
+</pre></div>
+</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>ndim</strong><span class="classifier">int</span></dt><dd><p>The number of dimensions in the array.</p>
+</dd>
+<dt><strong>exp</strong><span class="classifier"><a class="reference internal" href="pyexp.html#vc2_bit_widths.pyexp.PyExp" title="vc2_bit_widths.pyexp.PyExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">PyExp</span></code></a></span></dt><dd><p>The expression to be subscripted in each array element.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="computation-arrays">
+<h3>Computation arrays<a class="headerlink" href="#computation-arrays" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.LiftedArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">LiftedArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_dimension</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.LiftedArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a one-dimensional lifting filter step to an array, as described
+in the VC-2 specification (15.4.4).</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>input_array</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The input array whose entries will be filtered by the specified
+lifting stage.</p>
+</dd>
+<dt><strong>stage</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingStage" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingStage</span></code></a></span></dt><dd><p>A description of the lifting stage.</p>
+</dd>
+<dt><strong>interleave_dimension: int</strong></dt><dd><p>The dimension along which the filter will act.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.LeftShiftedArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">LeftShiftedArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_bits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.LeftShiftedArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a left bit shift to every value in an input array.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>input_array</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The array to have its values left-shifted.</p>
+</dd>
+<dt><strong>shift_bits: int</strong></dt><dd><p>Number of bits to shift by.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.RightShiftedArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">RightShiftedArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_bits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.RightShiftedArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a right bit shift to every value in an input array.</p>
+<p>The right-shift operation is based on the description in the VC-2
+specification (15.4.3). Specifically, <span class="math notranslate nohighlight">\(2^{\text{shiftbits}-1}\)</span> is
+added to the input values prior to the right-shift operation (which is used
+to implement rounding behaviour in integer arithmetic).</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>input_array</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The array to have its values right-sifted</p>
+</dd>
+<dt><strong>shift_bits: int</strong></dt><dd><p>Number of bits to shift by</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="sampling-arrays">
+<h3>Sampling arrays<a class="headerlink" href="#sampling-arrays" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.SubsampledArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">SubsampledArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.SubsampledArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>A subsampled view of another <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>input_array</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The array to be subsampled.</p>
+</dd>
+<dt><strong>steps, offsets: (int, …)</strong></dt><dd><p>Tuples giving the step size and start offset for each dimension.</p>
+<p>When this array is indexed, the index into the input array is
+computed as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">input_array_index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">index</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">*</span> <span class="n">step</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="o">+</span> <span class="n">offset</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.InterleavedArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">InterleavedArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array_even</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_odd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interleave_dimension</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.InterleavedArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>An array view which interleaves two <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s
+together into a single array.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>array_even, array_odd</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The two arrays to be interleaved. ‘array_even’ will be used for
+even-indexed values in the specified dimension and ‘array_odd’ for
+odd.</p>
+</dd>
+<dt><strong>interleave_dimension: int</strong></dt><dd><p>The dimension along which the two arrays will be interleaved.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="caching-arrays">
+<h3>Caching arrays<a class="headerlink" href="#caching-arrays" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt id="vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">SymbolicPeriodicCachingArray</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">symbol_arrays</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>A caching view of a <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a> of
+<a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a> values.</p>
+<p>This view will request at most one value from each filter phase of
+the input array and compute all other values by altering the indices in
+the previously computed values.</p>
+<p>For example, normally, when accessing values within a
+<a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>, values are computed from scratch on-demand:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">SymbolArray</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stage</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">some</span> <span class="nb">filter</span> <span class="n">stage</span><span class="o">&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">la</span> <span class="o">=</span> <span class="n">LiftedArray</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">stage</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># la[0, 0] worked out from scratch</span>
+<span class="go">LinExp(...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># la[0, 1] worked out from scratch</span>
+<span class="go">LinExp(...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># la[0, 2] worked out from scratch</span>
+<span class="go">LinExp(...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># la[0, 3] worked out from scratch</span>
+<span class="go">LinExp(...)</span>
+</pre></div>
+</div>
+<p>By contrast, when values are accessed in a
+<a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray" title="vc2_bit_widths.infinite_arrays.SymbolicPeriodicCachingArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolicPeriodicCachingArray</span></code></a>, only the first access to each
+filter phase is computed from scratch. All other values are found by
+changing the symbol indices in the cached array value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cached_la</span> <span class="o">=</span> <span class="n">SymbolicPeriodicCachingArray</span><span class="p">(</span><span class="n">la</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cached_la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># la[0, 0] worked out from scratch</span>
+<span class="go">LinExp(...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cached_la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># la[0, 1] worked out from scratch</span>
+<span class="go">LinExp(...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cached_la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># Cached value of la[0, 0] reused and mutated</span>
+<span class="go">LinExp(...)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cached_la</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># Cached value of la[0, 1] reused and mutated</span>
+<span class="go">LinExp(...)</span>
+</pre></div>
+</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>array</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a></span></dt><dd><p>The array whose values are to be cached. These array values must
+consist only of symbols from <a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>s passed as
+arguments, <a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> terms and
+constants.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Error terms may be repeated as returned from this array where
+they would usually be unique. If this is a problem, you should
+not use this caching view.</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">SymbolArray</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sa</span> <span class="o">=</span> <span class="n">RightShiftedArray</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Unique AAError terms (without caching)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sa</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;s&#39;, 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sa</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;s&#39;, 0, 1): Fraction(1, 2), AAError(id=2): Fraction(1, 2)})</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Non-unique AAError terms after caching</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ca</span> <span class="o">=</span> <span class="n">SymbolicPeriodicCachingArray</span><span class="p">(</span><span class="n">sa</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ca</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;s&#39;, 0, 0): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ca</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="go">LinExp({(&#39;s&#39;, 0, 1): Fraction(1, 2), AAError(id=1): Fraction(1, 2)})</span>
+</pre></div>
+</div>
+</div>
+</dd>
+<dt><strong>symbol_arrays</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a></span></dt><dd><p>The symbol arrays which the ‘array’ argument is constructed from.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.infinite_arrays</span></code>: Infinite arrays</a><ul>
+<li><a class="reference internal" href="#tutorial">Tutorial</a><ul>
+<li><a class="reference internal" href="#building-a-vc-2-filter">Building a VC-2 filter</a></li>
+<li><a class="reference internal" href="#filter-phases">Filter phases</a></li>
+<li><a class="reference internal" href="#detecting-no-operations">Detecting no-operations</a></li>
+<li><a class="reference internal" href="#relative-array-stepping">Relative array stepping</a></li>
+<li><a class="reference internal" href="#caching">Caching</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api">API</a><ul>
+<li><a class="reference internal" href="#infinitearray-base-class"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code> (base class)</a></li>
+<li><a class="reference internal" href="#base-value-type-arrays">Base value type arrays</a></li>
+<li><a class="reference internal" href="#computation-arrays">Computation arrays</a></li>
+<li><a class="reference internal" href="#sampling-arrays">Sampling arrays</a></li>
+<li><a class="reference internal" href="#caching-arrays">Caching arrays</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pyexp.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.pyexp</span></code>: Construct Python programs implementing arithmetic expressions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/infinite_arrays.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyexp.html" title="vc2_bit_widths.pyexp: Construct Python programs implementing arithmetic expressions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.infinite_arrays</span></code>: Infinite arrays</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

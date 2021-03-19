@@ -1,0 +1,477 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Computing signal bounds with Affine Arithmetic &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Test pattern generation" href="test_patterns.html" />
+    <link rel="prev" title="Related work" href="related_work.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test_patterns.html" title="Test pattern generation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="related_work.html" title="Related work"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Computing signal bounds with Affine Arithmetic</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="computing-signal-bounds-with-affine-arithmetic">
+<span id="theory-affine-arithmetic"></span><h1>Computing signal bounds with Affine Arithmetic<a class="headerlink" href="#computing-signal-bounds-with-affine-arithmetic" title="Permalink to this headline">¶</a></h1>
+<p>Though VC-2 implements the discrete wavelet transform, a linear filter, integer
+rounding and quantisation make VC-2 a non-linear filter. In this section we
+describe the process by which Affine Arithmetic (AA) may be used to find
+upper-bounds for signal ranges in VC-2.</p>
+<div class="section" id="analysing-linear-filters">
+<h2>Analysing linear filters<a class="headerlink" href="#analysing-linear-filters" title="Permalink to this headline">¶</a></h2>
+<p>Given an algebraic description of a linear filter, it is straight-forward to
+determine the inputs which produce the most extreme output values.</p>
+<p>For example, consider the following algebraic description which could describe
+how a linear filter might compute the value of a particular output, given two
+input pixel values <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{a}{2} - \frac{b}{8} + 1\]</div>
+<p>In this expression <span class="math notranslate nohighlight">\(a\)</span> is weighted with a positive coefficient
+(<span class="math notranslate nohighlight">\(\frac{1}{2}\)</span>) while <span class="math notranslate nohighlight">\(b\)</span> is weighted with a negative coefficient
+(<span class="math notranslate nohighlight">\(-\frac{1}{8}\)</span>). As a consequence, to produce an output with the highest
+possible value we should set <span class="math notranslate nohighlight">\(a\)</span> to a large positive value and <span class="math notranslate nohighlight">\(b\)</span>
+to a large negative value. Conversely, the opposite is true if we wish to
+produce the lowest possible value.</p>
+<p>For example, if we define the input signal range as being <span class="math notranslate nohighlight">\([-100, 100]\)</span>,
+it is maximum result, 63.5, is produced when <span class="math notranslate nohighlight">\(a=100\)</span> and <span class="math notranslate nohighlight">\(b=-100\)</span>
+and the minimum result, -61.5, when <span class="math notranslate nohighlight">\(a=-100\)</span> and <span class="math notranslate nohighlight">\(b=100\)</span>.</p>
+<p>In this way, given an algebraic description of a linear filter, we can compute
+a set of worst-case input values (i.e. a test pattern) and also the output
+signal range.</p>
+</div>
+<div class="section" id="affine-arithmetic">
+<h2>Affine arithmetic<a class="headerlink" href="#affine-arithmetic" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Affine_arithmetic">Affine arithmetic</a> provides
+a way to bound the effects of non-linearities due to rounding errors.</p>
+<p>In affine arithmetic, non-linear operations are modelled as linear operations
+with error terms.</p>
+<p>For example, when a value is divided by two using truncating integer arithmetic
+(<span class="math notranslate nohighlight">\(//\)</span>), this is modelled with affine arithmetic as:</p>
+<div class="math notranslate nohighlight">
+\[x//2 = \frac{x}{2} + \frac{e_1 - 1}{2}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(e_1\)</span> is an error term representing some value in the interval
+<span class="math notranslate nohighlight">\([-1, +1]\)</span>.</p>
+<p>As a result of the use of error terms, affine arithmetic expressions
+effectively specify <em>ranges</em> of possible values. In the example above, that
+range would be <span class="math notranslate nohighlight">\(\left[\frac{x}{2} - 1, \frac{x}{2}\right]\)</span>.</p>
+<p>Every time a non-linear operation is modelled using affine arithmetic a new
+error term must be introduced, thereby (pessimistically) modelling all errors
+as being independent. In practice, rounding errors are not independent and so
+affine arithmetic will tend to indicate an overly broad range of values.</p>
+<p>For example, if we substitute <span class="math notranslate nohighlight">\(x=11\)</span> into <span class="math notranslate nohighlight">\(x//2\)</span>, affine arithmetic
+tells us that the answer lies in the range <span class="math notranslate nohighlight">\([4.5, 5.5]\)</span> which is true
+(<span class="math notranslate nohighlight">\(11//2 = 5\)</span>), but imprecise.</p>
+<p>Nevertheless, affine arithmetic’s pessimism guarantees that the true result is
+<em>always</em> contained in the range indicated.</p>
+<p>As a rule of thumb, so long as the rounding errors in an expression are small,
+so too is the range indicated by affine arithmetic.</p>
+</div>
+<div class="section" id="worked-example">
+<h2>Worked example<a class="headerlink" href="#worked-example" title="Permalink to this headline">¶</a></h2>
+<p>The example below demonstrates the procedure used to find the theoretical
+bounds of a filter.</p>
+<p>Consider again the following filter on an input in the range <span class="math notranslate nohighlight">\([-100,
+100]\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\frac{a}{2} - \frac{b}{8} + 1\]</div>
+<p>As before, we can use simple linear filter analysis to determine that the
+filter value is maximised when <span class="math notranslate nohighlight">\(a=100\)</span> and <span class="math notranslate nohighlight">\(b=-100\)</span> and minimised
+when <span class="math notranslate nohighlight">\(a=-100\)</span> and <span class="math notranslate nohighlight">\(b=100\)</span>.</p>
+<p>Lets assume that the filter is approximated using truncating integer arithmetic
+as:</p>
+<div class="math notranslate nohighlight">
+\[(a+1)//2 - (b+4)//8 + 1\]</div>
+<p>Represented using affine arithmetic we have:</p>
+<div class="math notranslate nohighlight">
+\[\frac{a+1}{2} + \frac{e_1 - 1}{2} - \left(\frac{b+4}{8} + \frac{e_2 - 1}{2}\right) + 1\]</div>
+<p>Substituting the minimising and maximising values for <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(b\)</span>
+we find that the filter’s minimum and maximum values lies in the following
+ranges:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{maximum value} &amp;=
+    \frac{100+1}{2} + \frac{e_1 - 1}{2} - \left(\frac{-100+4}{8} + \frac{e_2 - 1}{2}\right) + 1 \\
+&amp;=
+    50.5 + \frac{e_1 - 1}{2} - \left(-12 + \frac{e_2 - 1}{2}\right) + 1 \\
+&amp;=
+    63.5 + \frac{e_1 - 1}{2} - \frac{e_2 - 1}{2} \\
+&amp;=
+    [62.5, 64.5] \\
+\\
+\text{minimum value} &amp;=
+    \frac{-100+1}{2} + \frac{e_1 - 1}{2} - \left(\frac{100+4}{8} + \frac{e_2 - 1}{2}\right) + 1 \\
+&amp;=
+    -49.5 + \frac{e_1 - 1}{2} - \left(13 + \frac{e_2 - 1}{2}\right) + 1 \\
+&amp;=
+    -61.5 + \frac{e_1 - 1}{2} - \frac{e_2 - 1}{2} \\
+&amp;=
+    [-62.5, -60.5] \\\end{split}\]</div>
+<p>From this we can therefore say that the output of our integer approximation of
+the filter is bounded by the range <span class="math notranslate nohighlight">\([-62.5, 64.5]\)</span>.</p>
+</div>
+<div class="section" id="quantisation-and-affine-arithmetic">
+<span id="theory-affine-arithmetic-quantisation"></span><h2>Quantisation and affine arithmetic<a class="headerlink" href="#quantisation-and-affine-arithmetic" title="Permalink to this headline">¶</a></h2>
+<p>Affine arithmetic may also be used to model the effects of quantisation since
+VC-2’s dead-zone quantiser is essentially just truncating integer division.</p>
+<p>Consider the following (simplified) definition of VC-2’s quantiser and
+dequantiser:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{quantise}(x, qf) &amp;= x//qf \\
+\text{dequantise}(X, qf) &amp;= X \times qf + \frac{qf}{2}\end{split}\]</div>
+<p>In affine arithmetic this becomes:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{quantise}(x, qf) &amp;= \frac{x}{qf} + \frac{e_1 - 1}{2}\\
+\text{dequantise}(X, qf) &amp;= X \times qf + \frac{qf}{2} + \frac{e_2 - 1}{2}\\\end{split}\]</div>
+<p>So the effect of quantising and dequantising a value, as modelled by affine
+arithmetic is:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{dequantise}(\text{quantise}(x, qf), qf) &amp;=
+    \left(\frac{x}{qf} + \frac{e_1 - 1}{2}\right) \times qf + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
+&amp;=
+    x + qf \frac{e_1 - 1}{2} + \frac{qf}{2} + \frac{e_2 - 1}{2}\\
+&amp;=
+    \left[x - \frac{qf}{2} - 1, x + \frac{qf}{2}\right]\\\end{split}\]</div>
+<p>This tells us that for large quantisation factors (where <span class="math notranslate nohighlight">\(qf \approx x\)</span>),
+quantisation produces a range:</p>
+<div class="math notranslate nohighlight">
+\[\text{dequantise}(\text{quantise}(x, x), x) =
+    \left[\frac{x}{2} - 1, \frac{3x}{2}\right]\]</div>
+<p>When negative numbers are taken into account, the affine range becomes:</p>
+<div class="math notranslate nohighlight">
+\[\text{dequantise}(\text{quantise}(x, x), x) =
+    \left[-\frac{3}{2}x, \frac{3}{2}x\right]\]</div>
+<p>That is, worst-case quantisation has the effect of replacing the quantised
+value with an affine error variable with a magnitude <span class="math notranslate nohighlight">\(\frac{3}{2}\times\)</span>
+the quantised value. In the next section we’ll attempt to bound this range.</p>
+</div>
+<div class="section" id="refining-worst-case-quantisation-error-bounds">
+<span id="theory-quantisation-proof"></span><h2>Refining worst-case quantisation error bounds<a class="headerlink" href="#refining-worst-case-quantisation-error-bounds" title="Permalink to this headline">¶</a></h2>
+<p>Though in some cases quantisation can result in the quantised value growing by
+a factor of <span class="math notranslate nohighlight">\(\frac{3}{2}\)</span>, as predicted by affine arithmetic, for many
+values the worst-case gain is lower.</p>
+<p>For any value in the range <span class="math notranslate nohighlight">\([-x_{\text{max}}, x_{\text{max}}]\)</span>, the
+largest value possible after quantisation and dequantisation is found by
+quantising and dequantising <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span> by the largest quantisation
+index which doesn’t quantise the value to zero. Once known, this figure may be
+used to define a slightly smaller affine range to represent the target value.</p>
+<p>A formal proof of this statement is provided in the remainder of this section.</p>
+<p>Quantisation using VC-2’s quantisation/dequantisation process can fairly simply
+be shown to produce outputs up to <span class="math notranslate nohighlight">\(\frac{3}{2}\times\)</span> larger than the
+original value. This proof sets out to show the exact upper bound of the output
+of VC-2’s quantiser given a defined input range.</p>
+<div class="section" id="definitions">
+<h3>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h3>
+<p>VC-2 defines a dead-zone quantiser based on an integer approximation of the
+following:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{quantise}(x,\,qf) &amp;= \left\{\begin{array}{ll}
+    \left\lfloor\frac{x}{qf}\right\rfloor &amp; \text{if}~x \ge 0 \\
+    -\left\lfloor\frac{-x}{qf}\right\rfloor &amp; \text{if}~x &lt; 0 \\
+\end{array}\right.
+\\
+\text{dequantise}(x,\,qf) &amp;= \left\{\begin{array}{ll}
+    x \, qf + \frac{qf}{2} &amp; \text{if}~x &gt; 0 \\
+    0 &amp; \text{if}~x = 0 \\
+    x \, qf - \frac{qf}{2} &amp; \text{if}~x &lt; 0 \\
+\end{array}\right.\end{split}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(x \in \mathbb{Z}\)</span> and <span class="math notranslate nohighlight">\(qf\)</span> is the quantisation factor,
+defined in terms of the quantisation index, <span class="math notranslate nohighlight">\(qi\)</span>, as follows:</p>
+<div class="math notranslate nohighlight">
+\[qf = 2^{qi/4} \quad \text{for} \quad qi \in \mathbb{N}\]</div>
+</div>
+<div class="section" id="formal-problem-statement">
+<h3>Formal problem statement<a class="headerlink" href="#formal-problem-statement" title="Permalink to this headline">¶</a></h3>
+<p>Given some value, <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span>, what is the largest-magnitude value
+which may be produced by
+<span class="math notranslate nohighlight">\(\text{dequantise}(\text{quantise}(x,\,qf),\,qf)\)</span> for
+<span class="math notranslate nohighlight">\(-x_{\text{max}} \le x \le x_{\text{max}}\)</span> and any <span class="math notranslate nohighlight">\(qf\)</span>?</p>
+</div>
+<div class="section" id="lemmas">
+<h3>Lemmas<a class="headerlink" href="#lemmas" title="Permalink to this headline">¶</a></h3>
+<p>In these lemmas the following shorthand notation will be used:</p>
+<div class="math notranslate nohighlight">
+\[x'_{qf} = \text{dequantise}(\text{quantise}(x,\,qf),\,qf)\]</div>
+<p>Without loss of generality, only non-negative values are considered below.
+Analogous lemmas may be found trivially for the negative cases due to the
+symmetry of the quantisation and dequantisation processes.</p>
+<p><strong>Lemma 1:</strong> When <span class="math notranslate nohighlight">\(qf &gt; x\)</span>, <span class="math notranslate nohighlight">\(x'_{qf} = 0\)</span>.</p>
+<p><em>Proof:</em> When <span class="math notranslate nohighlight">\(qf &gt; x\)</span>, <span class="math notranslate nohighlight">\(\text{quantise}(x,\,qf) =
+\left\lfloor\frac{x}{qf}\right\rfloor\)</span> is trivially equal to zero. Since
+<span class="math notranslate nohighlight">\(\text{dequantise}(0,\, qf) = 0\)</span> by definition, <span class="math notranslate nohighlight">\(x'_{qf} = 0\)</span> for
+all cases where <span class="math notranslate nohighlight">\(qf &gt; x\)</span>.  QED.</p>
+<p><strong>Lemma 2:</strong> If <span class="math notranslate nohighlight">\(x_1 \le x_2\)</span> then <span class="math notranslate nohighlight">\({x_1}'_{qf} \le {x_2}'_{qf}\)</span>.</p>
+<p>That is, for a fixed <span class="math notranslate nohighlight">\(qf\)</span>, VC-2’s quantiser is monotonic: changing the
+input value in one direction will never produce a change the output value in
+the opposite direction.</p>
+<p><em>Proof:</em> For the case where <span class="math notranslate nohighlight">\(x &gt; 0\)</span>, the complete quantisation and
+dequantisation process combine to form:</p>
+<div class="math notranslate nohighlight">
+\[x'_{qf} = \left\lfloor\frac{x}{qf}\right\rfloor qf + \frac{qf}{2}\]</div>
+<p>This expression is composed of only linear parts with the exception of the
+floor operator which, nevertheless, is monotonic. As a consequence, the
+operation as a whole is monotonic with a lower bound of 0.</p>
+<p>In the case where <span class="math notranslate nohighlight">\(x = 0\)</span>, <span class="math notranslate nohighlight">\(x'_{qf} = 0\)</span>.</p>
+<p>QED.</p>
+<p><strong>Lemma 3:</strong> For <span class="math notranslate nohighlight">\(x &gt; 0\)</span>, there exists at least one valid quantisation
+factor in the range <span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf \le x\)</span>.</p>
+<p><em>Proof:</em> The quantisation factor is restricted to quarter powers of two
+(<span class="math notranslate nohighlight">\(qf = 2^{qi/4}\)</span> for <span class="math notranslate nohighlight">\(qi \in \mathbb{N}\)</span>). Allowable quantisation
+factors are therefore spaced a factor of <span class="math notranslate nohighlight">\(2^{-1/4}\)</span> apart. Since the
+range <span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf \le x\)</span> covers a range a factor of <span class="math notranslate nohighlight">\(2^{1}\)</span>
+wide, several quantisation factors will fall within this region. QED.</p>
+<p>The above proof can be visualised using a log-scaled number line.  The
+following figure shows a log-scale with valid quantisation factors marked,
+along with an example <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(\frac{x}{2}\)</span> value. In this
+illustration it can be seen that four valid quantisation factors in
+<span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf \le x\)</span> will always be available in this range.</p>
+<img alt="../_images/log_numberline_valid_qf_always_exists.svg" src="../_images/log_numberline_valid_qf_always_exists.svg" /><p><strong>Lemma 4:</strong> For <span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf \le x\)</span>, <span class="math notranslate nohighlight">\(x'_{qf} = \frac{3}{2}
+qf\)</span>.</p>
+<p>That is, for the very largest quantisation factors which may be applied to
+<span class="math notranslate nohighlight">\(x\)</span>, without quantising it to zero (see lemma 1), the quantised value may
+be computed by the linear expression <span class="math notranslate nohighlight">\(x'_{qf} = \frac{3}{2} qf\)</span>.</p>
+<p><em>Proof:</em> When <span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf \le x\)</span>, <span class="math notranslate nohighlight">\(\text{quantise}(x,\,qf) =
+\left\lfloor\frac{x}{qf}\right\rfloor = 1\)</span>. As a consequence:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}x'_{qf} &amp;= \left\lfloor\frac{x}{qf}\right\rfloor qf + \frac{qf}{2} \\
+        &amp;= 1\,qf + \frac{qf}{2} \\
+        &amp;= \frac{3}{2} qf\end{split}\]</div>
+<p><strong>Lemma 5:</strong> The largest quantisation factor in <span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf \le x\)</span>,
+which we will call <span class="math notranslate nohighlight">\(qf_{\text{max},x}\)</span>, produces the largest dequantised
+value for any quantisation factor in this range.</p>
+<p><em>Proof:</em> In the range <span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf \le x\)</span>, lemma 4 shows that
+<span class="math notranslate nohighlight">\(x'_{qf} = \frac{3}{2} qf\)</span>. This expression is linear and therefore
+monotonic. Therefore, the largest <span class="math notranslate nohighlight">\(qf\)</span> allowed also produces the largest
+<span class="math notranslate nohighlight">\(x'_{qf}\)</span> possible in this range. QED.</p>
+<p><strong>Lemma 6:</strong> <span class="math notranslate nohighlight">\(2^{-1/4} x &lt; qf_{\text{max},x} \le x\)</span></p>
+<p><em>Proof:</em> By definition (lemma 5) the upper bound of <span class="math notranslate nohighlight">\(qf_{\text{max},x}\)</span>
+is <span class="math notranslate nohighlight">\(qf_{\text{max},x} \le x\)</span>.</p>
+<p>Since quantisation factors are spaced at intervals of <span class="math notranslate nohighlight">\(2^{1/4}\)</span>,
+the lower bound is therefore <span class="math notranslate nohighlight">\(2^{-1/4} x\)</span>.</p>
+<p>QED.</p>
+<p><strong>Lemma 7:</strong> If <span class="math notranslate nohighlight">\(qf_{\text{max},x}\)</span> is the largest <span class="math notranslate nohighlight">\(qf \le x\)</span>,
+<span class="math notranslate nohighlight">\(\frac{qf_{\text{max},x}}{2}\)</span> is the largest <span class="math notranslate nohighlight">\(qf \le \frac{x}{2}\)</span>.</p>
+<p><em>Proof:</em> The following visual illustration shows a log-scaled number line on
+which the above values are plotted.</p>
+<img alt="../_images/log_numberline_half_qf_max_for_half_x.svg" src="../_images/log_numberline_half_qf_max_for_half_x.svg" /><p>On a log scale, scaling <span class="math notranslate nohighlight">\(x\)</span> to <span class="math notranslate nohighlight">\(\frac{x}{2}\)</span> moves by a factor of
+<span class="math notranslate nohighlight">\(2^{-1}\)</span> to the left, or exactly four quantisation factors. As a
+consequence, the nearest quantisation factor below <span class="math notranslate nohighlight">\(\frac{x}{2}\)</span> is also
+four quantisation factors to the left of <span class="math notranslate nohighlight">\(qf_{\text{max},x}\)</span>, that is
+<span class="math notranslate nohighlight">\(\frac{qf_{\text{max},x}}{2}\)</span>.</p>
+<p>QED.</p>
+<p><strong>Lemma 8:</strong> <span class="math notranslate nohighlight">\(x'_{qf} \le x + \frac{qf}{2}\)</span> and therefore we have an
+upper bound on <span class="math notranslate nohighlight">\(x'_{qf}\)</span> which is monotonic with <span class="math notranslate nohighlight">\(qf\)</span>.</p>
+<p><em>Proof:</em> For <span class="math notranslate nohighlight">\(x &gt; 0\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[x'_{qf} = \left\lfloor\frac{x}{qf}\right\rfloor qf + \frac{qf}{2}\]</div>
+<p>The effect of the floor operation can be replaced with an error term,
+<span class="math notranslate nohighlight">\(0 \le e &lt; 1\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}x'_{qf} &amp;= \left(\frac{x}{qf} - e\right) qf + \frac{qf}{2} \\
+        &amp;= x - e\,qf + \frac{qf}{2}\end{split}\]</div>
+<p>Therefore we get the upper bound:</p>
+<div class="math notranslate nohighlight">
+\[x'_{qf} \le x + \frac{qf}{2}\]</div>
+<p>Which is linear and, consequently, monotonic with <span class="math notranslate nohighlight">\(qf\)</span>.</p>
+<p>QED.</p>
+<p><strong>Lemma 9:</strong> <span class="math notranslate nohighlight">\(x'_{qf} &lt; x'_{qf_{\text{max},x}}\)</span> for all <span class="math notranslate nohighlight">\(qf\)</span> in the
+region <span class="math notranslate nohighlight">\(1 \le qf \le \frac{x}{2}\)</span>.</p>
+<p><em>Proof:</em> By lemma 7, the largest quantisation factor in the range <span class="math notranslate nohighlight">\(1 \le
+qf \le \frac{x}{2}\)</span> is <span class="math notranslate nohighlight">\(\frac{qf_{\text{max},x}}{2}\)</span>. Lemma 8 tells us
+that this quantisation factor also gives an upper-bound on <span class="math notranslate nohighlight">\(x'_{qf}\)</span> for
+<span class="math notranslate nohighlight">\(1 \le qf \le \frac{x}{2}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}x'_{\frac{qf_{\text{max},x}}{2}} &amp;\le x + \frac{qf_{\text{max},x}/2}{2} \\\end{split}\]</div>
+<p>Since <span class="math notranslate nohighlight">\(\frac{qf_{\text{max},x}}{2} \le \frac{x}{2}\)</span> (lemmas 6 and 7), we
+can substitute the former for the latter in the inequality to get:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}x'_{\frac{qf_{\text{max},x}}{2}} &amp;\le x + \frac{x/2}{2} \\
+                                 &amp;\le x + \frac{x}{4} \\
+                                 &amp;\le \frac{5}{4} x \\
+                                 &amp;\le 1.25\,x\end{split}\]</div>
+<p>Lemma 4 states that:</p>
+<div class="math notranslate nohighlight">
+\[x'_{qf_{\text{max},x}} = \frac{3}{2} qf_{\text{max},x}\]</div>
+<p>Lemma 6 gives a lower-bound for <span class="math notranslate nohighlight">\(qf_{\text{max},x}\)</span> in terms of
+<span class="math notranslate nohighlight">\(x\)</span>, leading to the inequality:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}x'_{qf_{\text{max},x}} &amp;&gt; \frac{3}{2} 2^{-1/4} x \\
+                       &amp;&gt; 1.261\ldots\,x\end{split}\]</div>
+<p>From this we can conclude that:</p>
+<div class="math notranslate nohighlight">
+\[x'_{\frac{qf_{\text{max},x}}{2}} &lt; x'_{qf_{\text{max},x}}\]</div>
+<p>And since we considered the upper-bound for
+<span class="math notranslate nohighlight">\(x'_{\frac{qf_{\text{max},x}}{2}}\)</span>, which is monotonic with <span class="math notranslate nohighlight">\(qf\)</span>
+(lemma 8), we can therefore state that:</p>
+<div class="math notranslate nohighlight">
+\[x'_{qf} &lt; x'_{qf_{\text{max},x}} \quad \text{for} \quad 1 \le qf \le \frac{x}{2}\]</div>
+<p>QED.</p>
+<p><strong>Lemma 10:</strong> The largest <span class="math notranslate nohighlight">\(x'_{qf}\)</span> for any <span class="math notranslate nohighlight">\(qf\)</span> is produced for
+the largest non-zero-producing quantisation factor, <span class="math notranslate nohighlight">\(qf_{\text{max},x}\)</span>.</p>
+<p><em>Proof:</em> From the lemmas above:</p>
+<ul class="simple">
+<li><p>There exists at least one quantisation factor in the range
+<span class="math notranslate nohighlight">\(\frac{x}{2} &lt; qf_{\text{max},x} \le x\)</span> (lemma 3).</p></li>
+<li><p>Within this range, the largest quantisation factor,
+<span class="math notranslate nohighlight">\(qf_{\text{max},x}\)</span>, also produces the largest dequantised value,
+<span class="math notranslate nohighlight">\(x'_{qf_{\text{max},x}}\)</span> (lemma 5).</p></li>
+<li><p>For <span class="math notranslate nohighlight">\(qf &gt; qf_{\text{max},x}\)</span> we get <span class="math notranslate nohighlight">\(x'_{qf} = 0\)</span> (lemma 1).</p></li>
+<li><p>For <span class="math notranslate nohighlight">\(qf \le \frac{x}{2}\)</span> have shown that <span class="math notranslate nohighlight">\(x'_{qf} &lt;
+x'_{qf_{\text{max},x}}\)</span> (lemma 9).</p></li>
+</ul>
+<p>Therefore, <span class="math notranslate nohighlight">\(x'_{qf} \le x'_{qf_{\text{max},x}}\)</span> for <em>all</em> <span class="math notranslate nohighlight">\(qf\)</span>.</p>
+<p>QED.</p>
+</div>
+<div class="section" id="problem-solution">
+<h3>Problem solution<a class="headerlink" href="#problem-solution" title="Permalink to this headline">¶</a></h3>
+<p>Using the lemmas above we are able to define a solution to our original
+problem statement, repeated here for convenience:</p>
+<blockquote>
+<div><p>Given some value, <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span>, what is the largest-magnitude
+value which may be produced by
+<span class="math notranslate nohighlight">\(\text{dequantise}(\text{quantise}(x,\,qf),\,qf)\)</span> for
+<span class="math notranslate nohighlight">\(-x_{\text{max}} \le x \le x_{\text{max}}\)</span> and any <span class="math notranslate nohighlight">\(qf\)</span>?</p>
+</div></blockquote>
+<p>Lemma 10 tells us that the largest dequantised value for <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span>
+will be <span class="math notranslate nohighlight">\(qf_{\text{max},x_{\text{max}}}\)</span>, that is, the largest
+quantisation factor that doesn’t quantise <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span> to zero. Any
+other quantisation factor will never quantise <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span> to a
+larger value. Lemma 2 tells us that replacing <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span> with any
+<span class="math notranslate nohighlight">\(x &lt; x_{\text{max}}\)</span> will also never produce a larger dequantised value.</p>
+<p>The solution to the problem, therefore, is:</p>
+<div class="math notranslate nohighlight">
+\[\text{largest dequantised value} =
+    \text{dequantise}(
+        \text{quantise}(
+            x_{\text{max}},\,
+            qf_{\text{max},x_{\text{max}}}
+        ),\,
+        qf_{\text{max},x_{\text{max}}}
+    )\]</div>
+<p>QED.</p>
+</div>
+<div class="section" id="validity-under-integer-arithmetic">
+<h3>Validity under integer arithmetic<a class="headerlink" href="#validity-under-integer-arithmetic" title="Permalink to this headline">¶</a></h3>
+<p>Under VC-2’s integer arithmetic, all fractional values are truncated towards
+zero, that is, results are monotonically adjusted downward in magnitude. As a
+consequence, the monotonicity-related results for the lemmas above hold.</p>
+<p>The function <span class="math notranslate nohighlight">\(2^{qi/4}\)</span> is approximated in fixed-point arithmetic by the
+function <code class="docutils literal notranslate"><span class="pre">quant_factor</span></code> in the VC-2 specification. This approximation is
+accurate to the full precision of the arithmetic used up to quantisation index
+134, corresponding with a quantisation factor of <span class="math notranslate nohighlight">\(2^{33.5}\)</span>.  In real
+applications (which use substantially smaller quantisation factors), the
+approximation is accurate.</p>
+<p>Finally, to give additional confidence, this solution has been verified
+empirically for all 20 bit integers.</p>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Computing signal bounds with Affine Arithmetic</a><ul>
+<li><a class="reference internal" href="#analysing-linear-filters">Analysing linear filters</a></li>
+<li><a class="reference internal" href="#affine-arithmetic">Affine arithmetic</a></li>
+<li><a class="reference internal" href="#worked-example">Worked example</a></li>
+<li><a class="reference internal" href="#quantisation-and-affine-arithmetic">Quantisation and affine arithmetic</a></li>
+<li><a class="reference internal" href="#refining-worst-case-quantisation-error-bounds">Refining worst-case quantisation error bounds</a><ul>
+<li><a class="reference internal" href="#definitions">Definitions</a></li>
+<li><a class="reference internal" href="#formal-problem-statement">Formal problem statement</a></li>
+<li><a class="reference internal" href="#lemmas">Lemmas</a></li>
+<li><a class="reference internal" href="#problem-solution">Problem solution</a></li>
+<li><a class="reference internal" href="#validity-under-integer-arithmetic">Validity under integer arithmetic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="related_work.html"
+                        title="previous chapter">Related work</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="test_patterns.html"
+                        title="next chapter">Test pattern generation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/theory_and_design/aa_integer_arithmetic.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test_patterns.html" title="Test pattern generation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="related_work.html" title="Related work"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Computing signal bounds with Affine Arithmetic</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

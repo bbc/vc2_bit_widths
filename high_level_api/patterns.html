@@ -1,0 +1,293 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.patterns: Containers for test pattern data &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.json_serialisations: JSON Data File Serialisation/Deserialisation" href="json_serialisations.html" />
+    <link rel="prev" title="vc2_bit_widths.helpers: Helper Functions" href="helpers.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="json_serialisations.html" title="vc2_bit_widths.json_serialisations: JSON Data File Serialisation/Deserialisation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="helpers.html" title="vc2_bit_widths.helpers: Helper Functions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.patterns</span></code>: Containers for test pattern data</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.patterns"></span><div class="section" id="vc2-bit-widths-patterns-containers-for-test-pattern-data">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.patterns" title="vc2_bit_widths.patterns"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.patterns</span></code></a>: Containers for test pattern data<a class="headerlink" href="#vc2-bit-widths-patterns-containers-for-test-pattern-data" title="Permalink to this headline">¶</a></h1>
+<p>The following datastructures are used to define test patterns.</p>
+<div class="section" id="test-pattern-specification">
+<h2>Test pattern specification<a class="headerlink" href="#test-pattern-specification" title="Permalink to this headline">¶</a></h2>
+<p>These types define a test pattern along with information about required spacing
+or quantisation levels.</p>
+<dl class="py class">
+<dt id="vc2_bit_widths.patterns.TestPatternSpecification">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">TestPatternSpecification</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_translation_multiple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_translation_multiple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.TestPatternSpecification" title="Permalink to this definition">¶</a></dt>
+<dd><p>A definition of a test pattern for a VC-2 filter. This test pattern is intended
+to maximise the value of a particular intermediate or output value of a VC-2
+filter.</p>
+<p>Test patterns for both for analysis and synthesis filters are defined in terms
+of picture test patterns. For analysis filters, the picture should be fed
+directly to the encoder under test. For synthesis filters, the pattern must
+first be fed to an encoder and the transform coefficients quantised before
+being fed to a decoder.</p>
+<p>Test patterns tend to be quite small (tens to low hundreds of pixels square)
+and so it is usually sensible to collect together many test patterns into a
+single picture (see <a class="reference internal" href="../low_level_api/picture_packing.html#module-vc2_bit_widths.picture_packing" title="vc2_bit_widths.picture_packing"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.picture_packing</span></code></a>). To retain their
+functionality, test patterns must remain correctly aligned with their target
+filter. When relocating a test pattern, the pattern must be moved only by
+multiples of the values in <code class="docutils literal notranslate"><span class="pre">pattern_translation_multiple</span></code>. For each multiple
+moved, the target value effected by the pattern moves by the same multiple of
+<code class="docutils literal notranslate"><span class="pre">target_translation_multiple</span></code>.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>target</strong><span class="classifier">(tx, ty)</span></dt><dd><p>The target coordinate which is maximised by this test pattern.</p>
+</dd>
+<dt><strong>pattern</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.patterns.TestPattern" title="vc2_bit_widths.patterns.TestPattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPattern</span></code></a></span></dt><dd><p>The input pattern to be fed into a VC-2 encoder. Only those pixels defined
+in this pattern need be set – all other pixels may be set to arbitrary
+values and have no effect.</p>
+<p>The test pattern is specified such that the pattern is as close to the
+top-left corner as possible given <code class="docutils literal notranslate"><span class="pre">pattern_translation_multiple</span></code>, without
+any negative pixel coordinates. That is, <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">min(x)</span> <span class="pre">&lt;</span> <span class="pre">mx</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;=</span>
+<span class="pre">min(y)</span> <span class="pre">&lt;</span> <span class="pre">my</span></code>.</p>
+</dd>
+<dt><strong>pattern_translation_multiple</strong><span class="classifier">(mx, my)</span></dt><dd></dd>
+<dt><strong>target_translation_multiple</strong><span class="classifier">(tmx, tmy)</span></dt><dd><p>The multiples by which pattern pixel coordinates and target array
+coordinates may be translated when relocating the test pattern. Both the
+pattern and target must be translated by the same multiple of these two
+factors.</p>
+<p>For example, if the pattern is translated by (2*mx, 3*my), the target must
+be translated by (2*tmx, 3*tmy).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="vc2_bit_widths.patterns.OptimisedTestPatternSpecification">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">OptimisedTestPatternSpecification</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern_translation_multiple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_translation_multiple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantisation_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decoded_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_search_iterations</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.OptimisedTestPatternSpecification" title="Permalink to this definition">¶</a></dt>
+<dd><p>A test pattern specification which has been optimised to produce more extreme
+signal values for a particular codec configuration.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>target</strong><span class="classifier">(tx, ty)</span></dt><dd></dd>
+<dt><strong>pattern</strong><span class="classifier"><a class="reference internal" href="#vc2_bit_widths.patterns.TestPattern" title="vc2_bit_widths.patterns.TestPattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPattern</span></code></a></span></dt><dd></dd>
+<dt><strong>pattern_translation_multiple</strong><span class="classifier">(mx, my)</span></dt><dd></dd>
+<dt><strong>target_translation_multiple</strong><span class="classifier">(tmx, tmy)</span></dt><dd><p>Same as <a class="reference internal" href="#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a></p>
+</dd>
+<dt><strong>quantisation_index</strong><span class="classifier">int</span></dt><dd><p>The quantisation index which, when used for all coded picture slices,
+produces the largest values when this pattern is decoded.</p>
+</dd>
+<dt><strong>decoded_value</strong><span class="classifier">int</span></dt><dd><p>For informational purposes. The value which will be produced in the target
+decoder array for this input pattern.</p>
+</dd>
+<dt><strong>num_search_iterations</strong><span class="classifier">int</span></dt><dd><p>For informational purposes. The number of search iterations performed to
+find this value.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.patterns.invert_test_pattern_specification">
+<code class="sig-name descname"><span class="pre">invert_test_pattern_specification</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_pattern</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.invert_test_pattern_specification" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a <a class="reference internal" href="#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a> or
+<a class="reference internal" href="#vc2_bit_widths.patterns.OptimisedTestPatternSpecification" title="vc2_bit_widths.patterns.OptimisedTestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimisedTestPatternSpecification</span></code></a>,
+return a copy with the signal polarity inverted.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="test-pattern">
+<h2>Test pattern<a class="headerlink" href="#test-pattern" title="Permalink to this headline">¶</a></h2>
+<p>A description of a test pattern in terms of pixel polarities.</p>
+<dl class="py class">
+<dt id="vc2_bit_widths.patterns.TestPattern">
+<em class="property"><span class="pre">class</span> </em><code class="sig-name descname"><span class="pre">TestPattern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.TestPattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>A test pattern.</p>
+<p>A test pattern is described by a set of pixels with a defined polarity
+(either -1 or +1) with all other pixels being undefined (represented as 0).
+Where a pixel has +ve polarity, the maximum signal value should be used in
+test pictures, for -ve polarities, the minimum signal value should be used.</p>
+<p>This object stores test patterns as a <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code> defining a
+rectangular region where some pixels are not undefined. This region lies
+at the offset defined by <a class="reference internal" href="#vc2_bit_widths.patterns.TestPattern.origin" title="vc2_bit_widths.patterns.TestPattern.origin"><code class="xref py py-attr docutils literal notranslate"><span class="pre">origin</span></code></a> and the values within the region
+are defined by <a class="reference internal" href="#vc2_bit_widths.patterns.TestPattern.polarities" title="vc2_bit_widths.patterns.TestPattern.polarities"><code class="xref py py-attr docutils literal notranslate"><span class="pre">polarities</span></code></a>.</p>
+<p><a class="reference internal" href="#vc2_bit_widths.patterns.TestPattern" title="vc2_bit_widths.patterns.TestPattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPattern</span></code></a> objects can be constructed from either a dictionary
+of the form <code class="docutils literal notranslate"><span class="pre">{(x,</span> <span class="pre">y):</span> <span class="pre">polarity,</span> <span class="pre">...}</span></code> or from a pair of arguments,
+<code class="docutils literal notranslate"><span class="pre">origin</span></code> and <code class="docutils literal notranslate"><span class="pre">polarities</span></code> giving a <code class="docutils literal notranslate"><span class="pre">(dy,</span> <span class="pre">dx)</span></code> tuple and
+2D <code class="xref py py-class docutils literal notranslate"><span class="pre">np.array</span></code> respectively.</p>
+<dl class="py method">
+<dt id="vc2_bit_widths.patterns.TestPattern.origin">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">origin</span></code><a class="headerlink" href="#vc2_bit_widths.patterns.TestPattern.origin" title="Permalink to this definition">¶</a></dt>
+<dd><p>The origin of the rectangular region definining the test pattern given
+as (dy, dx).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Numpy-style index ordering used!</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.patterns.TestPattern.polarities">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">polarities</span></code><a class="headerlink" href="#vc2_bit_widths.patterns.TestPattern.polarities" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code> definining the polarities of the pixels
+within a rectangular region definde by <a class="reference internal" href="#vc2_bit_widths.patterns.TestPattern.origin" title="vc2_bit_widths.patterns.TestPattern.origin"><code class="xref py py-attr docutils literal notranslate"><span class="pre">origin</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.patterns.TestPattern.as_dict">
+<code class="sig-name descname"><span class="pre">as_dict</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.TestPattern.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary representation of the test pattern of the form
+<code class="docutils literal notranslate"><span class="pre">{(x,</span> <span class="pre">y):</span> <span class="pre">polarity,</span> <span class="pre">...}</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.patterns.TestPattern.as_picture_and_slice">
+<code class="sig-name descname"><span class="pre">as_picture_and_slice</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">signal_min=-1</span></em>, <em class="sig-param"><span class="pre">signal_max=1</span></em>, <em class="sig-param"><span class="pre">dtype=&lt;class</span> <span class="pre">'numpy.int64'&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.TestPattern.as_picture_and_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert this test pattern into a picture array with its origin at (0,
+0).</p>
+<p>Not supported for test patterns with pixels at negative coordinates.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>signal_min</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>signal_max</strong><span class="classifier">int</span></dt><dd><p>The values to use for pixels with negative and positive polarities,
+respecitvely.</p>
+</dd>
+<dt><strong>dtype</strong></dt><dd><p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code> datatype for the returned array.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>picture</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code></span></dt><dd><p>A test picture with its origin at (0, 0) containing the test
+pattern (with zeros in all undefined pixels).</p>
+</dd>
+<dt><strong>picture_slice</strong><span class="classifier">(<a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">slice</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">slice</span></code></a>)</span></dt><dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.array</span></code> slice identifying the region of
+<code class="docutils literal notranslate"><span class="pre">picture</span></code> which contains the test pattern.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.patterns.TestPattern.__len__">
+<code class="sig-name descname"><span class="pre">__len__</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.TestPattern.__len__" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of defined pixels in the test pattern.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="vc2_bit_widths.patterns.TestPattern.__neg__">
+<code class="sig-name descname"><span class="pre">__neg__</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.patterns.TestPattern.__neg__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <a class="reference internal" href="#vc2_bit_widths.patterns.TestPattern" title="vc2_bit_widths.patterns.TestPattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPattern</span></code></a> with inverted polarities.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.patterns</span></code>: Containers for test pattern data</a><ul>
+<li><a class="reference internal" href="#test-pattern-specification">Test pattern specification</a></li>
+<li><a class="reference internal" href="#test-pattern">Test pattern</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="helpers.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code>: Helper Functions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="json_serialisations.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code>: JSON Data File Serialisation/Deserialisation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/high_level_api/patterns.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="json_serialisations.html" title="vc2_bit_widths.json_serialisations: JSON Data File Serialisation/Deserialisation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="helpers.html" title="vc2_bit_widths.helpers: Helper Functions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.patterns</span></code>: Containers for test pattern data</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

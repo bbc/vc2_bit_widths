@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.vc2_filters: VC-2 Filters Implemented as InfiniteArrays &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.linexp: A simple Computer Algebra System with affine arithmetic" href="linexp.html" />
+    <link rel="prev" title="vc2_bit_widths.quantisation: VC-2 Quantisation" href="quantisation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="linexp.html" title="vc2_bit_widths.linexp: A simple Computer Algebra System with affine arithmetic"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="quantisation.html" title="vc2_bit_widths.quantisation: VC-2 Quantisation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters</span></code>: VC-2 Filters Implemented as <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.vc2_filters"></span><div class="section" id="vc2-bit-widths-vc2-filters-vc-2-filters-implemented-as-infinitearrays">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.vc2_filters" title="vc2_bit_widths.vc2_filters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters</span></code></a>: VC-2 Filters Implemented as <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s<a class="headerlink" href="#vc2-bit-widths-vc2-filters-vc-2-filters-implemented-as-infinitearrays" title="Permalink to this headline">¶</a></h1>
+<p>This module provides an implementation of the complete VC-2 wavelet filtering
+process in terms of <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s.</p>
+<p>By using <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>s as inputs,
+algebraic descriptions (using <a class="reference internal" href="linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a>) of the
+VC-2 filters may be assembled. From these analyses may be performed to
+determine, for example, signal ranges and rounding error bounds.</p>
+<p>Using <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.VariableArray" title="vc2_bit_widths.infinite_arrays.VariableArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">VariableArray</span></code></a>s as inputs,
+Python functions may be generated (using <a class="reference internal" href="pyexp.html#module-vc2_bit_widths.pyexp" title="vc2_bit_widths.pyexp"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyexp</span></code></a>) which
+efficiently compute individual filter outputs or intermediate values in
+isolation.</p>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>To create an <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s-based description of a VC-2 filter we
+must first define the filter to be implemented. In particular, we need a set of
+<a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a> describing the wavelets to
+use. In practice these are easily obtained from
+<a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LIFTING_FILTERS" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-data docutils literal notranslate"><span class="pre">vc2_data_tables.LIFTING_FILTERS</span></code></a> like so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_data_tables</span> <span class="kn">import</span> <span class="n">WaveletFilters</span><span class="p">,</span> <span class="n">LIFTING_FILTERS</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wavelet_index</span> <span class="o">=</span> <span class="n">WaveletFilters</span><span class="o">.</span><span class="n">haar_with_shift</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wavelet_index_ho</span> <span class="o">=</span> <span class="n">WaveletFilters</span><span class="o">.</span><span class="n">le_gall_5_3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dwt_depth</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dwt_depth_ho</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h_filter_params</span> <span class="o">=</span> <span class="n">LIFTING_FILTERS</span><span class="p">[</span><span class="n">wavelet_index_ho</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">v_filter_params</span> <span class="o">=</span> <span class="n">LIFTING_FILTERS</span><span class="p">[</span><span class="n">wavelet_index</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Given this description we can construct a set of symbolic analysis filters
+using <a class="reference internal" href="#vc2_bit_widths.vc2_filters.analysis_transform" title="vc2_bit_widths.vc2_filters.analysis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">analysis_transform()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.infinite_arrays</span> <span class="kn">import</span> <span class="n">SymbolArray</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.vc2_filters</span> <span class="kn">import</span> <span class="n">analysis_transform</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">input_picture</span> <span class="o">=</span> <span class="n">SymbolArray</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output_coeff_arrays</span><span class="p">,</span> <span class="n">intermediate_analysis_arrays</span> <span class="o">=</span> <span class="n">analysis_transform</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">h_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">v_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth_ho</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">input_picture</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Two dictionaries are returned. The first dictionary, <code class="docutils literal notranslate"><span class="pre">output_coeff_arrays</span></code>,
+provides a nested dictionary of the form <code class="docutils literal notranslate"><span class="pre">{level:</span> <span class="pre">{orient:</span> <span class="pre">array,</span> <span class="pre">...},</span> <span class="pre">...}</span></code>
+containing the <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s representing the generated
+transform coefficients.</p>
+<p>The second dictionary, <code class="docutils literal notranslate"><span class="pre">intermediate_analysis_arrays</span></code>, is of the form
+<code class="docutils literal notranslate"><span class="pre">{(level,</span> <span class="pre">array_name):</span> <span class="pre">array,</span> <span class="pre">...}</span></code> and exposes every intermediate
+<code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code> from the filtering process (see <a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>
+for a guide to the naming convention used). This dictionary contains a superset
+of the arrays contained in the first.</p>
+<p>Similarly we can use <a class="reference internal" href="#vc2_bit_widths.vc2_filters.synthesis_transform" title="vc2_bit_widths.vc2_filters.synthesis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">synthesis_transform()</span></code></a> to construct an algebraic
+description of the synthesis filters. This function takes an array for
+each transform component as input. The <a class="reference internal" href="#vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays" title="vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_symbol_coeff_arrays()</span></code></a>
+utility function provides a convenient way to produce the necessary
+<a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>s:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.vc2_filters</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="n">make_symbol_coeff_arrays</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">synthesis_transform</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">input_coeff_arrays</span> <span class="o">=</span> <span class="n">make_symbol_coeff_arrays</span><span class="p">(</span><span class="n">dwt_depth</span><span class="p">,</span> <span class="n">dwt_depth_ho</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output_picture</span><span class="p">,</span> <span class="n">intermediate_synthesis_arrays</span> <span class="o">=</span> <span class="n">synthesis_transform</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">h_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">v_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth_ho</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">input_coeff_arrays</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>As before, two values are returned. The first, <code class="docutils literal notranslate"><span class="pre">output_picture</span></code>, is a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code> representing the final decoded picture. The second,
+<code class="docutils literal notranslate"><span class="pre">intermediate_synthesis_arrays</span></code>, again contains all of the intermediate
+<code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s (and the output picture).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <a class="reference internal" href="#vc2_bit_widths.vc2_filters.analysis_transform" title="vc2_bit_widths.vc2_filters.analysis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">analysis_transform()</span></code></a> and <a class="reference internal" href="#vc2_bit_widths.vc2_filters.synthesis_transform" title="vc2_bit_widths.vc2_filters.synthesis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">synthesis_transform()</span></code></a>
+functions always return almost immediately since
+<a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s only compute
+their values on-demand. For very large transforms, accessing values within
+these arrays (and triggering their evaluation) can take a non-trivial
+amount of time and memory.</p>
+</div>
+</div>
+<div class="section" id="omitting-arrays">
+<h2>Omitting arrays<a class="headerlink" href="#omitting-arrays" title="Permalink to this headline">¶</a></h2>
+<p>Some of the intermediate arrays returned by <a class="reference internal" href="#vc2_bit_widths.vc2_filters.analysis_transform" title="vc2_bit_widths.vc2_filters.analysis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">analysis_transform()</span></code></a> and
+<a class="reference internal" href="#vc2_bit_widths.vc2_filters.synthesis_transform" title="vc2_bit_widths.vc2_filters.synthesis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">synthesis_transform()</span></code></a> are simple interleavings/subsamplings/renamings
+of other intermediate arrays. These arrays may be identified using their
+<a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray.nop" title="vc2_bit_widths.infinite_arrays.InfiniteArray.nop"><code class="xref py py-attr docutils literal notranslate"><span class="pre">nop</span></code></a> property and
+skipped to avoid duplicating work when performing filter analysis.</p>
+<p>When arrays have been skipped during processing it can still be helpful to show
+the duplicate entries when results are presented. The
+<a class="reference internal" href="#vc2_bit_widths.vc2_filters.add_missing_analysis_values" title="vc2_bit_widths.vc2_filters.add_missing_analysis_values"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_missing_analysis_values()</span></code></a> and
+<a class="reference internal" href="#vc2_bit_widths.vc2_filters.add_missing_synthesis_values" title="vc2_bit_widths.vc2_filters.add_missing_synthesis_values"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_missing_synthesis_values()</span></code></a> functions are provided to perform
+exactly this task.</p>
+<p>For example, lets count up the number of symbols in each filter phase in the
+example wavelet transforms, skipping duplicate arrays:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">count_symbols</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">symbols</span><span class="p">()))</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">analysis_symbol_counts</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> <span class="n">count_symbols</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">),</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">intermediate_analysis_arrays</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">period</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">period</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">array</span><span class="o">.</span><span class="n">nop</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">synthesis_symbol_counts</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> <span class="n">count_symbols</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">),</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">intermediate_synthesis_arrays</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">period</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">period</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">array</span><span class="o">.</span><span class="n">nop</span>
+<span class="gp">... </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>We can then fill in all of the missing entries and present the results to the
+user:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.vc2_filters</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="gp">... </span>    <span class="n">add_missing_analysis_values</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">add_missing_synthesis_values</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">full_analysis_symbol_counts</span> <span class="o">=</span> <span class="n">add_missing_analysis_values</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">h_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">v_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth_ho</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">analysis_symbol_counts</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">full_synthesis_symbol_counts</span> <span class="o">=</span> <span class="n">add_missing_synthesis_values</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">h_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">v_filter_params</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">dwt_depth_ho</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">synthesis_symbol_counts</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">symbol_count</span> <span class="ow">in</span> <span class="n">full_analysis_symbol_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> symbols&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">symbol_count</span>
+<span class="gp">... </span>    <span class="p">))</span>
+<span class="go">4 Input 0 0: 1 symbols</span>
+<span class="go">4 DC 0 0: 1 symbols</span>
+<span class="go">4 DC&#39; 0 0: 1 symbols</span>
+<span class="go">4 DC&#39; 1 0: 4 symbols</span>
+<span class="go">&lt;...snip...&gt;</span>
+<span class="go">1 DC&#39;&#39; 0 0: 340 symbols</span>
+<span class="go">1 DC&#39;&#39; 1 0: 245 symbols</span>
+<span class="go">1 L 0 0: 340 symbols</span>
+<span class="go">1 H 0 0: 245 symbols</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">symbol_count</span> <span class="ow">in</span> <span class="n">full_synthesis_symbol_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> symbols&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="n">level</span><span class="p">,</span> <span class="n">array_name</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">symbol_count</span>
+<span class="gp">... </span>    <span class="p">))</span>
+<span class="go">1 L 0 0: 1 symbols</span>
+<span class="go">1 H 0 0: 1 symbols</span>
+<span class="go">1 DC&#39;&#39; 0 0: 1 symbols</span>
+<span class="go">1 DC&#39;&#39; 1 0: 1 symbols</span>
+<span class="go">&lt;...snip...&gt;</span>
+<span class="go">4 Output 14 0: 34 symbols</span>
+<span class="go">4 Output 14 1: 38 symbols</span>
+<span class="go">4 Output 15 0: 42 symbols</span>
+<span class="go">4 Output 15 1: 48 symbols</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="transforms">
+<h3>Transforms<a class="headerlink" href="#transforms" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="vc2_bit_widths.vc2_filters.analysis_transform">
+<code class="sig-name descname"><span class="pre">analysis_transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.vc2_filters.analysis_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a multi-level VC-2 analysis Discrete Wavelet Transform (DWT) on a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code> in a manner which is the complement of the ‘idwt’
+pseudocode function described in (15.4.1) in the VC-2 standard.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>h_filter_params, v_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd><p>Horizontal and vertical filter parameters for the corresponding
+<em>synthesis</em> trhansform (e.g. from
+<a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LIFTING_FILTERS" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-data docutils literal notranslate"><span class="pre">vc2_data_tables.LIFTING_FILTERS</span></code></a>). These filter parameters
+will be transformed into analysis lifting stages internally.</p>
+</dd>
+<dt><strong>dwt_depth, dwt_depth_ho: int</strong></dt><dd><p>Transform depths for 2D and horizontal-only transforms.</p>
+</dd>
+<dt><strong>array</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></span></dt><dd><p>The array representing the picture to be analysed.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>coeff_arrays</strong><span class="classifier">{level: {orientation: <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>, …}, …}</span></dt><dd><p>The output transform coefficient values. These nested dictionaries are
+indexed the same way as ‘coeff_data’ in the idwt pseudocode function in
+(15.4.1) in the VC-2 specification.</p>
+</dd>
+<dt><strong>intermediate_arrays</strong><span class="classifier">{(level, array_name): <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>, …}</span></dt><dd><p>All intermediate (and output) value arrays, named according to the
+convention described in <a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>.</p>
+<p>This value is returned as an <a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.OrderedDict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code></a>
+giving the arrays in their order of creation; a sensible order for
+display purposes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.vc2_filters.synthesis_transform">
+<code class="sig-name descname"><span class="pre">synthesis_transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coeff_arrays</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.vc2_filters.synthesis_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a multi-level VC-2 synthesis Inverse Discrete Wavelet Transform
+(IDWT) on a <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code> in a manner equivalent to the ‘idwt’
+pseudocode function in (15.4.1) of the VC-2 standard.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>h_filter_params, v_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd><p>Horizontal and vertical filter synthesis filter parameters (e.g. from
+<a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LIFTING_FILTERS" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-data docutils literal notranslate"><span class="pre">vc2_data_tables.LIFTING_FILTERS</span></code></a>).</p>
+</dd>
+<dt><strong>dwt_depth, dwt_depth_ho: int</strong></dt><dd><p>Transform depths for 2D and horizontal-only transforms.</p>
+</dd>
+<dt><strong>coeff_arrays</strong><span class="classifier">{level: {orientation: <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>, …}, …}</span></dt><dd><p>The transform coefficient arrays to be used for synthesis. These nested
+dictionaries are indexed the same way as ‘coeff_data’ in the idwt
+pseudocode function in (15.4.1) in the VC-2 specification. See
+<a class="reference internal" href="#vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays" title="vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_symbol_coeff_arrays()</span></code></a> and
+<a class="reference internal" href="#vc2_bit_widths.vc2_filters.make_variable_coeff_arrays" title="vc2_bit_widths.vc2_filters.make_variable_coeff_arrays"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_variable_coeff_arrays()</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>array</strong><span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></span></dt><dd><p>The final output array (i.e. decoded picture).</p>
+</dd>
+<dt><strong>intermediate_arrays</strong><span class="classifier">{(level, array_name): <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>, …}</span></dt><dd><p>All intermediate (and output) value arrays, named according to the
+convention described in <a class="reference internal" href="../introduction/terminology.html#terminology"><span class="std std-ref">Terminology</span></a>.</p>
+<p>This value is returned as an <a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.OrderedDict" title="(in Python v3.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code></a>
+giving the arrays in their order of creation; a sensible order for
+display purposes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="coefficient-array-creation-utilities">
+<h3>Coefficient array creation utilities<a class="headerlink" href="#coefficient-array-creation-utilities" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays">
+<code class="sig-name descname"><span class="pre">make_symbol_coeff_arrays</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'coeff'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.vc2_filters.make_symbol_coeff_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>s
+representing transform coefficient values, as expected by
+<a class="reference internal" href="#vc2_bit_widths.vc2_filters.synthesis_transform" title="vc2_bit_widths.vc2_filters.synthesis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">synthesis_transform()</span></code></a>.</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl>
+<dt><strong>coeff_arrays</strong><span class="classifier">{level: {orientation: <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>, …}, …}</span></dt><dd><p>The transform coefficient values. These dictionaries are indexed the
+same way as ‘coeff_data’ in the idwt pseudocode function in (15.4.1) in
+the VC-2 specification.</p>
+<p>The symbols will have the naming convention <code class="docutils literal notranslate"><span class="pre">((prefix,</span> <span class="pre">level,</span> <span class="pre">orient),</span>
+<span class="pre">x,</span> <span class="pre">y)</span></code>
+where:</p>
+<ul class="simple">
+<li><p>prefix is given by the ‘prefix’ argument</p></li>
+<li><p>level is an integer giving the level number</p></li>
+<li><p>orient is the transform orientation (one of “L”, “H”, “LL”, “LH”,
+“HL” or “HH”).</p></li>
+<li><p>x and y are the coordinate of the coefficient within that subband.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.vc2_filters.make_variable_coeff_arrays">
+<code class="sig-name descname"><span class="pre">make_variable_coeff_arrays</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Argument('coeffs')</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.vc2_filters.make_variable_coeff_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a set of <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.SymbolArray" title="vc2_bit_widths.infinite_arrays.SymbolArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">SymbolArray</span></code></a>s
+representing transform coefficient values, as expected by
+<a class="reference internal" href="#vc2_bit_widths.vc2_filters.synthesis_transform" title="vc2_bit_widths.vc2_filters.synthesis_transform"><code class="xref py py-func docutils literal notranslate"><span class="pre">synthesis_transform()</span></code></a>.</p>
+<dl class="field-list">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl>
+<dt><strong>coeff_arrays</strong><span class="classifier">{level: {orientation: <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.VariableArray" title="vc2_bit_widths.infinite_arrays.VariableArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">VariableArray</span></code></a>, …}, …}</span></dt><dd><p>The transform coefficient values. These dictionaries are indexed the
+same way as ‘coeff_data’ in the idwt pseudocode function in (15.4.1) in
+the VC-2 specification.</p>
+<p>The expressions within the
+<a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.VariableArray" title="vc2_bit_widths.infinite_arrays.VariableArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">VariableArray</span></code></a>s will be
+indexed as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vc2_bit_widths.pyexp</span> <span class="kn">import</span> <span class="n">Argument</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coeffs_arg</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="s2">&quot;coeffs_arg&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coeff_arrays</span> <span class="o">=</span> <span class="n">make_variable_coeff_arrays</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">coeffs_arg</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coeff_arrays</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s2">&quot;LH&quot;</span><span class="p">][</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">coeffs_arg</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s2">&quot;LH&quot;</span><span class="p">][</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="omitted-value-insertion">
+<h3>Omitted value insertion<a class="headerlink" href="#omitted-value-insertion" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt id="vc2_bit_widths.vc2_filters.add_missing_analysis_values">
+<code class="sig-name descname"><span class="pre">add_missing_analysis_values</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.vc2_filters.add_missing_analysis_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill in results for omitted (duplicate) filter arrays and phases.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>h_filter_params, v_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd></dd>
+<dt><strong>dwt_depth, dwt_depth_ho: int</strong></dt><dd><p>The filter parameters.</p>
+</dd>
+<dt><strong>analysis_values</strong><span class="classifier">{(level, array_name, x, y): value, …}</span></dt><dd><p>A dictionary of values associated with individual intermediate analysis
+filter phases with entries omitted where arrays are just
+interleavings/subsamplings/renamings.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>full_analysis_values</strong><span class="classifier">{(level, array_name, x, y): value, …}</span></dt><dd><p>A new dictionary of values with missing filters and phases filled in.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.vc2_filters.add_missing_synthesis_values">
+<code class="sig-name descname"><span class="pre">add_missing_synthesis_values</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_filter_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">synthesis_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_in_equivalent_phases</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.vc2_filters.add_missing_synthesis_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fill in results for omitted (duplicate) filter arrays and phases.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>h_filter_params, v_filter_params</strong><span class="classifier"><a class="reference external" href="https://bbc.github.io/vc2_data_tables/api.html#vc2_data_tables.LiftingFilterParameters" title="(in SMPTE ST 2042-1 (VC-2) Data Tables v0.1.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">vc2_data_tables.LiftingFilterParameters</span></code></a></span></dt><dd></dd>
+<dt><strong>dwt_depth, dwt_depth_ho: int</strong></dt><dd><p>The filter parameters.</p>
+</dd>
+<dt><strong>synthesis_values</strong><span class="classifier">{(level, array_name, x, y): value, …}</span></dt><dd><p>A dictionary of values associated with individual intermediate
+synthesis filter phases with entries omitted where arrays are just
+interleavings/subsamplings/renamings.</p>
+</dd>
+<dt><strong>fill_in_equivalent_phases</strong><span class="classifier">bool</span></dt><dd><p>When two <a class="reference internal" href="infinite_arrays.html#vc2_bit_widths.infinite_arrays.InfiniteArray" title="vc2_bit_widths.infinite_arrays.InfiniteArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code></a>s
+with different periods are interleaved, the interleaved signal’s period
+will include repetitions of some phases of one of the input arrays. For
+example, consider the following arrays:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">a</span> <span class="o">=</span> <span class="o">...</span> <span class="n">a0</span> <span class="n">a1</span> <span class="n">a0</span> <span class="n">a1</span> <span class="o">...</span>    <span class="p">(</span><span class="n">Period</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
+ <span class="n">b</span> <span class="o">=</span> <span class="o">...</span> <span class="n">b0</span> <span class="n">b0</span> <span class="n">b0</span> <span class="n">b0</span> <span class="o">...</span>    <span class="p">(</span><span class="n">Period</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">ab</span> <span class="o">=</span> <span class="o">...</span> <span class="n">a0</span> <span class="n">b0</span> <span class="n">a1</span> <span class="n">b0</span> <span class="o">...</span>    <span class="p">(</span><span class="n">Period</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this example, the interleaved array has a period of 4 with two
+phases coming from a and two from b. Since b has a period of one,
+however, one of the phases of ab contains a repeat of one of the phases
+of ‘b’.</p>
+<p>Since in a de-duplicated set of filters and phases, duplicate phases
+appearing in interleaved arrays are not present, some other value must
+be used when filling in these phases. If the
+‘fill_in_equivalent_phases’ argument is True (the default), the value
+from an equivalent phase will be copied in. If False, None will be used
+instead.</p>
+<p>Where the dictionary being filled in contains results generic to the
+phase being used (and not the specific filter coordinates), the default
+value of ‘True’ will give the desired results.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>full_synthesis_values</strong><span class="classifier">{(level, array_name, x, y): value, …}</span></dt><dd><p>A new dictionary of values with missing filters and phases filled in.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters</span></code>: VC-2 Filters Implemented as <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s</a><ul>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#omitting-arrays">Omitting arrays</a></li>
+<li><a class="reference internal" href="#api">API</a><ul>
+<li><a class="reference internal" href="#transforms">Transforms</a></li>
+<li><a class="reference internal" href="#coefficient-array-creation-utilities">Coefficient array creation utilities</a></li>
+<li><a class="reference internal" href="#omitted-value-insertion">Omitted value insertion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="quantisation.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.quantisation</span></code>: VC-2 Quantisation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="linexp.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.linexp</span></code>: A simple Computer Algebra System with affine arithmetic</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/vc2_filters.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="linexp.html" title="vc2_bit_widths.linexp: A simple Computer Algebra System with affine arithmetic"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="quantisation.html" title="vc2_bit_widths.quantisation: VC-2 Quantisation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters</span></code>: VC-2 Filters Implemented as <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

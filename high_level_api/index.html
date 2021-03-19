@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>High-level Python API Reference &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.helpers: Helper Functions" href="helpers.html" />
+    <link rel="prev" title="vc2-bundle" href="../cli/vc2_bundle.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="helpers.html" title="vc2_bit_widths.helpers: Helper Functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../cli/vc2_bundle.html" title="vc2-bundle"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">High-level Python API Reference</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths"></span><div class="section" id="high-level-python-api-reference">
+<span id="high-level-api"></span><h1>High-level Python API Reference<a class="headerlink" href="#high-level-python-api-reference" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-vc2_bit_widths" title="vc2_bit_widths"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths</span></code></a> Python module exposes the underlying functionality
+provided by the command-line utilities (see <a class="reference internal" href="../cli/index.html#cli"><span class="std std-ref">Command-line utilities reference</span></a>) via a Python interface.
+In addition, Python functions are provided for assisting in the serialisation
+and deserialisation of the file formats used by the command-line utilities.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="helpers.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code>: Helper Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html#static-filter-analysis">Static filter analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html#calculating-bit-width-requirements">Calculating bit-width requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html#bounding-quantisation-indices">Bounding quantisation indices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html#optimising-synthesis-test-patterns">Optimising synthesis test patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helpers.html#generating-test-pictures">Generating test pictures</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="patterns.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.patterns</span></code>: Containers for test pattern data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="patterns.html#test-pattern-specification">Test pattern specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="patterns.html#test-pattern">Test pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="json_serialisations.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code>: JSON Data File Serialisation/Deserialisation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="json_serialisations.html#signal-bounds">Signal bounds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="json_serialisations.html#test-patterns">Test patterns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="json_serialisations.html#quantisation-matrices">Quantisation matrices</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bundle.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.bundle</span></code>: Analysis file bundling</a></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../cli/vc2_bundle.html"
+                        title="previous chapter"><code class="docutils literal notranslate"><span class="pre">vc2-bundle</span></code></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="helpers.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers</span></code>: Helper Functions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/high_level_api/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="helpers.html" title="vc2_bit_widths.helpers: Helper Functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../cli/vc2_bundle.html" title="vc2-bundle"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">High-level Python API Reference</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

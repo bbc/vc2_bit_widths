@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.json_serialisations: JSON Data File Serialisation/Deserialisation &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.bundle: Analysis file bundling" href="bundle.html" />
+    <link rel="prev" title="vc2_bit_widths.patterns: Containers for test pattern data" href="patterns.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bundle.html" title="vc2_bit_widths.bundle: Analysis file bundling"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="patterns.html" title="vc2_bit_widths.patterns: Containers for test pattern data"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code>: JSON Data File Serialisation/Deserialisation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.json_serialisations"></span><div class="section" id="vc2-bit-widths-json-serialisations-json-data-file-serialisation-deserialisation">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.json_serialisations" title="vc2_bit_widths.json_serialisations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code></a>: JSON Data File Serialisation/Deserialisation<a class="headerlink" href="#vc2-bit-widths-json-serialisations-json-data-file-serialisation-deserialisation" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-vc2_bit_widths.json_serialisations" title="vc2_bit_widths.json_serialisations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code></a> module provides functions for
+serialising and deserialising parts of the JSON files produced by the various
+command-line interfaces to <a class="reference internal" href="index.html#module-vc2_bit_widths" title="vc2_bit_widths"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths</span></code></a> (see <a class="reference internal" href="../cli/index.html#cli"><span class="std std-ref">Command-line utilities reference</span></a>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These functions do not serialise/deserialise JSON directly, instead they
+produce/accept standard Python data structures compatible with the Python
+<a class="reference external" href="https://docs.python.org/3/library/json.html#module-json" title="(in Python v3.9)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">json</span></code></a> module.</p>
+</div>
+<div class="section" id="signal-bounds">
+<h2>Signal bounds<a class="headerlink" href="#signal-bounds" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.serialise_signal_bounds">
+<code class="sig-name descname"><span class="pre">serialise_signal_bounds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal_bounds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.serialise_signal_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a dictionary of analysis or synthesis signal bounds expressions
+into a JSON-serialisable form.</p>
+<p>See <a class="reference internal" href="#vc2_bit_widths.json_serialisations.serialise_linexp" title="vc2_bit_widths.json_serialisations.serialise_linexp"><code class="xref py py-func docutils literal notranslate"><span class="pre">serialise_linexp()</span></code></a> for details of the <code class="docutils literal notranslate"><span class="pre">&quot;lower_bound&quot;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&quot;upper_bound&quot;</span></code> fields.</p>
+<dl>
+<dt>For example::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">before</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;LH&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span> <span class="p">(</span>
+<span class="gp">... </span>        <span class="n">LinExp</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">LinExp</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">),</span>
+<span class="gp">... </span>    <span class="o">...</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">serialise_signal_bounds</span><span class="p">(</span><span class="n">before</span><span class="p">)</span>
+<span class="go">[</span>
+<span class="go">    {</span>
+<span class="go">        &quot;level&quot;: 1,</span>
+<span class="go">        &quot;array_name&quot;: &quot;LH&quot;,</span>
+<span class="go">        &quot;phase&quot;: [2, 3],</span>
+<span class="go">        &quot;lower_bound&quot;: [</span>
+<span class="go">            {&quot;symbol&quot;: &quot;foo&quot;, &quot;numer&quot;: &quot;1&quot;, &quot;denom&quot;: &quot;2&quot;},</span>
+<span class="go">            {&quot;symbol&quot;: None, &quot;numer&quot;: &quot;1&quot;, &quot;denom&quot;: &quot;1&quot;},</span>
+<span class="go">        ],</span>
+<span class="go">        &quot;upper_bound&quot;: [</span>
+<span class="go">            {&quot;symbol&quot;: &quot;bar&quot;, &quot;numer&quot;: &quot;1&quot;, &quot;denom&quot;: &quot;4&quot;},</span>
+<span class="go">            {&quot;symbol&quot;: None, &quot;numer&quot;: &quot;2&quot;, &quot;denom&quot;: &quot;1&quot;},</span>
+<span class="go">        ],</span>
+<span class="go">    },</span>
+<span class="go">    ...</span>
+<span class="go">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.deserialise_signal_bounds">
+<code class="sig-name descname"><span class="pre">deserialise_signal_bounds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal_bounds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.deserialise_signal_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverse of <a class="reference internal" href="#vc2_bit_widths.json_serialisations.serialise_signal_bounds" title="vc2_bit_widths.json_serialisations.serialise_signal_bounds"><code class="xref py py-func docutils literal notranslate"><span class="pre">serialise_signal_bounds()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.serialise_linexp">
+<code class="sig-name descname"><span class="pre">serialise_linexp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.serialise_linexp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialise a restricted subset of <a class="reference internal" href="../low_level_api/linexp.html#vc2_bit_widths.linexp.LinExp" title="vc2_bit_widths.linexp.LinExp"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinExp</span></code></a>
+s into JSON form.</p>
+<p>Restrictions:</p>
+<ul class="simple">
+<li><p>Only supports expressions made up of rational values (i.e. no floating
+point coefficients/constants.</p></li>
+<li><p>Symbols must all be strings (i.e. no tuples or
+<a class="reference internal" href="../low_level_api/linexp.html#vc2_bit_widths.linexp.AAError" title="vc2_bit_widths.linexp.AAError"><code class="xref py py-class docutils literal notranslate"><span class="pre">AAError</span></code></a> sybols)</p></li>
+</ul>
+<dl>
+<dt>Example::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">before</span> <span class="o">=</span> <span class="n">LinExp</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="kc">None</span><span class="p">:</span> <span class="n">Fraction</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">serialise_linexp</span><span class="p">(</span><span class="n">before</span><span class="p">)</span>
+<span class="go">[</span>
+<span class="go">    {&quot;symbol&quot;: &quot;a&quot;, &quot;numer&quot;: &quot;1&quot;, &quot;denom&quot;: &quot;5&quot;},</span>
+<span class="go">    {&quot;symbol&quot;: &quot;b&quot;, &quot;numer&quot;: &quot;10&quot;, &quot;denom&quot;: &quot;1&quot;},</span>
+<span class="go">    {&quot;symbol&quot;: None, &quot;numer&quot;: &quot;-2&quot;, &quot;denom&quot;: &quot;3&quot;},</span>
+<span class="go">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Numbers are encoded as strings to avoid floating point precision
+limitations.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.deserialise_linexp">
+<code class="sig-name descname"><span class="pre">deserialise_linexp</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.deserialise_linexp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverse of <a class="reference internal" href="#vc2_bit_widths.json_serialisations.serialise_linexp" title="vc2_bit_widths.json_serialisations.serialise_linexp"><code class="xref py py-func docutils literal notranslate"><span class="pre">serialise_linexp()</span></code></a>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="test-patterns">
+<h2>Test patterns<a class="headerlink" href="#test-patterns" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.serialise_test_pattern_specifications">
+<code class="sig-name descname"><span class="pre">serialise_test_pattern_specifications</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec_namedtuple_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_patterns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.serialise_test_pattern_specifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a dictionary of analysis or synthesis test pattern specifications into a
+JSON-serialisable form.</p>
+<p>See <a class="reference internal" href="#vc2_bit_widths.json_serialisations.serialise_test_pattern" title="vc2_bit_widths.json_serialisations.serialise_test_pattern"><code class="xref py py-func docutils literal notranslate"><span class="pre">serialise_test_pattern()</span></code></a> for the serialisation used for the
+pattern data.</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">before</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;LH&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span> <span class="n">TestPatternSpecification</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="n">target</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="n">pattern</span><span class="o">=</span><span class="n">TestPattern</span><span class="p">({(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span> <span class="n">polarity</span><span class="p">,</span> <span class="o">...</span><span class="p">}),</span>
+<span class="gp">... </span>        <span class="n">pattern_translation_multiple</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="n">target_translation_multiple</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">),</span>
+<span class="gp">... </span>    <span class="o">...</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">serialise_test_pattern_specifications</span><span class="p">(</span><span class="n">TestPatternSpecification</span><span class="p">,</span> <span class="n">before</span><span class="p">)</span>
+<span class="go">[</span>
+<span class="go">    {</span>
+<span class="go">        &quot;level&quot;: 1,</span>
+<span class="go">        &quot;array_name&quot;: &quot;LH&quot;,</span>
+<span class="go">        &quot;phase&quot;: [2, 3],</span>
+<span class="go">        &quot;target&quot;: [4, 5],</span>
+<span class="go">        &quot;pattern&quot;: {...},</span>
+<span class="go">        &quot;pattern_translation_multiple&quot;: [6, 7],</span>
+<span class="go">        &quot;target_translation_multiple&quot;: [8, 9],</span>
+<span class="go">    },</span>
+<span class="go">    ...</span>
+<span class="go">]</span>
+</pre></div>
+</div>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>spec_namedtuple_type</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.namedtuple" title="(in Python v3.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">namedtuple()</span></code></a> class</span></dt><dd><p>The namedtuple used to hold the test pattern specification. One of
+<a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>
+or
+<a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.OptimisedTestPatternSpecification" title="vc2_bit_widths.patterns.OptimisedTestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimisedTestPatternSpecification</span></code></a>.</p>
+</dd>
+<dt><strong>test_patterns</strong><span class="classifier">{(level, array_name, x, y): (…), …}</span></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications">
+<code class="sig-name descname"><span class="pre">deserialise_test_pattern_specifications</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec_namedtuple_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_patterns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.deserialise_test_pattern_specifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverse of <a class="reference internal" href="#vc2_bit_widths.json_serialisations.serialise_test_pattern_specifications" title="vc2_bit_widths.json_serialisations.serialise_test_pattern_specifications"><code class="xref py py-func docutils literal notranslate"><span class="pre">serialise_test_pattern_specifications()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.serialise_test_pattern">
+<code class="sig-name descname"><span class="pre">serialise_test_pattern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_pattern</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.serialise_test_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a <code class="xref py py-class docutils literal notranslate"><span class="pre">TestPattern</span></code> into a compact JSON-serialisable form.</p>
+<dl>
+<dt>For example::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">before</span> <span class="o">=</span> <span class="n">TestPattern</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">12</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">12</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">12</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">13</span><span class="p">):</span> <span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">serialise_test_pattern</span><span class="p">(</span><span class="n">before</span><span class="p">)</span>
+<span class="go">{</span>
+<span class="go">    &#39;dx&#39;: 4,</span>
+<span class="go">    &#39;dy&#39;: 10,</span>
+<span class="go">    &#39;width&#39;: 4,</span>
+<span class="go">    &#39;height&#39;: 4,</span>
+<span class="go">    &#39;positive&#39;: &#39;paU=&#39;,</span>
+<span class="go">    &#39;mask&#39;: &#39;//8=&#39;,</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>The serialised format is based on a Base64 (RFC 3548) encoded bit-packed
+positive/mask representation of the picture.</p>
+<p>In a positive/mask representation, the input picture is represented as two
+binary arrays: ‘positive’ and ‘mask’. When an entry in the mask is 1, a 1
+in the corresponding positive array means ‘+1’ and a 0 means ‘-1’. When the
+mask entry is 0, the corresponding entry in the positive array is ignored
+and a value of ‘0’ is assumed.</p>
+<p>The positive and mask arrays are defined as having their bottom left corner
+at (dx, dy) and having the width and height defined. All values outside of
+this region are zero.</p>
+<p>The positive and mask arrays are serialised in raster-scan order into a bit
+array. This bit array is packed into bytes with the first bit in each byte
+being the most significant.</p>
+<p>The byte-packed bit arrays are finally Base64 (RFC 3548) encoded into the
+‘positive’ and ‘mask’ fields.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.deserialise_test_pattern">
+<code class="sig-name descname"><span class="pre">deserialise_test_pattern</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.deserialise_test_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverse of <code class="xref py py-func docutils literal notranslate"><span class="pre">serialise_namedtuple()</span></code>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="quantisation-matrices">
+<h2>Quantisation matrices<a class="headerlink" href="#quantisation-matrices" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.serialise_quantisation_matrix">
+<code class="sig-name descname"><span class="pre">serialise_quantisation_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantisation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.serialise_quantisation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a quantisation matrix into JSON-serialisable form.</p>
+<dl>
+<dt>For example::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">before</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="mi">1</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;H&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">serialise_quantisation_matrix</span><span class="p">(</span><span class="n">before</span><span class="p">)</span>
+<span class="go">{&quot;0&quot;: {&quot;L&quot;: 2}, &quot;1&quot;: {&quot;H&quot;: 0}}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.json_serialisations.deserialise_quantisation_matrix">
+<code class="sig-name descname"><span class="pre">deserialise_quantisation_matrix</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantisation_matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.json_serialisations.deserialise_quantisation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverse of <a class="reference internal" href="#vc2_bit_widths.json_serialisations.serialise_quantisation_matrix" title="vc2_bit_widths.json_serialisations.serialise_quantisation_matrix"><code class="xref py py-func docutils literal notranslate"><span class="pre">serialise_quantisation_matrix()</span></code></a>.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code>: JSON Data File Serialisation/Deserialisation</a><ul>
+<li><a class="reference internal" href="#signal-bounds">Signal bounds</a></li>
+<li><a class="reference internal" href="#test-patterns">Test patterns</a></li>
+<li><a class="reference internal" href="#quantisation-matrices">Quantisation matrices</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="patterns.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.patterns</span></code>: Containers for test pattern data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="bundle.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.bundle</span></code>: Analysis file bundling</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/high_level_api/json_serialisations.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="bundle.html" title="vc2_bit_widths.bundle: Analysis file bundling"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="patterns.html" title="vc2_bit_widths.patterns: Containers for test pattern data"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code>: JSON Data File Serialisation/Deserialisation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

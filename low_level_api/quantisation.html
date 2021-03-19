@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.quantisation: VC-2 Quantisation &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="vc2_bit_widths.vc2_filters: VC-2 Filters Implemented as InfiniteArrays" href="vc2_filters.html" />
+    <link rel="prev" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise: Fast single value encode, quantise and decode" href="fast_partial_analyse_quantise_synthesise.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_filters.html" title="vc2_bit_widths.vc2_filters: VC-2 Filters Implemented as InfiniteArrays"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="fast_partial_analyse_quantise_synthesise.html" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise: Fast single value encode, quantise and decode"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.quantisation</span></code>: VC-2 Quantisation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.quantisation"></span><div class="section" id="vc2-bit-widths-quantisation-vc-2-quantisation">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.quantisation" title="vc2_bit_widths.quantisation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.quantisation</span></code></a>: VC-2 Quantisation<a class="headerlink" href="#vc2-bit-widths-quantisation-vc-2-quantisation" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-vc2_bit_widths.quantisation" title="vc2_bit_widths.quantisation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.quantisation</span></code></a> module contains an implementation of
+VC-2’s quantisation scheme along with functions for analysing its properties.</p>
+<div class="section" id="quantisation-dequantisation">
+<h2>Quantisation &amp; dequantisation<a class="headerlink" href="#quantisation-dequantisation" title="Permalink to this headline">¶</a></h2>
+<p>The VC-2 quantisation related pseudocode functions are implemented as follows:</p>
+<dl class="py function">
+<dt id="vc2_bit_widths.quantisation.forward_quant">
+<code class="sig-name descname"><span class="pre">forward_quant</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coeff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quant_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.quantisation.forward_quant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quantise a value according to the informative description in (13.3.1)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.quantisation.inverse_quant">
+<code class="sig-name descname"><span class="pre">inverse_quant</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantized_coeff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quant_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.quantisation.inverse_quant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dequantise a value using the normative method in (13.3.1)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.quantisation.quant_factor">
+<code class="sig-name descname"><span class="pre">quant_factor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.quantisation.quant_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the quantisation factor for a given quantisation index. (13.3.2)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.quantisation.quant_offset">
+<code class="sig-name descname"><span class="pre">quant_offset</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.quantisation.quant_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the quantisation offset for a given quantisation index. (13.3.2)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="analysis">
+<h2>Analysis<a class="headerlink" href="#analysis" title="Permalink to this headline">¶</a></h2>
+<p>The following functions compute incidental information about the behaviour of
+the VC-2 quantisation scheme.</p>
+<dl class="py function">
+<dt id="vc2_bit_widths.quantisation.maximum_useful_quantisation_index">
+<code class="sig-name descname"><span class="pre">maximum_useful_quantisation_index</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.quantisation.maximum_useful_quantisation_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the smallest quantisation index which quantizes the supplied value
+to zero. This is considered to be the largest useful quantisation index
+with respect to this value.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.quantisation.maximum_dequantised_magnitude">
+<code class="sig-name descname"><span class="pre">maximum_dequantised_magnitude</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.quantisation.maximum_dequantised_magnitude" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the value with the largest magnitude that the supplied value may be
+dequantised to for any quantisation index.</p>
+<p>See <a class="reference internal" href="../theory_and_design/aa_integer_arithmetic.html#theory-affine-arithmetic-quantisation"><span class="std std-ref">Quantisation and affine arithmetic</span></a> for a proof of this method.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.quantisation</span></code>: VC-2 Quantisation</a><ul>
+<li><a class="reference internal" href="#quantisation-dequantisation">Quantisation &amp; dequantisation</a></li>
+<li><a class="reference internal" href="#analysis">Analysis</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="fast_partial_analyse_quantise_synthesise.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.fast_partial_analyse_quantise_synthesise</span></code>: Fast single value encode, quantise and decode</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vc2_filters.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.vc2_filters</span></code>: VC-2 Filters Implemented as <code class="xref py py-class docutils literal notranslate"><span class="pre">InfiniteArray</span></code>s</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/low_level_api/quantisation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vc2_filters.html" title="vc2_bit_widths.vc2_filters: VC-2 Filters Implemented as InfiniteArrays"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="fast_partial_analyse_quantise_synthesise.html" title="vc2_bit_widths.fast_partial_analyse_quantise_synthesise: Fast single value encode, quantise and decode"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.quantisation</span></code>: VC-2 Quantisation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>

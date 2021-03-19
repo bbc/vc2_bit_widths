@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vc2_bit_widths.bundle: Analysis file bundling &#8212; SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Theory overview" href="../theory_and_design/overview.html" />
+    <link rel="prev" title="vc2_bit_widths.json_serialisations: JSON Data File Serialisation/Deserialisation" href="json_serialisations.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory_and_design/overview.html" title="Theory overview"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="json_serialisations.html" title="vc2_bit_widths.json_serialisations: JSON Data File Serialisation/Deserialisation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.bundle</span></code>: Analysis file bundling</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-vc2_bit_widths.bundle"></span><div class="section" id="vc2-bit-widths-bundle-analysis-file-bundling">
+<h1><a class="reference internal" href="#module-vc2_bit_widths.bundle" title="vc2_bit_widths.bundle"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.bundle</span></code></a>: Analysis file bundling<a class="headerlink" href="#vc2-bit-widths-bundle-analysis-file-bundling" title="Permalink to this headline">¶</a></h1>
+<p>Pre-computed filter analyses (e.g. from multiple runs of
+<a class="reference internal" href="../cli/vc2_static_filter_analysis.html#vc2-static-filter-analysis"><span class="std std-ref">vc2-static-filter-analysis</span></a>) and optimised test patterns (e.g. from runs
+of <a class="reference internal" href="../cli/vc2_optimise_synthesis_test_patterns.html#vc2-optimise-synthesis-test-patterns"><span class="std std-ref">vc2-optimise-synthesis-test-patterns</span></a>) may be packed into a ‘bundle’
+file along with an index of available patterns.</p>
+<p>The bundle file is a compressed zip file and offers significant space savings
+over storing the analyses uncompressed.</p>
+<p>The provision of an index file also enables more efficient lookup of files by
+codec parameters than reading every file.</p>
+<dl class="py function">
+<dt id="vc2_bit_widths.bundle.bundle_create_from_serialised_dicts">
+<code class="sig-name descname"><span class="pre">bundle_create_from_serialised_dicts</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_or_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serialised_static_filter_analyses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serialised_optimised_synthesis_test_patterns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.bundle.bundle_create_from_serialised_dicts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a bundle file containing the supplied pre-serialised filter analyses
+and test patterns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file_or_filename</strong><span class="classifier">file-like or str</span></dt><dd><p>The bundle to write to.</p>
+</dd>
+<dt><strong>serialised_static_filter_analyses</strong><span class="classifier">iterable</span></dt><dd><p>An iterable of dictionaries containing filter analyses with all entries
+serialised as produced by <a class="reference internal" href="../cli/vc2_static_filter_analysis.html#vc2-static-filter-analysis"><span class="std std-ref">vc2-static-filter-analysis</span></a>. Must be
+free of duplicates.</p>
+</dd>
+<dt><strong>serialised_optimised_synthesis_test_patterns</strong><span class="classifier">iterable</span></dt><dd><p>An iterable of dictionaries containing filter analyses with all entries
+serialised as expected by <a class="reference internal" href="../cli/vc2_optimise_synthesis_test_patterns.html#vc2-optimise-synthesis-test-patterns"><span class="std std-ref">vc2-optimise-synthesis-test-patterns</span></a>.
+Must be free of duplicates.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.bundle.bundle_index">
+<code class="sig-name descname"><span class="pre">bundle_index</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_or_filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.bundle.bundle_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the index from a bundle file.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file_or_filename</strong><span class="classifier">file-like or str</span></dt><dd><p>The bundle to read.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>index</strong><span class="classifier">dict</span></dt><dd><p>Returns a dictionary containing two lists under the keys
+“static_filter_analyses” and “optimised_synthesis_test_patterns”.
+Both lists contain dictionaries containing the following fields:</p>
+<ul class="simple">
+<li><p>“wavelet_index” (int)</p></li>
+<li><p>“wavelet_index_ho” (int)</p></li>
+<li><p>“dwt_depth” (int)</p></li>
+<li><p>“dwt_depth_ho” (int)</p></li>
+<li><p>“filename”: The file in the bundle containing the corresponding
+analysis or test patterns.</p></li>
+</ul>
+<p>The “optimised_synthesis_test_patterns” list dicts also contain the
+following additional entries:</p>
+<ul class="simple">
+<li><p>“quantisation_matrix” (<code class="docutils literal notranslate"><span class="pre">{level:</span> <span class="pre">{orient:</span> <span class="pre">value,</span> <span class="pre">...},</span> <span class="pre">...}</span></code>)</p></li>
+<li><p>“picture_bit_width” (int)</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.bundle.bundle_get_static_filter_analysis">
+<code class="sig-name descname"><span class="pre">bundle_get_static_filter_analysis</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_or_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.bundle.bundle_get_static_filter_analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a static filter analysis for a particular filter configuration from
+a bundle. Raises <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.9)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">KeyError</span></code></a> if no matching analysis is present in
+the bundle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file_or_filename</strong><span class="classifier">file-like or str</span></dt><dd><p>The bundle to read.</p>
+</dd>
+<dt><strong>wavelet_index</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>wavelet_index_ho</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth_ho</strong><span class="classifier">int</span></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>analysis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), …}</span></dt><dd></dd>
+<dt><strong>synthesis_signal_bounds</strong><span class="classifier">{(level, array_name, x, y): (lower_bound_exp, upper_bound_exp), …}</span></dt><dd></dd>
+<dt>analysis_test_patterns: {(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</dt><dd></dd>
+<dt>synthesis_test_patterns: {(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.TestPatternSpecification" title="vc2_bit_widths.patterns.TestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestPatternSpecification</span></code></a>, …}</dt><dd><p>See <a class="reference internal" href="helpers.html#vc2_bit_widths.helpers.static_filter_analysis" title="vc2_bit_widths.helpers.static_filter_analysis"><code class="xref py py-func docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers.static_filter_analysis()</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="vc2_bit_widths.bundle.bundle_get_optimised_synthesis_test_patterns">
+<code class="sig-name descname"><span class="pre">bundle_get_optimised_synthesis_test_patterns</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_or_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelet_index_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwt_depth_ho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantisation_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">picture_bit_width</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#vc2_bit_widths.bundle.bundle_get_optimised_synthesis_test_patterns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a static filter analysis for a particular filter configuration from
+a bundle. Raises <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.9)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">KeyError</span></code></a> if no matching analysis is present in
+the bundle.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file_or_filename</strong><span class="classifier">file-like or str</span></dt><dd><p>The bundle to read.</p>
+</dd>
+<dt><strong>wavelet_index</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>wavelet_index_ho</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>dwt_depth_ho</strong><span class="classifier">int</span></dt><dd></dd>
+<dt><strong>quantisation_matrix</strong><span class="classifier">{level: {orient: value, …}, …}</span></dt><dd></dd>
+<dt><strong>picture_bit_width</strong><span class="classifier">int</span></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>optimised_test_patterns</strong><span class="classifier">{(level, array_name, x, y): <a class="reference internal" href="patterns.html#vc2_bit_widths.patterns.OptimisedTestPatternSpecification" title="vc2_bit_widths.patterns.OptimisedTestPatternSpecification"><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimisedTestPatternSpecification</span></code></a>, …}</span></dt><dd><p>See <a class="reference internal" href="helpers.html#vc2_bit_widths.helpers.optimise_synthesis_test_patterns" title="vc2_bit_widths.helpers.optimise_synthesis_test_patterns"><code class="xref py py-func docutils literal notranslate"><span class="pre">vc2_bit_widths.helpers.optimise_synthesis_test_patterns()</span></code></a>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="json_serialisations.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.json_serialisations</span></code>: JSON Data File Serialisation/Deserialisation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../theory_and_design/overview.html"
+                        title="next chapter">Theory overview</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/high_level_api/bundle.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory_and_design/overview.html" title="Theory overview"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="json_serialisations.html" title="vc2_bit_widths.json_serialisations: JSON Data File Serialisation/Deserialisation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">SMPTE ST 2042-1 (VC-2) Bit Widths 0.1.6 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >High-level Python API Reference</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">vc2_bit_widths.bundle</span></code>: Analysis file bundling</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021, BBC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.2.
+    </div>
+  </body>
+</html>
